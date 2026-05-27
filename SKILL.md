@@ -1,10 +1,19 @@
 ---
 name: commodore-pet
+version: 1.0.0
 description: >-
-  Root router for Commodore PET AI-agent skills. Load this file first,
-  then choose the smallest matching topic file from this skill directory.
-  Covers 6502 CPU, DASM assembler, PET hardware (VIA/PIA/CRTC),
-  memory map, KERNAL vectors, screen I/O, and assembly code patterns.
+  Commodore PET 6502 assembly programming skill. Covers MOS 6502 CPU architecture,
+  DASM assembler syntax, PET 3032 hardware (VIA 6522, PIA 6520, CRTC 6545),
+  memory map, KERNAL jump table, screen I/O, PETSCII, compression patterns,
+  and working code examples. Use whenever the user asks about Commodore PET
+  programming, 6502 assembly, DASM, PET hardware registers, screen memory,
+  KERNAL routines, tape/disk loading, sound generation, animation frames,
+  IRQ handling, or VBLANK timing. Triggers: 'PET 3032', 'Commodore PET',
+  '6502 assembly', 'DASM', 'PETSCII', 'KERNAL', 'VIA 6522', 'PIA 6520',
+  'screen memory', 'BASIC stub', 'SYS1038', 'animation player', 'VBLANK',
+  'tape loading', 'IEEE-488', 'shift register sound', 'frame delta',
+  'RLE compression', 'zero page', 'IRQ hook'.
+license: MIT
 ---
 
 # Commodore PET Agentic Programming Skills
