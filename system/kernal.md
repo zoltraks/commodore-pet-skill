@@ -15,8 +15,8 @@ This file covers the PET 3032 KERNAL in four progressive layers:
 | Out of scope             | See instead             |
 |--------------------------|-------------------------|
 | Hardware chip registers  | `hardware/pet-chips.md` |
-| Memory map and zero page | `system/memory-map.md`  |
-| Screen RAM and PETSCII   | `system/screen-io.md`   |
+| Memory map and zero page | `system/memory.md`  |
+| Screen RAM and PETSCII   | `system/screen.md` |
 
 ## KERNAL Jump Table ($FF00-$FFFF)
 

@@ -138,9 +138,9 @@ commodore-pet-skill/
 │   ├── pet-chips.md               # VIA, PIA, CRTC registers, I/O decoding, VBLANK
 │   └── sound.md                   # VIA shift register sound, CB2 speaker, frequency table
 ├── system/
-│   ├── memory-map.md              # PET 3032 RAM layout, zero page, safe zones
-│   ├── kernal-vectors.md          # KERNAL jump table, indirect vectors, I/O routines
-│   ├── screen-io.md               # Screen RAM, PETSCII, cursor, reverse video
+│   ├── memory.md                  # PET 3032 RAM layout, zero page, safe zones
+│   ├── kernal.md                  # KERNAL jump table, indirect vectors, I/O routines
+│   ├── screen.md                  # Screen RAM, PETSCII, cursor, reverse video
 │   └── loading.md                 # Tape/disk loading, SETNAM/SETLFS/LOAD, STATUS
 ├── code/
 │   ├── bit.md                     # Bit ops, masks, pointers, stack tricks

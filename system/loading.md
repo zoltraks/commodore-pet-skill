@@ -9,8 +9,8 @@ This file covers how to load raw binary data into PET RAM from cassette or disk,
 
 | Out of scope               | See instead                |
 |----------------------------|----------------------------|
-| KERNAL jump table overview | `system/kernal-vectors.md` |
-| Safe memory zones          | `system/memory-map.md`     |
+| KERNAL jump table overview | `system/kernal.md` |
+| Safe memory zones          | `system/memory.md` |
 
 ## KERNAL I/O Addresses
 

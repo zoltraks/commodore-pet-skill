@@ -1,6 +1,5 @@
 ---
 name: commodore-pet
-version: 1.0.0
 description: >-
   Commodore PET 6502 assembly programming skill. Covers MOS 6502 CPU architecture,
   DASM assembler syntax, PET 3032 hardware (VIA 6522, PIA 6520, CRTC 6545),
@@ -13,7 +12,6 @@ description: >-
   'screen memory', 'BASIC stub', 'SYS1038', 'animation player', 'VBLANK',
   'tape loading', 'IEEE-488', 'shift register sound', 'frame delta',
   'RLE compression', 'zero page', 'IRQ hook'.
-license: MIT
 ---
 
 # Commodore PET Agentic Programming Skills
@@ -37,9 +35,9 @@ This skill is self-contained. The topic files below are the available reference 
 
 ## `system/` - OS, Memory, I/O
 
-- **`system/memory-map.md`** - PET 3032 32 KB RAM layout, zero page, BASIC workspace, screen RAM, ROM regions, and safe memory zones for machine code.
-- **`system/kernal-vectors.md`** - KERNAL jump table ($FFB7-$FFEA), indirect vectors, CHROUT/GETIN/CLALL, safe IRQ hook patterns.
-- **`system/screen-io.md`** - Screen RAM layout, PETSCII vs screen codes, PETSCII control codes, graphics characters, direct screen writing, cursor control, and scrolling.
+- **`system/memory.md`** - PET 3032 32 KB RAM layout, zero page, BASIC workspace, screen RAM, ROM regions, and safe memory zones for machine code.
+- **`system/kernal.md`** - KERNAL jump table ($FFB7-$FFEA), indirect vectors, CHROUT/GETIN/CLALL, safe IRQ hook patterns.
+- **`system/screen.md`** - Screen RAM layout, PETSCII vs screen codes, PETSCII control codes, graphics characters, direct screen writing, cursor control, and scrolling.
 - **`system/loading.md`** - KERNAL tape and IEEE-488 disk loading (SETNAM/SETLFS/LOAD), byte-stream reading, STATUS word, and animation data load sequences.
 
 ## `code/` - Code Patterns
@@ -58,7 +56,7 @@ This skill is self-contained. The topic files below are the available reference 
 
 ## Navigation Rules
 
-- Hardware-register behavior belongs in `hardware/`; software rendering recipes belong in `system/screen-io.md`.
+- Hardware-register behavior belongs in `hardware/`; software rendering recipes belong in `system/screen.md`.
 - OS/vector/I/O questions belong in `system/`; build tools belong in `utility/`; runnable examples belong in `example/`.
 - Sound generation belongs in `hardware/sound.md`; tape or disk loading belongs in `system/loading.md`.
 - Prefer the narrowest topic file that directly matches the request.

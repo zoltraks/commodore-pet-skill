@@ -15,8 +15,8 @@ This file covers PET 3032 screen I/O in four progressive layers:
 | Out of scope                  | See instead                |
 |-------------------------------|----------------------------|
 | CRTC/PIA/VIA register details | `hardware/pet-chips.md`    |
-| KERNAL routines               | `system/kernal-vectors.md` |
-| Memory map                    | `system/memory-map.md`     |
+| KERNAL routines               | `system/kernal.md` |
+| Memory map                    | `system/memory.md` |
 
 ## Screen RAM Layout
 

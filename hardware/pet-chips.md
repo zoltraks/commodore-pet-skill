@@ -15,8 +15,8 @@ This file covers the PET 3032 hardware chips in four progressive layers:
 | Out of scope                    | See instead                |
 |---------------------------------|----------------------------|
 | 6502 CPU instructions and flags | `hardware/6502-cpu.md`     |
-| KERNAL routines and vectors     | `system/kernal-vectors.md` |
-| Screen I/O and PETSCII          | `system/screen-io.md`      |
+| KERNAL routines and vectors     | `system/kernal.md` |
+| Screen I/O and PETSCII          | `system/screen.md` |
 
 ## Memory Map Overview
 
