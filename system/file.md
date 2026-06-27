@@ -20,6 +20,20 @@ Do not use C64 addresses - they differ.
 | KERNAL jump table overview  | `system/kernal.md` |
 | Safe memory zones           | `system/memory.md` |
 
+## Contents
+
+| Section                    | Line  | What it covers                                              |
+|----------------------------|-------|-------------------------------------------------------------|
+| File Architecture Overview | 23    | Logical files, device numbers, secondary addresses, file types |
+| KERNAL Routine Reference   | 122   | SETNAM, SETLFS, OPEN, CLOSE, CHKIN, CHKOUT, CLRCHN, CHRIN, CHROUT, READST, LOAD, SAVE, CLALL, STOP |
+| Call Sequences             | 781   | Open-read, open-write, load PRG, save PRG patterns          |
+| EOF Detection              | 973   | STATUS bit 6 (disk), STATUS bit 4 (cassette)                |
+| Error Handling             | 1025  | OPEN error codes, device not present, file not found        |
+| PETSCII Filename Rules     | 1093  | Uppercase, wildcards, drive prefix                          |
+| Tape File Notes            | 1119  | Cassette SA values, sequential vs PRG                       |
+| Multiple Open Files        | 1131  | Table limits, safe LFN allocation                           |
+| Troubleshooting            | 1167  | Common bugs and their causes                                |
+
 ## File Architecture Overview
 
 The PET KERNAL implements a uniform byte-stream I/O model.

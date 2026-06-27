@@ -12,6 +12,26 @@ This file covers DASM for PET 3032 work in four progressive layers:
 - **Working code examples** - verified ASM snippets
 - **Deep reference notes** - edge cases, caveats, implementation rules
 
+## Contents
+
+| Section                    | Line | What it covers                                           |
+|----------------------------|------|----------------------------------------------------------|
+| Command Line               | 15   | Invocation flags: `-f3`, `-o`, `-I`, `-D`                |
+| Processor Directive        | 35   | `processor 6502` requirement                             |
+| Origin Directive           | 43   | `org $0401` and relocation                               |
+| Addressing Modes           | 59   | Immediate, ZP, absolute, indexed, indirect syntax        |
+| Data Directives            | 76   | `byte`, `word`, `hex`, `ds`, `dc`                        |
+| Labels and Equates         | 125  | Local labels, `equ`/`=`, forward references              |
+| Comments                   | 192  | Semicolon style, block comments                          |
+| Macros                     | 204  | `mac`/`endm`, arguments, nesting                         |
+| Conditional Assembly       | 226  | `ifconst`, `ifnconst`, `else`, `endif`                   |
+| Repeat Loops               | 249  | `repeat`/`repend`                                        |
+| Segments                   | 259  | `seg`, `seg.u` for BSS, linking multiple segments        |
+| Naming Conventions         | 270  | Label case, scope, PET-specific patterns                 |
+| Column Alignment           | 284  | Tab stops for opcode/operand/comment columns             |
+| PET-Specific Conventions   | 298  | BASIC stub, KERNAL equates, PETSCII strings              |
+| Common Errors              | 358  | Undefined label, wrong format flag, forward-ref issues   |
+
 ## Command Line
 
 ```bash

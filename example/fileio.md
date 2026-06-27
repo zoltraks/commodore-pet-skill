@@ -15,6 +15,21 @@ Every example assembles cleanly with DASM and follows the conventions in `system
 | DOS commands and directory format | `system/disk.md`                     |
 | KERNAL jump table overview        | `system/kernal.md`                   |
 
+## Contents
+
+| Section                         | Line | What it covers                                          |
+|---------------------------------|------|---------------------------------------------------------|
+| Address Definitions             | 18   | Standard KERNAL equates block to paste at top of file   |
+| Load a PRG File                 | 45   | LOAD with SA=0 (file address) and SA=1 (fixed address)  |
+| Save a PRG File                 | 139  | SAVE from zero-page pointer to end address              |
+| Read a Sequential File          | 206  | OPEN + CHKIN + CHRIN loop + STATUS EOF check + CLOSE    |
+| Write a Sequential File         | 341  | OPEN + CHKOUT + CHROUT loop + STATUS check + CLOSE      |
+| Send a DOS Command              | 448  | SA=15 OPEN with command string, reopen to read status   |
+| Read the Disk Directory         | 580  | Open `$`, skip header, parse BASIC-format lines         |
+| Complete File I/O Program Template | 709 | Full program with init, read, error paths, CLOSE       |
+| Common Mistakes                 | 872  | CLRCHN, CLOSE on error, SA=0 misuse, LFN conflicts      |
+| Quick Reference: Call Sequences | 920  | One-line summary of every operation                     |
+
 ## Address Definitions
 
 All examples use these standard KERNAL addresses.

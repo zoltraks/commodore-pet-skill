@@ -19,6 +19,19 @@ The drive's firmware (Commodore DOS) interprets commands and manages the file sy
 | Complete DASM file I/O examples    | `example/fileio.md` |
 | KERNAL jump table                  | `system/kernal.md`  |
 
+## Contents
+
+| Section                       | Line | What it covers                                              |
+|-------------------------------|------|-------------------------------------------------------------|
+| Supported Disk Drives         | 22   | 2031, 2040, 4040, 8050, 8250, SFD-1001 specs and DOS versions |
+| The Command Channel           | 45   | SA=15 open, read status string, send DOS command pattern    |
+| DOS Commands                  | 168  | Initialize, scratch, rename, copy, format, validate         |
+| Reading the Directory         | 289  | `$` pseudo-file, BASIC-format encoding, parsing loop        |
+| DOS Error Messages            | 453  | Full error code table (00-74), checking CC field            |
+| Disk Images and Emulators     | 518  | D64/D80/D82 formats, D64 on PET caveats, VICE xpet workflow |
+| Comparing File Access Approaches | 635 | BASIC vs KERNAL routines vs direct IEEE-488               |
+| Best Practices                | 702  | CLRCHN, CLOSE, STATUS, command channel, LFN limits          |
+
 ## Supported Disk Drives
 
 The PET 3032 uses IEEE-488 (GPIB) to communicate with disk drives.

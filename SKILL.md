@@ -1,77 +1,120 @@
 ---
 name: commodore-pet
 description: >-
-  Commodore PET 6502 assembly programming skill. Covers MOS 6502 CPU architecture,
-  DASM assembler syntax, PET 3032 hardware (VIA 6522, PIA 6520, CRTC 6545),
-  memory map, KERNAL jump table, screen I/O, PETSCII, keyboard matrix, compression patterns,
-  file I/O, disk operations, and working code examples. Use whenever the user asks about
-  Commodore PET programming, 6502 assembly, DASM, PET hardware registers, screen memory,
-  KERNAL routines, tape/disk loading, sound generation, animation frames, IRQ handling,
-  VBLANK timing, file I/O, sequential files, disk drives, DOS commands, IEEE-488 bus,
-  directory listing, or disk images. Triggers: 'PET 3032', 'Commodore PET',
-  '6502 assembly', 'DASM', 'PETSCII', 'KERNAL', 'VIA 6522', 'PIA 6520',
-  'screen memory', 'BASIC stub', 'SYS1038', 'animation player', 'VBLANK',
-  'tape loading', 'IEEE-488', 'shift register sound', 'frame delta',
-  'RLE compression', 'zero page', 'IRQ hook', 'keyboard matrix', 'key scan',
-  'SETNAM', 'SETLFS', 'OPEN', 'CLOSE', 'CHKIN', 'CHKOUT', 'sequential file',
-  'disk directory', 'DOS command', 'scratch', 'format disk', 'D64', 'D80', 'D82',
-  '4040', '8050', 'command channel', 'drive status'.
+  Expert reference for Commodore PET 3032 6502 assembly programming, hardware
+  registers, and working DASM code examples. Always use this skill whenever
+  the conversation involves anything related to the Commodore PET, 6502 or
+  65xx assembly, DASM assembler, PET hardware chips (VIA 6522, PIA 6520,
+  CRTC 6545), PETSCII, screen RAM, KERNAL routines, tape or disk I/O, file
+  operations, DOS commands, IEEE-488, keyboard matrix scanning, sound
+  generation, IRQ or VBLANK, compression or animation on the PET, or
+  anything that mentions PET 3032, SYS1038, BASIC stub, CBM DOS, or
+  Commodore disk drives. Do not skip this skill just because a question
+  seems simple — even short 6502 questions benefit from verified PET-specific
+  addresses and hardware facts.
 ---
 
-# Commodore PET Agentic Programming Skills
+# Commodore PET Programming Reference
 
-> **Type:** Root router and taxonomy
-> **Purpose:** Route Commodore PET programming, hardware, and tooling questions to the smallest useful English skill file.
+This skill is the root router for all Commodore PET 3032 programming tasks.
 
-Use progressive disclosure:
+## How to Use This Skill
 
-1. Read this router.
-2. Open exactly one or two topic files that match the task.
-3. Use additional topic files only when the task crosses domains.
+Read this file first.
 
-This skill is self-contained. The topic files below are the available reference material in this repository.
+Then open **exactly one or two** topic files that match the task.
 
-## `hardware/` - Silicon Reference
+Do not load all topic files — pick the narrowest match.
 
-- **`hardware/cpu.md`** - 6502 registers, flags, instruction set, addressing modes, cycle counts, stack operations, interrupts, and zero-page idioms.
-- **`hardware/chip.md`** - VIA 6522, PIA 6520 (x2), CRTC 6545 registers, I/O decoding, screen memory, character generator, VBLANK, and IRQ acknowledgement.
-- **`hardware/sound.md`** - VIA shift register sound via CB2, frequency table, ACR/SR/T2 control, tone start/stop routines.
+Load additional files only when the task genuinely crosses two domains.
 
-## `system/` - OS, Memory, I/O
+After reading the relevant topic file(s), answer using the verified facts and code patterns from those files.
 
-- **`system/memory.md`** - PET 3032 32 KB RAM layout, zero page, BASIC workspace, screen RAM, ROM regions, and safe memory zones for machine code.
-- **`system/kernal.md`** - KERNAL jump table ($FFB7-$FFEA), indirect vectors, CHROUT/GETIN/CLALL, safe IRQ hook patterns.
-- **`system/screen.md`** - Screen RAM layout, PETSCII vs screen codes, PETSCII control codes, graphics characters, direct screen writing, cursor control, and scrolling.
-- **`system/loading.md`** - KERNAL tape and IEEE-488 disk loading (SETNAM/SETLFS/LOAD), byte-stream reading, STATUS word, and animation data load sequences.
-- **`system/keyboard.md`** - PET keyboard matrix layout, PIA 1 row/column scan, KERNAL GETIN vs direct scan, special keys, and multi-key detection patterns.
-- **`system/file.md`** - Complete KERNAL file I/O system: logical files, device numbers, secondary addresses, SETNAM/SETLFS/OPEN/CLOSE/CHKIN/CHKOUT/CLRCHN/CHRIN/CHROUT/LOAD/SAVE/READST reference, STATUS byte, and error handling.
-- **`system/disk.md`** - Commodore DOS commands (scratch, rename, copy, format, validate), command channel (SA=15), directory reading, drive error codes, disk image formats (D64/D80/D82), emulator workflows (VICE xpet), and BASIC vs KERNAL vs direct IEEE-488 comparison.
+All addresses and register values are PET 3032 specific. Do not substitute C64 addresses.
 
-## `code/` - Code Patterns
+## Topic Files
 
-- **`code/bit.md`** - Bit shifts, rotates, flag testing, mask building, INC/DEC 16-bit pointers, and zero-page idioms.
-- **`code/optimization.md`** - 6502 size/speed trade-offs for PET, unrolled loops, compare-free countdown, stack tricks, and branch tuning.
-- **`code/compression.md`** - `$00`-escape RLE for full-range screen codes (including inverse video), byte-run, and frame-delta patterns for PET screen-memory animation.
+### Hardware
 
-## `utility/` - Build Tools
+Read these files for chip register behavior, timing, and hardware-level facts.
 
-- **`utility/dasm-assembler.md`** - DASM syntax, directives, macros, segments, PET-specific conventions, and command-line options.
+| File                  | Read when the task involves                                                                 |
+|-----------------------|---------------------------------------------------------------------------------------------|
+| `hardware/cpu.md`     | 6502 registers, flags, instruction set, addressing modes, cycle counts, interrupts, BRK     |
+| `hardware/chip.md`    | VIA 6522, PIA 6520, CRTC 6545, I/O addresses, VBLANK signal, IRQ acknowledgement           |
+| `hardware/sound.md`   | VIA CB2 speaker, shift register tone generation, frequency table, T2 timer setup           |
 
-## `example/` - General Examples
+### System Software
 
-- **`example/general.md`** - Ready-to-read PET 3032 examples: BASIC stub, clear screen, wait-key, screen copy, VBLANK polling, IRQ-driven animation skeleton, and screen data row format.
-- **`example/fileio.md`** - Complete DASM file I/O examples: load PRG, save PRG, read sequential file, write sequential file, send DOS command, read disk directory, full program template, common mistakes, and quick-reference call sequences.
+Read these files for OS routines, memory layout, and I/O protocols.
 
-## Navigation Rules
+| File                  | Read when the task involves                                                                  |
+|-----------------------|----------------------------------------------------------------------------------------------|
+| `system/memory.md`    | RAM layout, zero page map, BASIC workspace, screen RAM range, safe zones for machine code   |
+| `system/kernal.md`    | KERNAL jump table ($FFB7-$FFEA), indirect vectors, IRQ hook patterns, CHROUT/GETIN/CLALL   |
+| `system/screen.md`    | Screen RAM layout, PETSCII vs screen codes, control codes, reverse video, cursor, scrolling |
+| `system/loading.md`   | Loading PRG files from tape or disk, SETNAM/SETLFS/LOAD call sequence, STATUS byte         |
+| `system/keyboard.md`  | PIA 1 keyboard matrix scan, GETIN vs direct scan, special keys, multi-key detection        |
+| `system/file.md`      | Full file I/O: SETNAM/SETLFS/OPEN/CLOSE/CHKIN/CHKOUT/CLRCHN/CHRIN/CHROUT/LOAD/SAVE        |
+| `system/disk.md`      | DOS commands, command channel (SA=15), directory reading, drive errors, disk images         |
 
-- Hardware-register behavior belongs in `hardware/`; software rendering recipes belong in `system/screen.md`.
-- OS/vector/I/O questions belong in `system/`; build tools belong in `utility/`; runnable examples belong in `example/`.
-- Sound generation belongs in `hardware/sound.md`; tape or disk loading belongs in `system/loading.md`.
-- Keyboard matrix scanning belongs in `system/keyboard.md`; KERNAL GETIN is also documented there.
-- KERNAL file routine reference (SETNAM/SETLFS/OPEN/CLOSE/CHKIN/CHKOUT/CLRCHN/CHRIN/CHROUT/LOAD/SAVE) belongs in `system/file.md`.
-- DOS commands, command channel, directory reading, drive error codes, disk images, and emulator workflows belong in `system/disk.md`.
-- Complete runnable DASM file I/O examples belong in `example/fileio.md`.
-- Prefer the narrowest topic file that directly matches the request.
-- If a task needs both hardware facts and implementation guidance, load the hardware topic first, then the system or utility topic that covers the code path.
-- For file I/O tasks: start with `system/file.md` for routine reference, `system/disk.md` for DOS and directory, `example/fileio.md` for ready-to-use code.
-- For animation player generation: start with `example/general.md` for skeletons, `hardware/chip.md` for VBLANK/IRQ, `system/loading.md` for data loading, `hardware/sound.md` for audio.
+### Code Patterns
+
+Read these files for implementation techniques and algorithmic patterns.
+
+| File                    | Read when the task involves                                                               |
+|-------------------------|-------------------------------------------------------------------------------------------|
+| `code/bit.md`           | Bit shifts, rotates, masking, flag testing, 16-bit pointer increment/decrement            |
+| `code/optimization.md`  | Loop unrolling, branch tuning, size/speed trade-offs, compare-free countdown             |
+| `code/compression.md`   | $00-escape RLE for PET screen codes, byte-run encoding, frame-delta for animation        |
+
+### Build Tool
+
+| File                        | Read when the task involves                                            |
+|-----------------------------|------------------------------------------------------------------------|
+| `utility/dasm-assembler.md` | DASM syntax, directives, macros, segments, command-line options        |
+
+### Examples
+
+Read these files when you need a complete, runnable starting point.
+
+| File                  | Read when the task involves                                                                   |
+|-----------------------|-----------------------------------------------------------------------------------------------|
+| `example/general.md`  | BASIC stub, screen clear, wait-key, VBLANK polling, IRQ skeleton, animation frame player      |
+| `example/fileio.md`   | Load PRG, save PRG, read/write sequential file, DOS command, directory, error handling        |
+
+## Common Task Routing
+
+Use this table to pick the right file without reading every option above.
+
+| Task                                       | Open first                              | Open second if needed          |
+|--------------------------------------------|-----------------------------------------|--------------------------------|
+| Write or explain a 6502 instruction        | `hardware/cpu.md`                       |                                |
+| Use VIA, PIA, or CRTC registers            | `hardware/chip.md`                      |                                |
+| Generate a tone on the PET speaker         | `hardware/sound.md`                     |                                |
+| Find a safe memory address for code/data   | `system/memory.md`                      |                                |
+| Call a KERNAL routine by address           | `system/kernal.md`                      |                                |
+| Write to the screen or use PETSCII         | `system/screen.md`                      |                                |
+| Load a PRG or data file from tape or disk  | `system/loading.md`                     |                                |
+| Scan the keyboard or detect keypresses     | `system/keyboard.md`                    |                                |
+| Open, read, or write a sequential file     | `system/file.md`                        | `example/fileio.md`            |
+| Send a DOS command or read the directory   | `system/disk.md`                        | `example/fileio.md`            |
+| Compress screen data or do frame-delta     | `code/compression.md`                   |                                |
+| Optimize a loop or reduce code size        | `code/optimization.md`                  |                                |
+| Write DASM source with macros or segments  | `utility/dasm-assembler.md`             |                                |
+| Build a complete animation player          | `example/general.md`                    | `hardware/chip.md`             |
+| Build a complete file I/O program          | `example/fileio.md`                     | `system/file.md`               |
+| BASIC stub + SYS1038                       | `example/general.md`                    |                                |
+
+## Note on Large Reference Files
+
+These files are long and have their own table of contents at the top.
+
+Use the table of contents to jump to the relevant section rather than reading the whole file.
+
+| File               | Lines |
+|--------------------|-------|
+| `system/file.md`   | ~1180 |
+| `example/fileio.md`| ~930  |
+| `system/disk.md`   | ~750  |
+| `example/general.md`| ~550 |
