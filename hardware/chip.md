@@ -104,6 +104,23 @@ wait_vblank:
         beq wait_vblank ; wait until high
 ```
 
+### Cassette Motor Control
+
+Motor control uses PIA 1 CRB bit 2 (CB2 output).
+
+Bit 2 low = motor on. Bit 2 high = motor off.
+
+```asm
+        lda $E813       ; PIA 1 CRB
+        and #$FB        ; clear bit 2 -> motor on
+        sta $E813
+
+        ; turn motor off:
+        lda $E813
+        ora #$04        ; set bit 2 -> motor off
+        sta $E813
+```
+
 ## PIA 2 ($E820-$E823) - IEEE-488
 
 PIA 2 handles the IEEE-488 bus data and control lines.
@@ -257,15 +274,6 @@ The PET 3032 uses board #3.
 | PET 3032B | 50 Hz        | European       |
 
 The VBLANK signal on PIA1 CB1 corresponds to the refresh rate.
-
-## Useful KERNAL Routines
-
-| Address | Name   | Description                  |
-|---------|--------|------------------------------|
-| $FFD2   | CHROUT | Output character to screen   |
-| $FFE4   | GETIN  | Read keyboard buffer         |
-| $FFE7   | CLALL  | Close all files and channels |
-| $FFEA   | UDTIM  | Update jiffy clock           |
 
 ## PET 3032 Specifics
 

@@ -118,40 +118,6 @@ done:
         rts
 ```
 
-## Compare-Free Loops
-
-### Down-Count with BNE
-
-```asm
-        ldx #$28        ; 40 iterations
-loop    ; ... body ...
-        dex
-        bne loop
-```
-
-### Up-Count to Zero with INY/BMI
-
-```asm
-        ldy #$E0        ; count 32 iterations
-loop    ; ... body ...
-        iny
-        bmi loop
-```
-
-### X-Driven Table Walk (0 to N-1)
-
-```asm
-        ldx #$00
-
-loop:
-
-        lda table,x
-        ; ... use A ...
-        inx
-        cpx #size
-        bne loop
-```
-
 ## Mask and Lookup Patterns
 
 ### Nibble Swap
@@ -182,22 +148,6 @@ bit_reverse_table:
 ```
 
 ## Stack Tricks
-
-### Inline Data After JSR
-
-```asm
-        jsr print_string
-        .byte "HELLO",0
-
-print_string:
-
-        pla
-        sta ptr_lo
-        pla
-        sta ptr_hi
-        ; ptr now points to "HELLO",0
-        ; advance ptr by data size before RTS
-```
 
 ### Fast A/X/Y Save/Restore
 

@@ -151,8 +151,9 @@ commodore-pet-skill/
 ├── system/
 │   ├── memory.md                  # PET 3032 RAM layout, zero page, safe zones
 │   ├── kernal.md                  # KERNAL jump table, indirect vectors, I/O routines
+│   ├── irq.md                     # VBLANK IRQ setup, CINV vector, handler template, polling
+│   ├── load.md                    # PRG loading from tape/disk, LOAD call, tape file format
 │   ├── screen.md                  # Screen RAM, PETSCII, cursor, reverse video
-│   ├── loading.md                 # Tape/disk loading, SETNAM/SETLFS/LOAD, STATUS
 │   ├── keyboard.md                # Keyboard matrix, PIA 1 scan, GETIN, multi-key detection
 │   ├── file.md                    # KERNAL file I/O: SETNAM/SETLFS/OPEN/CLOSE/CHKIN/CHKOUT/CHRIN/CHROUT/LOAD/SAVE
 │   └── disk.md                    # DOS commands, command channel, directory, error codes, disk images, emulators

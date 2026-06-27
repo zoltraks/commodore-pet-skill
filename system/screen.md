@@ -2,7 +2,7 @@
 
 ## Purpose
 
-> **Scope:** Screen RAM, PETSCII, screen codes, cursor, reverse video, keyboard, direct writes
+> **Scope:** Screen RAM, PETSCII, screen codes, cursor, reverse video, direct writes
 > **Key items:** SCREEN=$8000, 40x25 layout, PETSCII $93 = CLR/HOME, bit 7 = reverse, row stride = 40
 
 This file covers PET 3032 screen I/O in four progressive layers:
@@ -12,11 +12,12 @@ This file covers PET 3032 screen I/O in four progressive layers:
 - **Working code examples** - verified ASM snippets
 - **Deep reference notes** - edge cases, caveats, implementation rules
 
-| Out of scope                  | See instead        |
-|-------------------------------|--------------------|
-| CRTC/PIA/VIA register details | `hardware/chip.md` |
-| KERNAL routines               | `system/kernal.md` |
-| Memory map                    | `system/memory.md` |
+| Out of scope                  | See instead          |
+|-------------------------------|----------------------|
+| CRTC/PIA/VIA register details | `hardware/chip.md`   |
+| KERNAL routines               | `system/kernal.md`   |
+| Memory map                    | `system/memory.md`   |
+| Keyboard matrix and GETIN     | `system/keyboard.md` |
 
 ## Screen RAM Layout
 
@@ -176,38 +177,6 @@ loop:
         bne loop
         rts
 ```
-
-## Keyboard Input
-
-### Via KERNAL (GETIN)
-
-```asm
-wait_key:
-
-        jsr GETIN               ; $FFE4
-        beq wait_key            ; Z=1 means buffer empty
-        ; A now contains PETSCII code of pressed key
-```
-
-### Direct Keyboard Matrix Scan
-
-The keyboard is read via PIA 1.
-
-PORT A (bits 3-0) selects the row via a 4-to-10 decoder.
-
-PORT B returns the column states.
-
-```asm
-; Scan row 0 (keys: INST/DEL, RETURN, CURSOR RIGHT, F7, F1, F3, F5, CURSOR DOWN)
-        lda #$FE                ; select row 0 (bit 0 low)
-        sta $E810               ; PIA 1 PORT A
-        lda $E812               ; PIA 1 PORT B
-        ; each bit 0 = key pressed in that column
-```
-
-**Note:** Direct keyboard scanning is complex on the PET due to the matrix decoder.
-
-Using KERNAL GETIN is strongly preferred unless you need to detect multiple simultaneous keys.
 
 ## Reverse Video
 

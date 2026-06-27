@@ -169,3 +169,34 @@ loop:
 ### No Dedicated Sound
 
 Sound requires bit-banging the VIA user port or using the internal beeper via KERNAL.
+
+## Compare-Free Loops
+
+### Down-Count with BNE
+
+```asm
+        ldx #$28        ; 40 iterations
+loop    ; ... body ...
+        dex
+        bne loop
+```
+
+### Up-Count with BPL
+
+```asm
+        ldx #$00
+loop    ; ... body ...
+        inx
+        bpl loop        ; stops at 128 iterations
+```
+
+### X-Driven Table Walk (0 to N-1)
+
+```asm
+        ldx #$00
+loop    lda table,x
+        ; ... use A ...
+        inx
+        cpx #size
+        bne loop
+```

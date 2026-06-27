@@ -229,18 +229,3 @@ my_irq:
 | Fast save/restore   | `STA zp / STX zp+1`                           | faster than stack for repeated use |
 | 16-bit load         | `LDA #<val / STA ptr / LDA #>val / STA ptr+1` | standard PET pattern               |
 
-### Animation Export ZP Allocation
-
-For project-level animation export, additional zero page locations may be needed beyond the basic `$F7-$FA` pointer set:
-
-```asm
-stream_ptr_lo  = $F7
-stream_ptr_hi  = $F8
-backbuf_ptr_lo = $F9
-backbuf_ptr_hi = $FA
-fragment_x     = $FB
-fragment_y     = $FC
-fragment_w     = $FD
-fragment_h     = $FE
-vblank_count   = $FF
-```

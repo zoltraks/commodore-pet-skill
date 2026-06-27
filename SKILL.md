@@ -48,15 +48,16 @@ Read these files for chip register behavior, timing, and hardware-level facts.
 
 Read these files for OS routines, memory layout, and I/O protocols.
 
-| File                 | Read when the task involves                                                                 |
-|----------------------|---------------------------------------------------------------------------------------------|
-| `system/memory.md`   | RAM layout, zero page map, BASIC workspace, screen RAM range, safe zones for machine code   |
-| `system/kernal.md`   | KERNAL jump table ($FFB7-$FFEA), indirect vectors, IRQ hook patterns, CHROUT/GETIN/CLALL    |
-| `system/screen.md`   | Screen RAM layout, PETSCII vs screen codes, control codes, reverse video, cursor, scrolling |
-| `system/loading.md`  | Loading PRG files from tape or disk, SETNAM/SETLFS/LOAD call sequence, STATUS byte          |
-| `system/keyboard.md` | PIA 1 keyboard matrix scan, GETIN vs direct scan, special keys, multi-key detection         |
-| `system/file.md`     | Full file I/O: SETNAM/SETLFS/OPEN/CLOSE/CHKIN/CHKOUT/CLRCHN/CHRIN/CHROUT/LOAD/SAVE          |
-| `system/disk.md`     | DOS commands, command channel (SA=15), directory reading, drive errors, disk images         |
+| File                 | Read when the task involves                                                                       |
+|----------------------|---------------------------------------------------------------------------------------------------|
+| `system/memory.md`   | RAM layout, zero page map, BASIC workspace, screen RAM range, safe zones for machine code         |
+| `system/kernal.md`   | KERNAL jump table ($FFB7-$FFEA), indirect vectors, CHROUT/GETIN/CLALL                             |
+| `system/irq.md`      | VBLANK IRQ setup, CINV vector, PIA1 CRB acknowledgement, handler template, VBLANK polling         |
+| `system/screen.md`   | Screen RAM layout, PETSCII vs screen codes, control codes, reverse video, cursor, scrolling       |
+| `system/load.md`     | Loading PRG files from tape or disk, LOAD call sequence, tape file format                         |
+| `system/keyboard.md` | PIA 1 keyboard matrix scan, GETIN vs direct scan, special keys, multi-key detection               |
+| `system/file.md`     | Full file I/O: SETNAM/SETLFS/OPEN/CLOSE/CHKIN/CHKOUT/CLRCHN/CHRIN/CHROUT/LOAD/SAVE               |
+| `system/disk.md`     | DOS commands, command channel (SA=15), directory reading, drive errors, disk images               |
 
 ### Code Patterns
 
@@ -94,8 +95,9 @@ Use this table to pick the right file without reading every option above.
 | Generate a tone on the PET speaker        | `hardware/sound.md`         |                       |
 | Find a safe memory address for code/data  | `system/memory.md`          |                       |
 | Call a KERNAL routine by address          | `system/kernal.md`          |                       |
+| Set up a VBLANK IRQ or poll VBLANK        | `system/irq.md`             |                       |
 | Write to the screen or use PETSCII        | `system/screen.md`          |                       |
-| Load a PRG or data file from tape or disk | `system/loading.md`         |                       |
+| Load a PRG or data file from tape or disk | `system/load.md`            |                       |
 | Scan the keyboard or detect keypresses    | `system/keyboard.md`        |                       |
 | Open, read, or write a sequential file    | `system/file.md`            | `example/file.md`     |
 | Send a DOS command or read the directory  | `system/disk.md`            | `example/file.md`     |

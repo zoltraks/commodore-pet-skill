@@ -152,23 +152,3 @@ stop_pressed:
 
 When writing portable code, verify addresses against the target machine.
 
-## Tape Routines
-
-The PET 3032 has built-in cassette tape support via PIA 1 and the VIA.
-
-- Motor control: PIA 1 CRB bit 2 (CB2). 0 = motor on, 1 = motor off.
-- Cassette sense: PIA 1 PORT A bits 4-5.
-- Read data: PIA 1 CA1 (cassette #1 read line).
-
-Direct motor control:
-
-```asm
-        lda $E813       ; PIA 1 CRB
-        and #$FB        ; clear bit 2 -> motor on
-        sta $E813
-
-        ; later, turn motor off:
-        lda $E813
-        ora #$04        ; set bit 2 -> motor off
-        sta $E813
-```
