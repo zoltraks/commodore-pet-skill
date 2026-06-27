@@ -12,9 +12,9 @@ This file covers the PET 3032 hardware chips in four progressive layers:
 - **Working code examples** - verified ASM snippets
 - **Deep reference notes** - edge cases, caveats, implementation rules
 
-| Out of scope                    | See instead                |
-|---------------------------------|----------------------------|
-| 6502 CPU instructions and flags | `hardware/6502-cpu.md`     |
+| Out of scope                    | See instead        |
+|---------------------------------|--------------------|
+| 6502 CPU instructions and flags | `hardware/cpu.md`  |
 | KERNAL routines and vectors     | `system/kernal.md` |
 | Screen I/O and PETSCII          | `system/screen.md` |
 
@@ -41,7 +41,9 @@ This file covers the PET 3032 hardware chips in four progressive layers:
 
 ## I/O Area Decoding ($E800-$E8FF)
 
-The I/O area uses minimal decoding. Address lines A4-A7 select individual chips:
+The I/O area uses minimal decoding.
+
+Address lines A4-A7 select individual chips:
 
 | Chip  | Address Range | A7 | A6 | A5 | A4 |
 |-------|---------------|----|----|----|----|
@@ -49,7 +51,10 @@ The I/O area uses minimal decoding. Address lines A4-A7 select individual chips:
 | PIA 2 | $E820-$E82F   | 0  | 0  | 1  | 0  |
 | VIA   | $E840-$E84F   | 0  | 1  | 0  | 0  |
 | CRTC  | $E880-$E88F   | 1  | 0  | 0  | 0  |
-Multiple chips may be selected simultaneously at overlapping addresses. Only the normal mappings are described here.
+
+Multiple chips may be selected simultaneously at overlapping addresses.
+
+Only the normal mappings are described here.
 
 ## PIA 1 ($E810-$E813) - Keyboard, Tape, VBLANK
 
@@ -70,7 +75,11 @@ PIA 1 handles keyboard scanning, cassette I/O, and the VBLANK interrupt source.
 
 ### VBLANK IRQ Acknowledgement
 
-The VBLANK IRQ is level-triggered via PIA 1 CB1. The interrupt flag remains set until the PIA is acknowledged by **reading PIA 1 CRB ($E813)**. If a custom IRQ handler does not read $E813, the interrupt re-fires immediately after `RTI`, locking the CPU.
+The VBLANK IRQ is level-triggered via PIA 1 CB1.
+
+The interrupt flag remains set until the PIA is acknowledged by **reading PIA 1 CRB ($E813)**.
+
+If a custom IRQ handler does not read $E813, the interrupt re-fires immediately after `RTI`, locking the CPU.
 
 ```asm
 ; Inside a custom VBLANK IRQ handler:
@@ -81,7 +90,9 @@ my_vblank_irq:
         rti
 ```
 
-When chaining to the KERNAL IRQ handler, the KERNAL reads $E813 itself. If you replace CINV completely, add the read explicitly.
+When chaining to the KERNAL IRQ handler, the KERNAL reads $E813 itself.
+
+If you replace CINV completely, add the read explicitly.
 
 To wait for VBLANK without enabling interrupts:
 
@@ -97,11 +108,11 @@ wait_vblank:
 
 PIA 2 handles the IEEE-488 bus data and control lines.
 
-| Address | Register | Description                                                |
-|---------|----------|------------------------------------------------------------|
-| $E820   | PORT A   | Input buffer for IEEE data lines                           |
+| Address | Register | Description                                                 |
+|---------|----------|-------------------------------------------------------------|
+| $E820   | PORT A   | Input buffer for IEEE data lines                            |
 | $E821   | CRA      | Control register A: CA2 = IEEE NDAC out; CA1 = IEEE ATN in |
-| $E822   | PORT B   | Output buffer for IEEE data lines                          |
+| $E822   | PORT B   | Output buffer for IEEE data lines                           |
 | $E823   | CRB      | Control register B: CB2 = IEEE DAV out; CB1 = IEEE SRQ in  |
 
 ## VIA 6522 ($E840-$E84F)
@@ -165,18 +176,25 @@ PCR_L   = $08           ; CA2 low:  lowercase / text charset
 
 ### VIA Sound via CB2 and Shift Register
 
-The internal PET speaker is wired to VIA CB2 (user port pin M). The shift register, clocked by Timer 2, drives CB2 as a serial output without CPU involvement.
+The internal PET speaker is wired to VIA CB2 (user port pin M).
 
-| Register | Address | Sound Role                                  |
-|----------|---------|---------------------------------------------|
-| ACR      | $E84B   | Set to $10 to enable SR free-running on T2  |
-| SR       | $E84A   | Bit pattern: $0F (base), $33 (x2), $55 (x4) |
-| T2C-L    | $E848   | Pitch divider (lower = higher frequency)    |
-Set ACR=$00 to stop sound. Full documentation in `hardware/sound.md`.
+The shift register, clocked by Timer 2, drives CB2 as a serial output without CPU involvement.
+
+| Register | Address | Sound Role                                   |
+|----------|---------|----------------------------------------------|
+| ACR      | $E84B   | Set to $10 to enable SR free-running on T2   |
+| SR       | $E84A   | Bit pattern: $0F (base), $33 (x2), $55 (x4)  |
+| T2C-L    | $E848   | Pitch divider (lower = higher frequency)     |
+
+Set ACR=$00 to stop sound.
+
+Full documentation in `hardware/sound.md`.
 
 ## CRTC 6545 ($E880-$E88F)
 
-Available on PETs with board revisions #3 and above. The PET 3032 uses board #3.
+Available on PETs with board revisions #3 and above.
+
+The PET 3032 uses board #3.
 
 - Two registers: `$E880` (address) and `$E881` (data)
 - The 6545 generates all video timing
@@ -235,6 +253,7 @@ Available on PETs with board revisions #3 and above. The PET 3032 uses board #3.
 |-----------|--------------|----------------|
 | PET 3032  | 60 Hz        | North American |
 | PET 3032B | 50 Hz        | European       |
+
 The VBLANK signal on PIA1 CB1 corresponds to the refresh rate.
 
 ## Useful KERNAL Routines

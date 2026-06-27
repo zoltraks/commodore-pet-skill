@@ -12,13 +12,16 @@ This file covers the 6502 CPU as used in the Commodore PET 3032 in four progress
 - **Working code examples** - verified ASM snippets for PET
 - **Deep reference notes** - edge cases, caveats, implementation rules
 
-| Out of scope                          | See instead                |
-|---------------------------------------|----------------------------|
-| PET-specific I/O chips (VIA/PIA/CRTC) | `hardware/pet-chips.md`    |
+| Out of scope                          | See instead        |
+|---------------------------------------|--------------------|
+| PET-specific I/O chips (VIA/PIA/CRTC) | `hardware/chip.md` |
 | KERNAL routines and vectors           | `system/kernal.md` |
-All values hex ($NN) unless noted decimal. The PET 3032 uses a 1 MHz NMOS 6502.
 
-## Quick-lookup
+All values hex ($NN) unless noted decimal.
+
+The PET 3032 uses a 1 MHz NMOS 6502.
+
+## Quick-Lookup
 
 | Need                                | Section                            |
 |-------------------------------------|------------------------------------|
@@ -56,7 +59,10 @@ All values hex ($NN) unless noted decimal. The PET 3032 uses a 1 MHz NMOS 6502.
 | 2   | I    | Interrupt disable                                         |
 | 1   | Z    | Zero (set if result was zero)                             |
 | 0   | C    | Carry                                                     |
-**Critical nuance:** NMOS 6502 does NOT auto-clear D on IRQ entry. Always `CLD` in interrupt handlers that use ADC/SBC.
+
+**Critical nuance:** NMOS 6502 does NOT auto-clear D on IRQ entry.
+
+Always `CLD` in interrupt handlers that use ADC/SBC.
 
 ## Load and Store
 
@@ -105,6 +111,7 @@ All values hex ($NN) unless noted decimal. The PET 3032 uses a 1 MHz NMOS 6502.
 | RTS         | Return from subroutine   | -         | `rts`       |
 | RTI         | Return from interrupt    | -         | `rti`       |
 | BRK         | Force break              | -         | `brk`       |
+
 **Branch timing:** Taken, same page = 3 cycles. Taken, cross page = 4 cycles. Not taken = 2 cycles.
 
 ## Stack and Transfers
@@ -154,6 +161,7 @@ All values hex ($NN) unless noted decimal. The PET 3032 uses a 1 MHz NMOS 6502.
 | Indexed indirect      | `($zp,x)` | 6                 | `lda ($F7,x)` |
 | Indirect indexed      | `($zp),y` | 5 (+1 page cross) | `lda ($F7),y` |
 | Relative              | label     | 2/3/4             | `bne loop`    |
+
 **NMOS 6502 page-cross penalty:**
 
 - Read ops (`LDA abs,X`, `AND abs,Y`, `(zp),Y`) speculate fetch: +1 cycle if page crossed.
@@ -162,7 +170,7 @@ All values hex ($NN) unless noted decimal. The PET 3032 uses a 1 MHz NMOS 6502.
 
 ## Interrupts
 
-### IRQ (maskable)
+### IRQ (Maskable)
 
 - Level-triggered. The 6502 responds when I-flag is clear.
 - IRQ must be cleared at the device before `CLI`, or handler re-enters immediately.
@@ -170,7 +178,7 @@ All values hex ($NN) unless noted decimal. The PET 3032 uses a 1 MHz NMOS 6502.
 - Entry: 7 cycles. Stacks PC (low, high) then P (with B=0).
 - NMOS 6502 does NOT auto-clear D. Always `CLD` in IRQ handlers using ADC/SBC.
 
-### NMI (non-maskable)
+### NMI (Non-Maskable)
 
 - Edge-triggered on PET. Pressing NMI button asserts it once.
 - Entry: same 7-cycle sequence as IRQ, but B=0 on stacked P.

@@ -22,6 +22,7 @@ This file covers bit-operation patterns for the PET 3032 in four progressive lay
 | Clear bit N  | `AND #(255^(1<<N))`        | 2      |
 | Toggle bit N | `EOR #(1<<N)`              | 2      |
 | Test bit N   | `AND #(1<<N)` then check Z | 2      |
+
 ```asm
 ; Set bit 7
         lda value

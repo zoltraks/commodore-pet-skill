@@ -12,10 +12,10 @@ This file covers the PET 3032 memory map in four progressive layers:
 - **Working code examples** - verified ASM snippets
 - **Deep reference notes** - edge cases, caveats, implementation rules
 
-| Out of scope                  | See instead             |
-|-------------------------------|-------------------------|
-| VIA/PIA/CRTC register details | `hardware/pet-chips.md` |
-| KERNAL routine usage          | `system/kernal.md`      |
+| Out of scope                  | See instead        |
+|-------------------------------|--------------------|
+| VIA/PIA/CRTC register details | `hardware/chip.md` |
+| KERNAL routine usage          | `system/kernal.md` |
 
 ## Full Memory Map
 
@@ -115,9 +115,11 @@ On PET BASIC 2, the safe zero page locations are very limited:
 
 **`$A2`** - explicitly listed as not used.
 
-Beyond those two single bytes, there is no clean contiguous free block in zero page on a running BASIC 2 system. This is in contrast to the C64 (which leaves `$FB-$FE` free) - on the PET those four bytes are taken by KERNAL.
+Beyond those two single bytes, there is no clean contiguous free block in zero page on a running BASIC 2 system.
 
-### Practical approach for ML programs
+This is in contrast to the C64 (which leaves `$FB-$FE` free) - on the PET those four bytes are taken by KERNAL.
+
+### Practical Approach for ML Programs
 
 The common technique is to disable the parts of the system you do not need, which then frees their zero page locations:
 
@@ -137,7 +139,9 @@ The common technique is to disable the parts of the system you do not need, whic
         txs
 ```
 
-**Note:** The PET KERNAL uses the stack heavily during interrupts and I/O. Keep stack usage moderate in IRQ handlers.
+**Note:** The PET KERNAL uses the stack heavily during interrupts and I/O.
+
+Keep stack usage moderate in IRQ handlers.
 
 ## Inline-Parameter JSR Trick
 

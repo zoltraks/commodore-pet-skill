@@ -26,18 +26,19 @@ Values are hexadecimal (`$NN`) unless noted decimal.
 
 ## When to use this skill
 
-| Situation                                   | Use this skill?                                           |
-|---------------------------------------------|-----------------------------------------------------------|
-| "Write a 6502 assembly program for the PET" | **Yes**                                                   |
-| "How do I clear the screen on a PET?"       | **Yes**                                                   |
-| "What are the VIA 6522 registers?"          | **Yes**                                                   |
-| "How do I load data from tape?"             | **Yes**                                                   |
-| "Build an animation player for PET"         | **Yes**                                                   |
-| "Generate a BASIC stub with SYS1038"        | **Yes**                                                   |
-| "How does PETSCII differ from ASCII?"       | **Yes**                                                   |
-| "Optimize this 6502 loop"                   | **Yes** - use `code/optimization.md`                      |
-| "General 6502 questions (not PET-specific)" | Partially - `hardware/6502-cpu.md` covers the CPU broadly |
-| "C64-specific programming"                  | No - this skill is PET 3032 focused                       |
+| Situation                                   | Use this skill?                                      |
+|---------------------------------------------|------------------------------------------------------|
+| "Write a 6502 assembly program for the PET" | **Yes**                                              |
+| "How do I clear the screen on a PET?"       | **Yes**                                              |
+| "What are the VIA 6522 registers?"          | **Yes**                                              |
+| "How do I load data from tape?"             | **Yes**                                              |
+| "Build an animation player for PET"         | **Yes**                                              |
+| "Generate a BASIC stub with SYS1038"        | **Yes**                                              |
+| "How does PETSCII differ from ASCII?"       | **Yes**                                              |
+| "How do I scan the keyboard matrix?"        | **Yes** - use `system/keyboard.md`                   |
+| "Optimize this 6502 loop"                   | **Yes** - use `code/optimization.md`                 |
+| "General 6502 questions (not PET-specific)" | Partially - `hardware/cpu.md` covers the CPU broadly |
+| "C64-specific programming"                  | No - this skill is PET 3032 focused                  |
 
 ---
 
@@ -134,14 +135,15 @@ gh skill install YOURNAME/commodore-pet-skill commodore-pet
 commodore-pet-skill/
 ├── SKILL.md                       # Root router - load this first
 ├── hardware/
-│   ├── 6502-cpu.md                # 6502 registers, flags, instructions, interrupts
-│   ├── pet-chips.md               # VIA, PIA, CRTC registers, I/O decoding, VBLANK
+│   ├── cpu.md                     # 6502 registers, flags, instructions, interrupts
+│   ├── chip.md                    # VIA, PIA, CRTC registers, I/O decoding, VBLANK
 │   └── sound.md                   # VIA shift register sound, CB2 speaker, frequency table
 ├── system/
 │   ├── memory.md                  # PET 3032 RAM layout, zero page, safe zones
 │   ├── kernal.md                  # KERNAL jump table, indirect vectors, I/O routines
 │   ├── screen.md                  # Screen RAM, PETSCII, cursor, reverse video
-│   └── loading.md                 # Tape/disk loading, SETNAM/SETLFS/LOAD, STATUS
+│   ├── loading.md                 # Tape/disk loading, SETNAM/SETLFS/LOAD, STATUS
+│   └── keyboard.md                # Keyboard matrix, PIA 1 scan, GETIN, multi-key detection
 ├── code/
 │   ├── bit.md                     # Bit ops, masks, pointers, stack tricks
 │   ├── optimization.md            # Size/speed trade-offs, unrolled loops, branch tuning

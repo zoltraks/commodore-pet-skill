@@ -5,16 +5,24 @@
 > **Scope:** VIA 6522 shift register sound, CB2 speaker output, frequency table, tone control
 > **Key items:** ACR=$10, SR=$E84A, T2=$E848, CB2 speaker, $0F/$33/$55 patterns, disable with ACR=$00
 
-Two methods are available. The shift register method is preferred: it runs without CPU involvement and survives interrupts.
+Two methods are available.
 
-| Out of scope          | See instead             |
-|-----------------------|-------------------------|
-| VIA register map      | `hardware/pet-chips.md` |
-| IRQ timing and VBLANK | `hardware/pet-chips.md` |
+The shift register method is preferred: it runs without CPU involvement and survives interrupts.
+
+| Out of scope          | See instead        |
+|-----------------------|--------------------|
+| VIA register map      | `hardware/chip.md` |
+| IRQ timing and VBLANK | `hardware/chip.md` |
 
 ## Hardware Background
 
-The PET 3032 has no dedicated sound chip. The internal speaker is wired to the CB2 output of the VIA 6522. CB2 is also the shift register serial output. When the shift register is configured to run free from Timer 2, it clocks a bit pattern onto CB2 continuously without CPU involvement.
+The PET 3032 has no dedicated sound chip.
+
+The internal speaker is wired to the CB2 output of the VIA 6522.
+
+CB2 is also the shift register serial output.
+
+When the shift register is configured to run free from Timer 2, it clocks a bit pattern onto CB2 continuously without CPU involvement.
 
 Three registers control tone output:
 
@@ -59,6 +67,7 @@ The SR register value determines the waveform shape and the effective octave.
 | $0F      | `00001111` | 0 (base) | x1                   |
 | $33      | `00110011` | +1       | x2                   |
 | $55      | `01010101` | +2       | x4                   |
+
 Use $F0, $CC, $AA for the inverted equivalents - they produce the same pitch.
 
 ## Frequency Formula
@@ -69,11 +78,15 @@ f = 500000 / (T2_LO * 4)     for SR = $33
 f = 500000 / (T2_LO * 2)     for SR = $55
 ```
 
-The VIA runs at 1 MHz on the PET 3032. The shift clock is PHI2 / (2 * T2_LO).
+The VIA runs at 1 MHz on the PET 3032.
 
-Minimum frequency: `500000 / (255 * 8)` = 245 Hz (B3). Lower notes require software synthesis.
+The shift clock is PHI2 / (2 * T2_LO).
 
-## Frequency Table (SR = $0F, base octave)
+Minimum frequency: `500000 / (255 * 8)` = 245 Hz (B3).
+
+Lower notes require software synthesis.
+
+## Frequency Table (SR = $0F, Base Octave)
 
 | T2        | Freq (Hz) | Note          |
 |-----------|-----------|---------------|
@@ -93,7 +106,10 @@ Minimum frequency: `500000 / (255 * 8)` = 245 Hz (B3). Lower notes require softw
 | $51 (81)  | 772       | G5            |
 | $48 (72)  | 868       | A5            |
 | $40 (64)  | 977       | B5            |
-For SR = $33 multiply frequency by 2. For SR = $55 multiply by 4.
+
+For SR = $33 multiply frequency by 2.
+
+For SR = $55 multiply by 4.
 
 ## Simple Tone Subroutine
 
@@ -182,7 +198,11 @@ no_sound:
 
 ## PCR and CA2 Interaction
 
-The PCR register ($E84C) controls both CA2 (character set) and CB2 (speaker). The ACR method above controls CB2 via the SR path and does not affect CA2 or the character set. Do not modify PCR bits 7-4 for sound; use ACR and SR only.
+The PCR register ($E84C) controls both CA2 (character set) and CB2 (speaker).
+
+The ACR method above controls CB2 via the SR path and does not affect CA2 or the character set.
+
+Do not modify PCR bits 7-4 for sound; use ACR and SR only.
 
 ```asm
 PCR     = $E84C
@@ -190,7 +210,11 @@ PCR_U   = $0C
 PCR_L   = $08
 ```
 
-Changing PCR bits 3-1 switches the character set. Changing ACR does not affect PCR. Both can be active simultaneously.
+Changing PCR bits 3-1 switches the character set.
+
+Changing ACR does not affect PCR.
+
+Both can be active simultaneously.
 
 ## Bit-Bashing Method (Reference Only)
 
@@ -213,4 +237,6 @@ beep_toggle:
         rts
 ```
 
-This method ties the CPU and is disrupted by interrupts. Use the shift register method for animation players.
+This method ties the CPU and is disrupted by interrupts.
+
+Use the shift register method for animation players.

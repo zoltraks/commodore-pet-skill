@@ -7,8 +7,8 @@
 
 This file covers how to load raw binary data into PET RAM from cassette or disk, which is the standard way to supply animation frame data to a player program.
 
-| Out of scope               | See instead                |
-|----------------------------|----------------------------|
+| Out of scope               | See instead        |
+|----------------------------|--------------------|
 | KERNAL jump table overview | `system/kernal.md` |
 | Safe memory zones          | `system/memory.md` |
 
@@ -181,6 +181,7 @@ read_done:
 | 5   | Checksum error / device not present       |
 | 6   | End of file (tape: EOT)                   |
 | 7   | End of file (IEEE-488: EOI received)      |
+
 Check bit 7 or 6 for normal EOF; bits 4-5 for errors.
 
 ## Typical Animation Player Load Sequence

@@ -29,6 +29,7 @@ Common options:
 | `-v#`       | Verbosity 0-4                             |
 | `-Dsym=val` | Predefine symbol                          |
 | `-Idir`     | Add include search path                   |
+
 For PET programs, always use `-f3` to produce raw binary loadable via BASIC `SYS` or monitor `L` command.
 
 ## Processor Directive
@@ -275,7 +276,10 @@ Generates 10 space bytes. Labels inside REPEAT should be temporary labels inside
 | Code labels               | `snake_case`       | `decompress_rle`           |
 | Loop labels               | `snake_case`       | `copy_loop_1`, `lz4_token` |
 | Data labels               | `snake_case`       | `screen_data`, `old_pcr`   |
-Prefixes group related labels. A subroutine and all its internal branch targets share the same prefix.
+
+Prefixes group related labels.
+
+A subroutine and all its internal branch targets share the same prefix.
 
 ## Column Alignment
 

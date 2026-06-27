@@ -12,9 +12,9 @@ This file covers PET 3032 screen I/O in four progressive layers:
 - **Working code examples** - verified ASM snippets
 - **Deep reference notes** - edge cases, caveats, implementation rules
 
-| Out of scope                  | See instead                |
-|-------------------------------|----------------------------|
-| CRTC/PIA/VIA register details | `hardware/pet-chips.md`    |
+| Out of scope                  | See instead        |
+|-------------------------------|--------------------|
+| CRTC/PIA/VIA register details | `hardware/chip.md` |
 | KERNAL routines               | `system/kernal.md` |
 | Memory map                    | `system/memory.md` |
 
@@ -120,6 +120,7 @@ PETSCII (the character codes used in BASIC strings and CHROUT) differ from scree
 | [     | $5B     | $1B         |
 | ]     | $5D     | $1D         |
 | _     | $A4     | $64         |
+
 **Reverse video:** OR with `$80` to set bit 7. `AND #$7F` to clear.
 
 ## Cursor Control
@@ -190,7 +191,11 @@ wait_key:
 
 ### Direct Keyboard Matrix Scan
 
-The keyboard is read via PIA 1. PORT A (bits 3-0) selects the row via a 4-to-10 decoder. PORT B returns the column states.
+The keyboard is read via PIA 1.
+
+PORT A (bits 3-0) selects the row via a 4-to-10 decoder.
+
+PORT B returns the column states.
 
 ```asm
 ; Scan row 0 (keys: INST/DEL, RETURN, CURSOR RIGHT, F7, F1, F3, F5, CURSOR DOWN)
@@ -200,7 +205,9 @@ The keyboard is read via PIA 1. PORT A (bits 3-0) selects the row via a 4-to-10 
         ; each bit 0 = key pressed in that column
 ```
 
-**Note:** Direct keyboard scanning is complex on the PET due to the matrix decoder. Using KERNAL GETIN is strongly preferred unless you need to detect multiple simultaneous keys.
+**Note:** Direct keyboard scanning is complex on the PET due to the matrix decoder.
+
+Using KERNAL GETIN is strongly preferred unless you need to detect multiple simultaneous keys.
 
 ## Reverse Video
 
@@ -229,7 +236,9 @@ Set the RVS flag before calling CHROUT:
 
 ## PETSCII Control Codes (for CHROUT)
 
-These codes are sent to `CHROUT` ($FFD2) to control the cursor and screen. They are not stored in screen RAM.
+These codes are sent to `CHROUT` ($FFD2) to control the cursor and screen.
+
+They are not stored in screen RAM.
 
 | Code         | Hex | Description                                |
 |--------------|-----|--------------------------------------------|
@@ -246,13 +255,16 @@ These codes are sent to `CHROUT` ($FFD2) to control the cursor and screen. They 
 | RVS OFF      | $92 | Disable reverse video                      |
 | LINE FEED    | $0A | Move cursor down one line                  |
 | TAB          | $09 | Move to next tab stop                      |
+
 **Note:** On the PET 3032, color control codes (used on C64) have no effect - the PET has a monochrome display.
 
 ## Graphics Characters (Uppercase + Graphics Charset)
 
 In the uppercase and graphics character set (PCR CA2 high, `PCR_U = $0C`), the PET provides block graphics and line-drawing characters.
 
-Screen codes in the $60-$7F range are the "graphics" portion of the charset. Key screen codes for demoscene and animation:
+Screen codes in the $60-$7F range are the "graphics" portion of the charset.
+
+Key screen codes for demoscene and animation:
 
 | Screen Code | Description                   | Common Use      |
 |-------------|-------------------------------|-----------------|
@@ -268,7 +280,12 @@ Screen codes in the $60-$7F range are the "graphics" portion of the charset. Key
 | $68         | Corner bottom-right           | Box drawing     |
 | $69         | Corner bottom-left            | Box drawing     |
 | $7F         | Full square solid             | Pixel art       |
-**Reverse video rule:** Any screen code OR'd with `$80` inverts the character. `$20 | $80 = $A0` is the solid block. `$A0 | $80 = $20` is a space again (inverting reverses back).
+
+**Reverse video rule:** Any screen code OR'd with `$80` inverts the character.
+
+`$20 | $80 = $A0` is the solid block.
+
+`$A0 | $80 = $20` is a space again (inverting reverses back).
 
 ### Solid Block Pattern
 
@@ -302,7 +319,9 @@ fill_checker:
 
 ## Screen Scrolling
 
-The PET hardware does not support hardware scrolling. Scrolling must be done in software by copying screen RAM.
+The PET hardware does not support hardware scrolling.
+
+Scrolling must be done in software by copying screen RAM.
 
 ### Scroll Up One Line
 

@@ -12,34 +12,36 @@ This file covers the PET 3032 KERNAL in four progressive layers:
 - **Working code examples** - verified ASM snippets
 - **Deep reference notes** - edge cases, caveats, implementation rules
 
-| Out of scope             | See instead             |
-|--------------------------|-------------------------|
-| Hardware chip registers  | `hardware/pet-chips.md` |
-| Memory map and zero page | `system/memory.md`  |
+| Out of scope             | See instead        |
+|--------------------------|--------------------|
+| Hardware chip registers  | `hardware/chip.md` |
+| Memory map and zero page | `system/memory.md` |
 | Screen RAM and PETSCII   | `system/screen.md` |
 
 ## KERNAL Jump Table ($FF00-$FFFF)
 
-The PET KERNAL provides a jump table at the top of ROM. Each entry is a 3-byte `JMP` instruction.
+The PET KERNAL provides a jump table at the top of ROM.
 
-| Address | Name   | Description                        | Input                                         | Output               |
-|---------|--------|------------------------------------|-----------------------------------------------|----------------------|
-| $FFB7   | READST | Read I/O status word               | -                                             | A = STATUS           |
-| $FFBA   | SETLFS | Set logical file params            | A = LF#, X = device, Y = SA                   | -                    |
-| $FFBD   | SETNAM | Set filename                       | A = length, X/Y = name addr                   | -                    |
-| $FFC0   | OPEN   | Open logical file                  | (params set by SETLFS/SETNAM)                 | C = error            |
-| $FFC3   | CLOSE  | Close logical file                 | A = logical file number                       | -                    |
-| $FFC6   | CHKIN  | Set input channel                  | X = logical file number                       | C = error            |
-| $FFC9   | CHKOUT | Set output channel                 | X = logical file number                       | C = error            |
-| $FFCC   | CLRCHN | Clear channels                     | -                                             | -                    |
-| $FFCF   | BASIN  | Read byte from current input       | -                                             | A = byte             |
-| $FFD2   | CHROUT | Output character to current output | A = PETSCII char                              | C = error            |
+Each entry is a 3-byte `JMP` instruction.
+
+| Address | Name   | Description                        | Input                                          | Output               |
+|---------|--------|------------------------------------|------------------------------------------------|----------------------|
+| $FFB7   | READST | Read I/O status word               | -                                              | A = STATUS           |
+| $FFBA   | SETLFS | Set logical file params            | A = LF#, X = device, Y = SA                    | -                    |
+| $FFBD   | SETNAM | Set filename                       | A = length, X/Y = name addr                    | -                    |
+| $FFC0   | OPEN   | Open logical file                  | (params set by SETLFS/SETNAM)                  | C = error            |
+| $FFC3   | CLOSE  | Close logical file                 | A = logical file number                        | -                    |
+| $FFC6   | CHKIN  | Set input channel                  | X = logical file number                        | C = error            |
+| $FFC9   | CHKOUT | Set output channel                 | X = logical file number                        | C = error            |
+| $FFCC   | CLRCHN | Clear channels                     | -                                              | -                    |
+| $FFCF   | BASIN  | Read byte from current input       | -                                              | A = byte             |
+| $FFD2   | CHROUT | Output character to current output | A = PETSCII char                               | C = error            |
 | $FFD5   | LOAD   | Load file to memory                | A = 0 (load) / 1 (verify), X/Y = addr if SA=1 | X/Y = end+1          |
-| $FFD8   | SAVE   | Save memory range                  | A = ZP ptr to start, X/Y = end+1              | C = error            |
-| $FFE1   | STOP   | Check STOP key                     | -                                             | Z = 1 if pressed     |
-| $FFE4   | GETIN  | Read keyboard buffer               | -                                             | A = char (0 = empty) |
-| $FFE7   | CLALL  | Close all files/channels           | -                                             | -                    |
-| $FFEA   | UDTIM  | Update jiffy clock                 | -                                             | -                    |
+| $FFD8   | SAVE   | Save memory range                  | A = ZP ptr to start, X/Y = end+1               | C = error            |
+| $FFE1   | STOP   | Check STOP key                     | -                                              | Z = 1 if pressed     |
+| $FFE4   | GETIN  | Read keyboard buffer               | -                                              | A = char (0 = empty) |
+| $FFE7   | CLALL  | Close all files/channels           | -                                              | -                    |
+| $FFEA   | UDTIM  | Update jiffy clock                 | -                                              | -                    |
 
 ### Common KERNAL Routine Usage
 
@@ -97,7 +99,7 @@ my_irq:
 
 ## I/O Device Numbers
 
-| Device | Number      | Description           |
+| Number | Device      | Description           |
 |--------|-------------|-----------------------|
 | 0      | Keyboard    | Default input         |
 | 1      | Cassette #1 | Tape device           |
@@ -114,7 +116,9 @@ my_irq:
 
 ## STOP Key Detection
 
-The STOP key is polled by the KERNAL during I/O operations. For direct polling:
+The STOP key is polled by the KERNAL during I/O operations.
+
+For direct polling:
 
 ```asm
         jsr STOP                ; $FFE1
@@ -138,7 +142,9 @@ stop_pressed:
         ; then set filename and call OPEN ($FFC0)
 ```
 
-**Note:** The PET KERNAL file OPEN/SETLFS/CLOSE patterns are similar to the C64 but at different addresses. When writing portable code, verify addresses against the target machine.
+**Note:** The PET KERNAL file OPEN/SETLFS/CLOSE patterns are similar to the C64 but at different addresses.
+
+When writing portable code, verify addresses against the target machine.
 
 ## Tape Routines
 

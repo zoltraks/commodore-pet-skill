@@ -26,6 +26,7 @@ This file covers optimization patterns for the PET 3032 in four progressive laye
 
 ## Unrolled Loops
 
+
 The PET has no DMA and no hardware copy assist. For maximum speed, unroll loops that touch screen RAM or copy data.
 
 ### Unrolled Screen Row Clear (40 bytes)

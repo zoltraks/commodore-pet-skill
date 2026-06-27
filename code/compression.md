@@ -25,7 +25,8 @@ PET screen codes include values > 127 (inverse video via bit 7). A sign-bit flag
 | `XX` (XX != $00) | 1 | Literal: write XX once |
 | `00 CC VV` | 3 | Repeat: write VV for CC times |
 
-**Repeat count wraparound:** A count of `$00` means 256 repetitions because `dec` wraps from `$00` to `$FF` (non-zero).
+**Repeat count wraparound:**
+ A count of `$00` means 256 repetitions because `dec` wraps from `$00` to `$FF` (non-zero).
 
 **Literal zero:** `$00 $01 $00` encodes a single `$00` screen code.
 
