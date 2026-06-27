@@ -45,12 +45,12 @@ The I/O area uses minimal decoding.
 
 Address lines A4-A7 select individual chips:
 
-| Chip  | Address Range | A7 | A6 | A5 | A4 |
-|-------|---------------|----|----|----|----|
-| PIA 1 | $E810-$E81F   | 0  | 0  | 0  | 1  |
-| PIA 2 | $E820-$E82F   | 0  | 0  | 1  | 0  |
-| VIA   | $E840-$E84F   | 0  | 1  | 0  | 0  |
-| CRTC  | $E880-$E88F   | 1  | 0  | 0  | 0  |
+| Chip  | Address Range | A7  | A6  | A5  | A4  |
+|-------|---------------|-----|-----|-----|-----|
+| PIA 1 | $E810-$E81F   | 0   | 0   | 0   | 1   |
+| PIA 2 | $E820-$E82F   | 0   | 0   | 1   | 0   |
+| VIA   | $E840-$E84F   | 0   | 1   | 0   | 0   |
+| CRTC  | $E880-$E88F   | 1   | 0   | 0   | 0   |
 
 Multiple chips may be selected simultaneously at overlapping addresses.
 
@@ -108,11 +108,11 @@ wait_vblank:
 
 PIA 2 handles the IEEE-488 bus data and control lines.
 
-| Address | Register | Description                                                 |
-|---------|----------|-------------------------------------------------------------|
-| $E820   | PORT A   | Input buffer for IEEE data lines                            |
+| Address | Register | Description                                                |
+|---------|----------|------------------------------------------------------------|
+| $E820   | PORT A   | Input buffer for IEEE data lines                           |
 | $E821   | CRA      | Control register A: CA2 = IEEE NDAC out; CA1 = IEEE ATN in |
-| $E822   | PORT B   | Output buffer for IEEE data lines                           |
+| $E822   | PORT B   | Output buffer for IEEE data lines                          |
 | $E823   | CRB      | Control register B: CB2 = IEEE DAV out; CB1 = IEEE SRQ in  |
 
 ## VIA 6522 ($E840-$E84F)
@@ -180,11 +180,11 @@ The internal PET speaker is wired to VIA CB2 (user port pin M).
 
 The shift register, clocked by Timer 2, drives CB2 as a serial output without CPU involvement.
 
-| Register | Address | Sound Role                                   |
-|----------|---------|----------------------------------------------|
-| ACR      | $E84B   | Set to $10 to enable SR free-running on T2   |
-| SR       | $E84A   | Bit pattern: $0F (base), $33 (x2), $55 (x4)  |
-| T2C-L    | $E848   | Pitch divider (lower = higher frequency)     |
+| Register | Address | Sound Role                                  |
+|----------|---------|---------------------------------------------|
+| ACR      | $E84B   | Set to $10 to enable SR free-running on T2  |
+| SR       | $E84A   | Bit pattern: $0F (base), $33 (x2), $55 (x4) |
+| T2C-L    | $E848   | Pitch divider (lower = higher frequency)    |
 
 Set ACR=$00 to stop sound.
 
@@ -229,8 +229,10 @@ The PET 3032 uses board #3.
 - Character ROM is internal to the video hardware
 - 128 characters, 8x8 pixels each
 - Two character sets selected via VIA CA2 (PCR register):
+
   - Uppercase + graphics (`$0C`)
   - Lowercase + uppercase (`$08`)
+
 - Bit 7 of screen RAM inverts the character (reverse video)
 
 ### Character Set Switching

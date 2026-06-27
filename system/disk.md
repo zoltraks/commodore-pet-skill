@@ -13,24 +13,24 @@ The PET KERNAL communicates with the drive using logical files and secondary add
 
 The drive's firmware (Commodore DOS) interprets commands and manages the file system.
 
-| Out of scope                       | See instead         |
-|------------------------------------|---------------------|
-| KERNAL file routine reference      | `system/file.md`    |
-| Complete DASM file I/O examples    | `example/fileio.md` |
-| KERNAL jump table                  | `system/kernal.md`  |
+| Out of scope                    | See instead         |
+|---------------------------------|---------------------|
+| KERNAL file routine reference   | `system/file.md`    |
+| Complete DASM file I/O examples | `example/fileio.md` |
+| KERNAL jump table               | `system/kernal.md`  |
 
 ## Contents
 
-| Section                       | Line | What it covers                                              |
-|-------------------------------|------|-------------------------------------------------------------|
-| Supported Disk Drives         | 22   | 2031, 2040, 4040, 8050, 8250, SFD-1001 specs and DOS versions |
-| The Command Channel           | 45   | SA=15 open, read status string, send DOS command pattern    |
-| DOS Commands                  | 168  | Initialize, scratch, rename, copy, format, validate         |
-| Reading the Directory         | 289  | `$` pseudo-file, BASIC-format encoding, parsing loop        |
-| DOS Error Messages            | 453  | Full error code table (00-74), checking CC field            |
-| Disk Images and Emulators     | 518  | D64/D80/D82 formats, D64 on PET caveats, VICE xpet workflow |
-| Comparing File Access Approaches | 635 | BASIC vs KERNAL routines vs direct IEEE-488               |
-| Best Practices                | 702  | CLRCHN, CLOSE, STATUS, command channel, LFN limits          |
+| Section                          | Line | What it covers                                                |
+|----------------------------------|------|---------------------------------------------------------------|
+| Supported Disk Drives            | 22   | 2031, 2040, 4040, 8050, 8250, SFD-1001 specs and DOS versions |
+| The Command Channel              | 45   | SA=15 open, read status string, send DOS command pattern      |
+| DOS Commands                     | 168  | Initialize, scratch, rename, copy, format, validate           |
+| Reading the Directory            | 289  | `$` pseudo-file, BASIC-format encoding, parsing loop          |
+| DOS Error Messages               | 453  | Full error code table (00-74), checking CC field              |
+| Disk Images and Emulators        | 518  | D64/D80/D82 formats, D64 on PET caveats, VICE xpet workflow   |
+| Comparing File Access Approaches | 635  | BASIC vs KERNAL routines vs direct IEEE-488                   |
+| Best Practices                   | 702  | CLRCHN, CLOSE, STATUS, command channel, LFN limits            |
 
 ## Supported Disk Drives
 
@@ -38,14 +38,14 @@ The PET 3032 uses IEEE-488 (GPIB) to communicate with disk drives.
 
 These drives are native PET hardware:
 
-| Drive  | Sides | Capacity  | DOS      | Notes                              |
-|--------|-------|-----------|----------|------------------------------------|
-| 2031   | 1     | 170 KB    | DOS 2.6  | Single drive, same DOS as 4040     |
-| 2040   | 1     | 170 KB    | DOS 2.0  | Oldest dual drive (read only compat)|
-| 4040   | 2x1   | 340 KB    | DOS 2.6  | Dual single-density drives         |
-| 8050   | 2x1   | 1 MB      | DOS 2.7  | Dual drives, D80 image format      |
-| 8250   | 2x2   | 2 MB      | DOS 2.7  | Dual double-density, D82 format    |
-| SFD-1001 | 1   | 1 MB      | DOS 2.7  | Single drive, same ROM as 8250     |
+| Drive    | Sides | Capacity | DOS     | Notes                                |
+|----------|-------|----------|---------|--------------------------------------|
+| 2031     | 1     | 170 KB   | DOS 2.6 | Single drive, same DOS as 4040       |
+| 2040     | 1     | 170 KB   | DOS 2.0 | Oldest dual drive (read only compat) |
+| 4040     | 2x1   | 340 KB   | DOS 2.6 | Dual single-density drives           |
+| 8050     | 2x1   | 1 MB     | DOS 2.7 | Dual drives, D80 image format        |
+| 8250     | 2x2   | 2 MB     | DOS 2.7 | Dual double-density, D82 format      |
+| SFD-1001 | 1     | 1 MB     | DOS 2.7 | Single drive, same ROM as 8250       |
 
 The 2031 and 4040 use the same DOS and are interchangeable for most purposes.
 
@@ -93,12 +93,12 @@ After opening the command channel, redirect input to it and read the status stri
 
 The status is a CR-terminated ASCII string in the form: `CC,MESSAGE,TT,SS`
 
-| Field   | Meaning                          |
-|---------|----------------------------------|
-| CC      | Two-digit decimal error code     |
-| MESSAGE | English text description         |
-| TT      | Track number (or 0)              |
-| SS      | Sector number (or 0)             |
+| Field   | Meaning                      |
+|---------|------------------------------|
+| CC      | Two-digit decimal error code |
+| MESSAGE | English text description     |
+| TT      | Track number (or 0)          |
+| SS      | Sector number (or 0)         |
 
 A clean drive returns: `00,OK,00,00`
 
@@ -290,14 +290,14 @@ validate_end:
 
 ### DOS Command Summary
 
-| Command      | Format                    | Description                    |
-|--------------|---------------------------|--------------------------------|
-| Initialize   | `I0`                      | Read BAM, reset drive state    |
-| Scratch      | `S0:FILENAME`             | Delete a file                  |
-| Rename       | `R0:NEWNAME=0:OLDNAME`    | Rename a file                  |
-| Copy         | `C0:DEST=0:SOURCE`        | Copy within or between drives  |
-| Format (new) | `N0:DISKNAME,ID`          | Format and create directory    |
-| Validate     | `V0`                      | Rebuild BAM                    |
+| Command      | Format                 | Description                   |
+|--------------|------------------------|-------------------------------|
+| Initialize   | `I0`                   | Read BAM, reset drive state   |
+| Scratch      | `S0:FILENAME`          | Delete a file                 |
+| Rename       | `R0:NEWNAME=0:OLDNAME` | Rename a file                 |
+| Copy         | `C0:DEST=0:SOURCE`     | Copy within or between drives |
+| Format (new) | `N0:DISKNAME,ID`       | Format and create directory   |
+| Validate     | `V0`                   | Rebuild BAM                   |
 
 ## Reading the Directory
 
@@ -454,10 +454,10 @@ line_buf:   byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 
 ### LOAD "$" vs Programmatic Directory Read
 
-| Approach         | Result                                           | BASIC program overwritten? |
-|------------------|--------------------------------------------------|----------------------------|
-| `LOAD "$",8`     | Directory loads into BASIC RAM at `$0401`        | Yes                        |
-| Programmatic read | Reads one byte at a time into your own buffer   | No                         |
+| Approach          | Result                                        | BASIC program overwritten? |
+|-------------------|-----------------------------------------------|----------------------------|
+| `LOAD "$",8`      | Directory loads into BASIC RAM at `$0401`     | Yes                        |
+| Programmatic read | Reads one byte at a time into your own buffer | No                         |
 
 Use the programmatic approach in machine-language programs.
 
@@ -475,31 +475,31 @@ Where CC is the error code, MESSAGE is text, TT is track, SS is sector.
 
 ### Common Error Codes
 
-| Code | Message               | Meaning                                      |
-|------|-----------------------|----------------------------------------------|
-| 00   | OK                    | No error                                     |
-| 01   | FILES SCRATCHED       | Informational: n files deleted (TT=count)    |
-| 20   | READ ERROR            | Block header not found                       |
-| 21   | READ ERROR            | Sync character not found                     |
-| 22   | READ ERROR            | Data block not present                       |
-| 23   | READ ERROR            | Checksum error in data                       |
-| 24   | READ ERROR            | Byte decoding error                          |
-| 25   | WRITE ERROR           | Write-verify failure                         |
-| 26   | WRITE PROTECT ON      | Disk is write-protected                      |
-| 27   | READ ERROR            | Checksum error in header                     |
-| 29   | DISK ID MISMATCH      | Wrong disk inserted                          |
-| 30   | SYNTAX ERROR          | Invalid DOS command format                   |
-| 31   | SYNTAX ERROR          | Unrecognized command                         |
-| 33   | SYNTAX ERROR          | Invalid filename                             |
-| 34   | SYNTAX ERROR          | No filename given                            |
-| 62   | FILE NOT FOUND        | Named file does not exist on disk            |
-| 63   | FILE EXISTS           | Cannot write: file already exists            |
-| 64   | FILE TYPE MISMATCH    | SA/type mismatch with existing file          |
-| 70   | NO CHANNEL            | All drive buffers in use; close a file first |
-| 71   | DIR ERROR             | BAM checksum error; run Validate             |
-| 72   | DISK FULL             | No more free blocks on disk                  |
-| 73   | DOS MISMATCH          | Drive power-on or incompatible format        |
-| 74   | DRIVE NOT READY       | No disk inserted or drive door open          |
+| Code | Message            | Meaning                                      |
+|------|--------------------|----------------------------------------------|
+| 00   | OK                 | No error                                     |
+| 01   | FILES SCRATCHED    | Informational: n files deleted (TT=count)    |
+| 20   | READ ERROR         | Block header not found                       |
+| 21   | READ ERROR         | Sync character not found                     |
+| 22   | READ ERROR         | Data block not present                       |
+| 23   | READ ERROR         | Checksum error in data                       |
+| 24   | READ ERROR         | Byte decoding error                          |
+| 25   | WRITE ERROR        | Write-verify failure                         |
+| 26   | WRITE PROTECT ON   | Disk is write-protected                      |
+| 27   | READ ERROR         | Checksum error in header                     |
+| 29   | DISK ID MISMATCH   | Wrong disk inserted                          |
+| 30   | SYNTAX ERROR       | Invalid DOS command format                   |
+| 31   | SYNTAX ERROR       | Unrecognized command                         |
+| 33   | SYNTAX ERROR       | Invalid filename                             |
+| 34   | SYNTAX ERROR       | No filename given                            |
+| 62   | FILE NOT FOUND     | Named file does not exist on disk            |
+| 63   | FILE EXISTS        | Cannot write: file already exists            |
+| 64   | FILE TYPE MISMATCH | SA/type mismatch with existing file          |
+| 70   | NO CHANNEL         | All drive buffers in use; close a file first |
+| 71   | DIR ERROR          | BAM checksum error; run Validate             |
+| 72   | DISK FULL          | No more free blocks on disk                  |
+| 73   | DOS MISMATCH       | Drive power-on or incompatible format        |
+| 74   | DRIVE NOT READY    | No disk inserted or drive door open          |
 
 Error code 73 is also returned as the power-on banner.
 
@@ -540,13 +540,13 @@ Once an image is mounted, all normal KERNAL file operations work without modific
 
 ### Disk Image Formats
 
-| Format | Drive   | Computer       | Capacity | Tracks | Native to PET? |
-|--------|---------|----------------|----------|--------|----------------|
-| D64    | 1541    | C64, VIC-20    | 170 KB   | 35     | No             |
-| D71    | 1571    | C128           | 340 KB   | 70     | No             |
-| D81    | 1581    | C64, C128      | 800 KB   | 80     | No             |
-| D80    | 8050    | PET, CBM       | 500 KB   | 77     | Yes            |
-| D82    | 8250    | PET, CBM       | 1 MB     | 154    | Yes            |
+| Format | Drive | Computer    | Capacity | Tracks | Native to PET? |
+|--------|-------|-------------|----------|--------|----------------|
+| D64    | 1541  | C64, VIC-20 | 170 KB   | 35     | No             |
+| D71    | 1571  | C128        | 340 KB   | 70     | No             |
+| D81    | 1581  | C64, C128   | 800 KB   | 80     | No             |
+| D80    | 8050  | PET, CBM    | 500 KB   | 77     | Yes            |
+| D82    | 8250  | PET, CBM    | 1 MB     | 154    | Yes            |
 
 D80 and D82 are the native formats for PET disk drives.
 
@@ -647,11 +647,11 @@ This code works identically on real hardware with a real IEEE-488 drive and in a
 
 ## Comparing File Access Approaches
 
-| Approach                | Complexity | Use when                                              |
-|-------------------------|------------|-------------------------------------------------------|
-| BASIC `LOAD/SAVE/OPEN`  | Low        | Prototyping, small programs, interactive use          |
-| KERNAL routines (ML)    | Medium     | Production code, games, utilities                     |
-| Direct IEEE-488 (ML)    | High       | Custom protocols, non-file bus operations             |
+| Approach               | Complexity | Use when                                     |
+|------------------------|------------|----------------------------------------------|
+| BASIC `LOAD/SAVE/OPEN` | Low        | Prototyping, small programs, interactive use |
+| KERNAL routines (ML)   | Medium     | Production code, games, utilities            |
+| Direct IEEE-488 (ML)   | High       | Custom protocols, non-file bus operations    |
 
 ### BASIC File Operations
 
@@ -701,16 +701,16 @@ Use it only for:
 - Debugging bus timing issues.
 - Implementing non-standard file protocols.
 
-| Call    | Address | Description                              |
-|---------|---------|------------------------------------------|
-| TALK    | $FFB4   | Command device to become a talker        |
-| LISTEN  | $FFB1   | Command device to become a listener      |
-| TKSA    | $FF96   | Send talk secondary address              |
-| SECOND  | $FF93   | Send listen secondary address            |
-| ACPTR   | $FFA5   | Receive one byte from the bus (ATN off)  |
-| CIOUT   | $FFA8   | Send one byte to the bus (ATN off)       |
-| UNTALK  | $FFAB   | Command current talker to stop           |
-| UNLSN   | $FFAE   | Command current listener to stop         |
+| Call   | Address | Description                             |
+|--------|---------|-----------------------------------------|
+| TALK   | $FFB4   | Command device to become a talker       |
+| LISTEN | $FFB1   | Command device to become a listener     |
+| TKSA   | $FF96   | Send talk secondary address             |
+| SECOND | $FF93   | Send listen secondary address           |
+| ACPTR  | $FFA5   | Receive one byte from the bus (ATN off) |
+| CIOUT  | $FFA8   | Send one byte to the bus (ATN off)      |
+| UNTALK | $FFAB   | Command current talker to stop          |
+| UNLSN  | $FFAE   | Command current listener to stop        |
 
 ## Best Practices
 

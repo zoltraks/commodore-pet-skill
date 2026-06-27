@@ -20,10 +20,10 @@ PET screen codes include values > 127 (inverse video via bit 7). A sign-bit flag
 
 ### Format
 
-| Pattern | Bytes | Meaning |
-|---------|-------|---------|
-| `XX` (XX != $00) | 1 | Literal: write XX once |
-| `00 CC VV` | 3 | Repeat: write VV for CC times |
+| Pattern          | Bytes | Meaning                       |
+|------------------|-------|-------------------------------|
+| `XX` (XX != $00) | 1     | Literal: write XX once        |
+| `00 CC VV`       | 3     | Repeat: write VV for CC times |
 
 **Repeat count wraparound:**
  A count of `$00` means 256 repetitions because `dec` wraps from `$00` to `$FF` (non-zero).
@@ -230,10 +230,10 @@ For full-screen images (1000 bytes), RLE works well because the PET screen has l
 
 ### Typical Compression Ratios
 
-| Content Type         | RLE Ratio | Notes                              |
-|----------------------|-----------|------------------------------------|
-| Empty screen         | 20:1      | 1000 spaces -> 3 bytes             |
-| Solid pattern        | 83:1      | 1000 identical codes -> 12 bytes   |
-| Text pages           | 3:1       | Moderate runs with mixed literals  |
-| Graphics/art         | 1.2:1     | Little repetition; may expand      |
-| Character animations | 2:1       | Repeated frames; delta may help    |
+| Content Type         | RLE Ratio | Notes                             |
+|----------------------|-----------|-----------------------------------|
+| Empty screen         | 20:1      | 1000 spaces -> 3 bytes            |
+| Solid pattern        | 83:1      | 1000 identical codes -> 12 bytes  |
+| Text pages           | 3:1       | Moderate runs with mixed literals |
+| Graphics/art         | 1.2:1     | Little repetition; may expand     |
+| Character animations | 2:1       | Repeated frames; delta may help   |

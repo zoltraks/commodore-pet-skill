@@ -20,14 +20,14 @@ This file covers PET 3032 keyboard input in four progressive layers:
 
 ## Quick-Lookup
 
-| Need                              | Section                  |
-|-----------------------------------|--------------------------|
-| Read a key via KERNAL             | KERNAL GETIN             |
-| Check STOP key                    | STOP Key                 |
-| Scan a specific key directly      | Direct Matrix Scan       |
-| Detect simultaneous key presses   | Multi-Key Detection      |
-| Full matrix layout                | Keyboard Matrix Map      |
-| PETSCII code for a key            | Common PETSCII Key Codes |
+| Need                            | Section                  |
+|---------------------------------|--------------------------|
+| Read a key via KERNAL           | KERNAL GETIN             |
+| Check STOP key                  | STOP Key                 |
+| Scan a specific key directly    | Direct Matrix Scan       |
+| Detect simultaneous key presses | Multi-Key Detection      |
+| Full matrix layout              | Keyboard Matrix Map      |
+| PETSCII code for a key          | Common PETSCII Key Codes |
 
 ## KERNAL GETIN
 
@@ -87,18 +87,18 @@ PIA 1 PORT B reads back the 8 column states.
 
 A bit value of `0` means the key is pressed; `1` means not pressed.
 
-| Row | PORT A value | Keys (column 7 to 0)                                             |
-|-----|--------------|------------------------------------------------------------------|
-| 0   | $FE          | ! , @ , # , $ , % , ' , & , (space STOP)                        |
-| 1   | $FD          | Q , W , E , R , T , Y , U , I                                    |
-| 2   | $FB          | O , P , [ , ] , RETURN , DELETE , PI , *                         |
-| 3   | $F7          | A , S , D , F , G , H , J , K                                    |
-| 4   | $EF          | L , : , ; , @ , (cursor up) , (cursor right) , (cursor down) , = |
-| 5   | $DF          | Z , X , C , V , B , N , M , ,                                    |
+| Row | PORT A value | Keys (column 7 to 0)                                                       |
+|-----|--------------|----------------------------------------------------------------------------|
+| 0   | $FE          | ! , @ , # , $ , % , ' , & , (space STOP)                                   |
+| 1   | $FD          | Q , W , E , R , T , Y , U , I                                              |
+| 2   | $FB          | O , P , [ , ] , RETURN , DELETE , PI , *                                   |
+| 3   | $F7          | A , S , D , F , G , H , J , K                                              |
+| 4   | $EF          | L , : , ; , @ , (cursor up) , (cursor right) , (cursor down) , =           |
+| 5   | $DF          | Z , X , C , V , B , N , M , ,                                              |
 | 6   | $BF          | . , / , (shift right) , RUN/STOP , (shift left) , HOME , BACK , (del/inst) |
-| 7   | $7F          | 1 , 2 , 3 , 4 , 5 , 6 , 7 , 8                                   |
-| 8   | $FE (2nd)    | 9 , 0 , + , - , (cursor left) , (cursor down rev) , CLR/HOME , = |
-| 9   | $FD (2nd)    | (not used on 3032)                                               |
+| 7   | $7F          | 1 , 2 , 3 , 4 , 5 , 6 , 7 , 8                                              |
+| 8   | $FE (2nd)    | 9 , 0 , + , - , (cursor left) , (cursor down rev) , CLR/HOME , =           |
+| 9   | $FD (2nd)    | (not used on 3032)                                                         |
 
 **Note:** The exact key assignments vary between PET keyboard models (business keyboard vs. graphics keyboard).
 
@@ -197,26 +197,26 @@ left_shift_only:
 
 These are the PETSCII values returned by GETIN for commonly used keys.
 
-| Key            | PETSCII | Hex  |
-|----------------|---------|------|
-| Space          | 32      | $20  |
-| Return         | 13      | $0D  |
-| Delete/Back    | 20      | $14  |
-| Insert         | 148     | $94  |
-| Cursor up      | 145     | $91  |
-| Cursor down    | 17      | $11  |
-| Cursor left    | 157     | $9D  |
-| Cursor right   | 29      | $1D  |
-| Home           | 19      | $13  |
-| CLR/HOME       | 147     | $93  |
-| RUN/STOP       | 3       | $03  |
-| F1             | 133     | $85  |
-| F3             | 134     | $86  |
-| F5             | 135     | $87  |
-| F7             | 136     | $88  |
-| A-Z (shifted)  | 65-90   | $41-$5A |
-| A-Z (unshifted)| 65-90   | $41-$5A |
-| 0-9            | 48-57   | $30-$39 |
+| Key             | PETSCII | Hex     |
+|-----------------|---------|---------|
+| Space           | 32      | $20     |
+| Return          | 13      | $0D     |
+| Delete/Back     | 20      | $14     |
+| Insert          | 148     | $94     |
+| Cursor up       | 145     | $91     |
+| Cursor down     | 17      | $11     |
+| Cursor left     | 157     | $9D     |
+| Cursor right    | 29      | $1D     |
+| Home            | 19      | $13     |
+| CLR/HOME        | 147     | $93     |
+| RUN/STOP        | 3       | $03     |
+| F1              | 133     | $85     |
+| F3              | 134     | $86     |
+| F5              | 135     | $87     |
+| F7              | 136     | $88     |
+| A-Z (shifted)   | 65-90   | $41-$5A |
+| A-Z (unshifted) | 65-90   | $41-$5A |
+| 0-9             | 48-57   | $30-$39 |
 
 **Note:** On the PET, upper and lower case letters are returned as the same PETSCII code regardless of SHIFT when using GETIN.
 

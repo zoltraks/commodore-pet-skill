@@ -9,18 +9,18 @@ This file provides verified, runnable code examples for the PET 3032. Each examp
 
 ## Contents
 
-| Section                       | Line | What it covers                                          |
-|-------------------------------|------|---------------------------------------------------------|
-| Minimal BASIC Stub            | 10   | Shortest valid BASIC stub at $0401, SYS1038             |
-| Clear Screen                  | 43   | Fill 1000 bytes of screen RAM with space character      |
-| Wait for Key Press            | 78   | Poll GETIN until non-zero                               |
-| VBLANK Polling                | 104  | Poll VIA PORT B bit 5 without interrupts                |
-| Copy Screen to Screen         | 133  | Copy 1000 bytes between two page-aligned buffers        |
-| Switch Character Set          | 176  | PCR register values for uppercase and lowercase sets    |
-| Minimal Animation Frame Player | 210 | Frame table, copy loop, VBLANK wait, keypress exit      |
-| Demo Skeleton Template        | 307  | init/main_loop/update/render pattern with IRQ guard     |
-| IRQ-Driven Animation Skeleton | 389  | Replace CINV, acknowledge PIA1 CRB, chain to KERNAL     |
-| Screen Data Row Format        | 534  | 40-column row layout, PETSCII screen code reference     |
+| Section                        | Line | What it covers                                       |
+|--------------------------------|------|------------------------------------------------------|
+| Minimal BASIC Stub             | 10   | Shortest valid BASIC stub at $0401, SYS1038          |
+| Clear Screen                   | 43   | Fill 1000 bytes of screen RAM with space character   |
+| Wait for Key Press             | 78   | Poll GETIN until non-zero                            |
+| VBLANK Polling                 | 104  | Poll VIA PORT B bit 5 without interrupts             |
+| Copy Screen to Screen          | 133  | Copy 1000 bytes between two page-aligned buffers     |
+| Switch Character Set           | 176  | PCR register values for uppercase and lowercase sets |
+| Minimal Animation Frame Player | 210  | Frame table, copy loop, VBLANK wait, keypress exit   |
+| Demo Skeleton Template         | 307  | init/main_loop/update/render pattern with IRQ guard  |
+| IRQ-Driven Animation Skeleton  | 389  | Replace CINV, acknowledge PIA1 CRB, chain to KERNAL  |
+| Screen Data Row Format         | 534  | 40-column row layout, PETSCII screen code reference  |
 
 ## Minimal BASIC Stub
 

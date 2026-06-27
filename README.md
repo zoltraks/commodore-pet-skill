@@ -1,7 +1,7 @@
 # Commodore PET Agentic Programming Skills
 
 <p align="center">
-  <b>Agent Skill</b> for Windsurf · Cursor · Claude Code · Gemini CLI · OpenCode · GitHub Copilot CLI
+  <b>Agent Skill</b> for Windsurf | Cursor | Claude Code | Gemini CLI | OpenCode | GitHub Copilot CLI
 </p>
 
 > Commodore PET 3032 6502 assembly programming, hardware reference, and working code examples. Drop-in skill for any AI coding agent that supports SKILL.md.

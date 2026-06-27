@@ -24,24 +24,24 @@ The PET KERNAL provides a jump table at the top of ROM.
 
 Each entry is a 3-byte `JMP` instruction.
 
-| Address | Name   | Description                        | Input                                          | Output               |
-|---------|--------|------------------------------------|------------------------------------------------|----------------------|
-| $FFB7   | READST | Read I/O status word               | -                                              | A = STATUS           |
-| $FFBA   | SETLFS | Set logical file params            | A = LF#, X = device, Y = SA                    | -                    |
-| $FFBD   | SETNAM | Set filename                       | A = length, X/Y = name addr                    | -                    |
-| $FFC0   | OPEN   | Open logical file                  | (params set by SETLFS/SETNAM)                  | C = error            |
-| $FFC3   | CLOSE  | Close logical file                 | A = logical file number                        | -                    |
-| $FFC6   | CHKIN  | Set input channel                  | X = logical file number                        | C = error            |
-| $FFC9   | CHKOUT | Set output channel                 | X = logical file number                        | C = error            |
-| $FFCC   | CLRCHN | Clear channels                     | -                                              | -                    |
-| $FFCF   | BASIN  | Read byte from current input       | -                                              | A = byte             |
-| $FFD2   | CHROUT | Output character to current output | A = PETSCII char                               | C = error            |
+| Address | Name   | Description                        | Input                                         | Output               |
+|---------|--------|------------------------------------|-----------------------------------------------|----------------------|
+| $FFB7   | READST | Read I/O status word               | -                                             | A = STATUS           |
+| $FFBA   | SETLFS | Set logical file params            | A = LF#, X = device, Y = SA                   | -                    |
+| $FFBD   | SETNAM | Set filename                       | A = length, X/Y = name addr                   | -                    |
+| $FFC0   | OPEN   | Open logical file                  | (params set by SETLFS/SETNAM)                 | C = error            |
+| $FFC3   | CLOSE  | Close logical file                 | A = logical file number                       | -                    |
+| $FFC6   | CHKIN  | Set input channel                  | X = logical file number                       | C = error            |
+| $FFC9   | CHKOUT | Set output channel                 | X = logical file number                       | C = error            |
+| $FFCC   | CLRCHN | Clear channels                     | -                                             | -                    |
+| $FFCF   | BASIN  | Read byte from current input       | -                                             | A = byte             |
+| $FFD2   | CHROUT | Output character to current output | A = PETSCII char                              | C = error            |
 | $FFD5   | LOAD   | Load file to memory                | A = 0 (load) / 1 (verify), X/Y = addr if SA=1 | X/Y = end+1          |
-| $FFD8   | SAVE   | Save memory range                  | A = ZP ptr to start, X/Y = end+1               | C = error            |
-| $FFE1   | STOP   | Check STOP key                     | -                                              | Z = 1 if pressed     |
-| $FFE4   | GETIN  | Read keyboard buffer               | -                                              | A = char (0 = empty) |
-| $FFE7   | CLALL  | Close all files/channels           | -                                              | -                    |
-| $FFEA   | UDTIM  | Update jiffy clock                 | -                                              | -                    |
+| $FFD8   | SAVE   | Save memory range                  | A = ZP ptr to start, X/Y = end+1              | C = error            |
+| $FFE1   | STOP   | Check STOP key                     | -                                             | Z = 1 if pressed     |
+| $FFE4   | GETIN  | Read keyboard buffer               | -                                             | A = char (0 = empty) |
+| $FFE7   | CLALL  | Close all files/channels           | -                                             | -                    |
+| $FFEA   | UDTIM  | Update jiffy clock                 | -                                             | -                    |
 
 ### Common KERNAL Routine Usage
 

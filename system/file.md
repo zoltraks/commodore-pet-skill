@@ -13,26 +13,26 @@ All KERNAL routine addresses for the PET 3032 are documented here.
 
 Do not use C64 addresses - they differ.
 
-| Out of scope                | See instead        |
-|-----------------------------|--------------------|
-| DOS commands and directory  | `system/disk.md`   |
-| Complete DASM examples      | `example/fileio.md` |
-| KERNAL jump table overview  | `system/kernal.md` |
-| Safe memory zones           | `system/memory.md` |
+| Out of scope               | See instead         |
+|----------------------------|---------------------|
+| DOS commands and directory | `system/disk.md`    |
+| Complete DASM examples     | `example/fileio.md` |
+| KERNAL jump table overview | `system/kernal.md`  |
+| Safe memory zones          | `system/memory.md`  |
 
 ## Contents
 
-| Section                    | Line  | What it covers                                              |
-|----------------------------|-------|-------------------------------------------------------------|
-| File Architecture Overview | 23    | Logical files, device numbers, secondary addresses, file types |
-| KERNAL Routine Reference   | 122   | SETNAM, SETLFS, OPEN, CLOSE, CHKIN, CHKOUT, CLRCHN, CHRIN, CHROUT, READST, LOAD, SAVE, CLALL, STOP |
-| Call Sequences             | 781   | Open-read, open-write, load PRG, save PRG patterns          |
-| EOF Detection              | 973   | STATUS bit 6 (disk), STATUS bit 4 (cassette)                |
-| Error Handling             | 1025  | OPEN error codes, device not present, file not found        |
-| PETSCII Filename Rules     | 1093  | Uppercase, wildcards, drive prefix                          |
-| Tape File Notes            | 1119  | Cassette SA values, sequential vs PRG                       |
-| Multiple Open Files        | 1131  | Table limits, safe LFN allocation                           |
-| Troubleshooting            | 1167  | Common bugs and their causes                                |
+| Section                    | Line | What it covers                                                                                     |
+|----------------------------|------|----------------------------------------------------------------------------------------------------|
+| File Architecture Overview | 23   | Logical files, device numbers, secondary addresses, file types                                     |
+| KERNAL Routine Reference   | 122  | SETNAM, SETLFS, OPEN, CLOSE, CHKIN, CHKOUT, CLRCHN, CHRIN, CHROUT, READST, LOAD, SAVE, CLALL, STOP |
+| Call Sequences             | 781  | Open-read, open-write, load PRG, save PRG patterns                                                 |
+| EOF Detection              | 973  | STATUS bit 6 (disk), STATUS bit 4 (cassette)                                                       |
+| Error Handling             | 1025 | OPEN error codes, device not present, file not found                                               |
+| PETSCII Filename Rules     | 1093 | Uppercase, wildcards, drive prefix                                                                 |
+| Tape File Notes            | 1119 | Cassette SA values, sequential vs PRG                                                              |
+| Multiple Open Files        | 1131 | Table limits, safe LFN allocation                                                                  |
+| Troubleshooting            | 1167 | Common bugs and their causes                                                                       |
 
 ## File Architecture Overview
 
@@ -60,19 +60,19 @@ You use the same LFN in CHKIN, CHKOUT, and CLOSE calls.
 
 ### Device Numbers
 
-| Number | Device              | Bus                  |
-|--------|---------------------|----------------------|
-| 0      | Keyboard            | Internal             |
-| 1      | Cassette #1         | Internal (PIA 1)     |
-| 2      | Cassette #2         | VIA user port        |
-| 3      | Screen              | Internal             |
-| 4      | Printer #1          | IEEE-488             |
-| 5      | Printer #2          | IEEE-488             |
-| 6      | Plotter             | IEEE-488             |
-| 7      | (reserved)          | IEEE-488             |
-| 8      | Disk drive #1       | IEEE-488             |
-| 9      | Disk drive #2       | IEEE-488             |
-| 10-15  | Additional devices  | IEEE-488             |
+| Number | Device             | Bus              |
+|--------|--------------------|------------------|
+| 0      | Keyboard           | Internal         |
+| 1      | Cassette #1        | Internal (PIA 1) |
+| 2      | Cassette #2        | VIA user port    |
+| 3      | Screen             | Internal         |
+| 4      | Printer #1         | IEEE-488         |
+| 5      | Printer #2         | IEEE-488         |
+| 6      | Plotter            | IEEE-488         |
+| 7      | (reserved)         | IEEE-488         |
+| 8      | Disk drive #1      | IEEE-488         |
+| 9      | Disk drive #2      | IEEE-488         |
+| 10-15  | Additional devices | IEEE-488         |
 
 Device numbers 4-15 are addressed over the IEEE-488 bus.
 
@@ -84,20 +84,20 @@ Secondary addresses (SA) carry different meanings depending on the device.
 
 **Cassette (devices 1-2):**
 
-| SA | Meaning                       |
-|----|-------------------------------|
-| 0  | Read (load)                   |
-| 1  | Write (save, append off)      |
-| 2  | Write with EOT marker         |
+| SA  | Meaning                  |
+|-----|--------------------------|
+| 0   | Read (load)              |
+| 1   | Write (save, append off) |
+| 2   | Write with EOT marker    |
 
 **Disk drives (devices 8-15):**
 
-| SA    | Meaning                                              |
-|-------|------------------------------------------------------|
-| 0     | Load (PRG read, relocating)                          |
-| 1     | Save (PRG write)                                     |
-| 2-14  | Sequential or relative file data channel             |
-| 15    | Command channel (DOS commands and status)            |
+| SA   | Meaning                                   |
+|------|-------------------------------------------|
+| 0    | Load (PRG read, relocating)               |
+| 1    | Save (PRG write)                          |
+| 2-14 | Sequential or relative file data channel  |
+| 15   | Command channel (DOS commands and status) |
 
 SA 15 is the command channel - always open it to check and send DOS commands.
 
@@ -123,15 +123,15 @@ Use SA 2-14 for sequential files.
 
 ### BASIC Commands and KERNAL Calls
 
-| BASIC Statement          | KERNAL calls used                              |
-|--------------------------|------------------------------------------------|
-| `OPEN n,dev,sa,"name"`   | SETNAM, SETLFS, OPEN                           |
-| `CLOSE n`                | CLOSE                                          |
-| `INPUT# n, var`          | CHKIN, CHRIN (loop), CLRCHN                    |
-| `PRINT# n, data`         | CHKOUT, CHROUT (loop), CLRCHN                  |
-| `GET# n, var`            | CHKIN, CHRIN, CLRCHN                           |
-| `LOAD "name", dev`       | SETNAM, SETLFS, LOAD                           |
-| `SAVE "name", dev`       | SETNAM, SETLFS, SAVE                           |
+| BASIC Statement        | KERNAL calls used             |
+|------------------------|-------------------------------|
+| `OPEN n,dev,sa,"name"` | SETNAM, SETLFS, OPEN          |
+| `CLOSE n`              | CLOSE                         |
+| `INPUT# n, var`        | CHKIN, CHRIN (loop), CLRCHN   |
+| `PRINT# n, data`       | CHKOUT, CHROUT (loop), CLRCHN |
+| `GET# n, var`          | CHKIN, CHRIN, CLRCHN          |
+| `LOAD "name", dev`     | SETNAM, SETLFS, LOAD          |
+| `SAVE "name", dev`     | SETNAM, SETLFS, SAVE          |
 
 ## KERNAL Routine Reference
 
@@ -145,11 +145,11 @@ Must be called before OPEN, LOAD, or SAVE.
 
 **Inputs:**
 
-| Register | Value                                |
-|----------|--------------------------------------|
-| A        | Filename length (0 = no name)        |
-| X        | Low byte of filename address         |
-| Y        | High byte of filename address        |
+| Register | Value                         |
+|----------|-------------------------------|
+| A        | Filename length (0 = no name) |
+| X        | Low byte of filename address  |
+| Y        | High byte of filename address |
 
 **Outputs:** None.
 
@@ -190,11 +190,11 @@ Must be called after SETNAM and before OPEN, LOAD, or SAVE.
 
 **Inputs:**
 
-| Register | Value                |
-|----------|----------------------|
-| A        | Logical file number  |
-| X        | Device number        |
-| Y        | Secondary address    |
+| Register | Value               |
+|----------|---------------------|
+| A        | Logical file number |
+| X        | Device number       |
+| Y        | Secondary address   |
 
 **Outputs:** None.
 
@@ -229,10 +229,10 @@ SETLFS  = $FFBA
 
 **Outputs:**
 
-| Register | Value                              |
-|----------|------------------------------------|
-| C        | 0 = success, 1 = error             |
-| A        | Error code if C=1 (see below)      |
+| Register | Value                         |
+|----------|-------------------------------|
+| C        | 0 = success, 1 = error        |
+| A        | Error code if C=1 (see below) |
 
 **Registers used:** A, X, Y.
 
@@ -244,17 +244,17 @@ SETLFS  = $FFBA
 
 **Error codes (when C=1):**
 
-| Code | Meaning                  |
-|------|--------------------------|
-| 1    | Too many files open      |
-| 2    | File already open        |
-| 3    | File not open            |
-| 4    | File not found           |
-| 5    | Device not present       |
-| 6    | Not an input file        |
-| 7    | Not an output file       |
-| 8    | Missing filename         |
-| 9    | Illegal device number    |
+| Code | Meaning               |
+|------|-----------------------|
+| 1    | Too many files open   |
+| 2    | File already open     |
+| 3    | File not open         |
+| 4    | File not found        |
+| 5    | Device not present    |
+| 6    | Not an input file     |
+| 7    | Not an output file    |
+| 8    | Missing filename      |
+| 9    | Illegal device number |
 
 **Notes:**
 
@@ -284,9 +284,9 @@ open_ok:
 
 **Inputs:**
 
-| Register | Value                |
-|----------|----------------------|
-| A        | Logical file number  |
+| Register | Value               |
+|----------|---------------------|
+| A        | Logical file number |
 
 **Outputs:** None.
 
@@ -324,15 +324,15 @@ Must be called after OPEN.
 
 **Inputs:**
 
-| Register | Value                |
-|----------|----------------------|
-| X        | Logical file number  |
+| Register | Value               |
+|----------|---------------------|
+| X        | Logical file number |
 
 **Outputs:**
 
-| Register | Value                          |
-|----------|--------------------------------|
-| C        | 0 = success, 1 = error         |
+| Register | Value                  |
+|----------|------------------------|
+| C        | 0 = success, 1 = error |
 
 **Registers used:** A, X.
 
@@ -368,15 +368,15 @@ Must be called after OPEN.
 
 **Inputs:**
 
-| Register | Value                |
-|----------|----------------------|
-| X        | Logical file number  |
+| Register | Value               |
+|----------|---------------------|
+| X        | Logical file number |
 
 **Outputs:**
 
-| Register | Value                          |
-|----------|--------------------------------|
-| C        | 0 = success, 1 = error         |
+| Register | Value                  |
+|----------|------------------------|
+| C        | 0 = success, 1 = error |
 
 **Registers used:** A, X.
 
@@ -443,10 +443,10 @@ CLRCHN  = $FFCC
 
 **Outputs:**
 
-| Register | Value                              |
-|----------|------------------------------------|
-| A        | Byte read                          |
-| C        | 1 if STATUS error (check STATUS)   |
+| Register | Value                            |
+|----------|----------------------------------|
+| A        | Byte read                        |
+| C        | 1 if STATUS error (check STATUS) |
 
 **Registers used:** A, Y.
 
@@ -490,8 +490,8 @@ got_eof_or_error:
 
 **Inputs:**
 
-| Register | Value                  |
-|----------|------------------------|
+| Register | Value                   |
+|----------|-------------------------|
 | A        | Byte to write (PETSCII) |
 
 **Outputs:** None.
@@ -531,9 +531,9 @@ STATUS  = $0096
 
 **Outputs:**
 
-| Register | Value                  |
-|----------|------------------------|
-| A        | STATUS byte ($0096)    |
+| Register | Value               |
+|----------|---------------------|
+| A        | STATUS byte ($0096) |
 
 **Registers used:** A.
 
@@ -556,16 +556,16 @@ READST  = $FFB7
 
 **STATUS Byte Bit Meanings:**
 
-| Bit | Mask | Meaning                                     | Device          |
-|-----|------|---------------------------------------------|-----------------|
-| 0   | $01  | Read timeout (device did not respond)       | IEEE-488        |
-| 1   | $02  | Write timeout (device did not respond)      | IEEE-488        |
-| 2   | $04  | Short block                                 | Cassette        |
-| 3   | $08  | Long block                                  | Cassette        |
-| 4   | $10  | Unrecoverable read error / file not found   | Cassette, disk  |
-| 5   | $20  | Checksum error / device not present         | Cassette        |
-| 6   | $40  | End of file (tape EOT)                      | Cassette        |
-| 7   | $80  | End of file (IEEE-488 EOI received)         | IEEE-488        |
+| Bit | Mask | Meaning                                   | Device         |
+|-----|------|-------------------------------------------|----------------|
+| 0   | $01  | Read timeout (device did not respond)     | IEEE-488       |
+| 1   | $02  | Write timeout (device did not respond)    | IEEE-488       |
+| 2   | $04  | Short block                               | Cassette       |
+| 3   | $08  | Long block                                | Cassette       |
+| 4   | $10  | Unrecoverable read error / file not found | Cassette, disk |
+| 5   | $20  | Checksum error / device not present       | Cassette       |
+| 6   | $40  | End of file (tape EOT)                    | Cassette       |
+| 7   | $80  | End of file (IEEE-488 EOI received)       | IEEE-488       |
 
 For disk EOF detection: check bit 7 ($80).
 
@@ -585,20 +585,20 @@ Must call SETNAM and SETLFS first.
 
 **Inputs:**
 
-| Register | Value                                        |
-|----------|----------------------------------------------|
-| A        | 0 = load, 1 = verify (compare to memory)     |
-| X        | Load address low byte (if SA=1 on SETLFS)    |
-| Y        | Load address high byte (if SA=1 on SETLFS)   |
+| Register | Value                                      |
+|----------|--------------------------------------------|
+| A        | 0 = load, 1 = verify (compare to memory)   |
+| X        | Load address low byte (if SA=1 on SETLFS)  |
+| Y        | Load address high byte (if SA=1 on SETLFS) |
 
 **Outputs:**
 
-| Register | Value                                        |
-|----------|----------------------------------------------|
-| C        | 0 = success, 1 = error                       |
-| A        | Error code if C=1                            |
-| X        | Low byte of address after last loaded byte   |
-| Y        | High byte of address after last loaded byte  |
+| Register | Value                                       |
+|----------|---------------------------------------------|
+| C        | 0 = success, 1 = error                      |
+| A        | Error code if C=1                           |
+| X        | Low byte of address after last loaded byte  |
+| Y        | High byte of address after last loaded byte |
 
 **Registers used:** A, X, Y.
 
@@ -661,18 +661,18 @@ Must call SETNAM and SETLFS first.
 
 **Inputs:**
 
-| Register | Value                                                        |
-|----------|--------------------------------------------------------------|
-| A        | Zero-page address of a 2-byte word containing start address  |
-| X        | Low byte of end address plus 1                               |
-| Y        | High byte of end address plus 1                              |
+| Register | Value                                                       |
+|----------|-------------------------------------------------------------|
+| A        | Zero-page address of a 2-byte word containing start address |
+| X        | Low byte of end address plus 1                              |
+| Y        | High byte of end address plus 1                             |
 
 **Outputs:**
 
-| Register | Value                    |
-|----------|--------------------------|
-| C        | 0 = success, 1 = error   |
-| A        | Error code if C=1        |
+| Register | Value                  |
+|----------|------------------------|
+| C        | 0 = success, 1 = error |
+| A        | Error code if C=1      |
 
 **Registers used:** A, X, Y.
 
@@ -768,9 +768,9 @@ CLALL   = $FFE7
 
 **Outputs:**
 
-| Register | Value                          |
-|----------|--------------------------------|
-| Z        | 1 (BEQ taken) if STOP pressed  |
+| Register | Value                         |
+|----------|-------------------------------|
+| Z        | 1 (BEQ taken) if STOP pressed |
 
 **Registers used:** None (flags affected).
 
@@ -1180,15 +1180,15 @@ A common pattern is to have a data channel and a command channel open at the sam
 
 ## Troubleshooting
 
-| Symptom                            | Likely cause                                                         |
-|------------------------------------|----------------------------------------------------------------------|
-| OPEN returns C=1, A=5              | Device not present; check IEEE-488 cable and drive power             |
-| OPEN returns C=1, A=1              | Too many files open; close unused files first                        |
-| CHRIN returns garbage after CHKIN  | File not opened for read; wrong SA or file opened for write          |
-| STATUS bit 0 set after CHRIN       | IEEE-488 read timeout; drive not responding                          |
-| STATUS bit 1 set after CHROUT      | IEEE-488 write timeout; drive not responding                         |
-| STATUS bit 4 set                   | Unrecoverable read error or file not found on cassette               |
-| File writes but drive LED flashes  | DOS error; read command channel (SA=15) for error code               |
-| CHROUT goes to screen not file     | CLRCHN was called; call CHKOUT again before writing                  |
-| LOAD returns incorrect end address | SA=0 used with non-PRG file; use SA=1 with explicit load address     |
+| Symptom                            | Likely cause                                                          |
+|------------------------------------|-----------------------------------------------------------------------|
+| OPEN returns C=1, A=5              | Device not present; check IEEE-488 cable and drive power              |
+| OPEN returns C=1, A=1              | Too many files open; close unused files first                         |
+| CHRIN returns garbage after CHKIN  | File not opened for read; wrong SA or file opened for write           |
+| STATUS bit 0 set after CHRIN       | IEEE-488 read timeout; drive not responding                           |
+| STATUS bit 1 set after CHROUT      | IEEE-488 write timeout; drive not responding                          |
+| STATUS bit 4 set                   | Unrecoverable read error or file not found on cassette                |
+| File writes but drive LED flashes  | DOS error; read command channel (SA=15) for error code                |
+| CHROUT goes to screen not file     | CLRCHN was called; call CHKOUT again before writing                   |
+| LOAD returns incorrect end address | SA=0 used with non-PRG file; use SA=1 with explicit load address      |
 | Program hangs after file operation | CLRCHN not called; KERNAL still reading from file instead of keyboard |

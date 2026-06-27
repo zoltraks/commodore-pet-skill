@@ -9,26 +9,26 @@ This file contains verified, runnable DASM assembly examples for all common PET 
 
 Every example assembles cleanly with DASM and follows the conventions in `system/file.md`.
 
-| Topic                             | Section                              |
-|-----------------------------------|--------------------------------------|
-| KERNAL routine reference          | `system/file.md`                     |
-| DOS commands and directory format | `system/disk.md`                     |
-| KERNAL jump table overview        | `system/kernal.md`                   |
+| Topic                             | Section            |
+|-----------------------------------|--------------------|
+| KERNAL routine reference          | `system/file.md`   |
+| DOS commands and directory format | `system/disk.md`   |
+| KERNAL jump table overview        | `system/kernal.md` |
 
 ## Contents
 
-| Section                         | Line | What it covers                                          |
-|---------------------------------|------|---------------------------------------------------------|
-| Address Definitions             | 18   | Standard KERNAL equates block to paste at top of file   |
-| Load a PRG File                 | 45   | LOAD with SA=0 (file address) and SA=1 (fixed address)  |
-| Save a PRG File                 | 139  | SAVE from zero-page pointer to end address              |
-| Read a Sequential File          | 206  | OPEN + CHKIN + CHRIN loop + STATUS EOF check + CLOSE    |
-| Write a Sequential File         | 341  | OPEN + CHKOUT + CHROUT loop + STATUS check + CLOSE      |
-| Send a DOS Command              | 448  | SA=15 OPEN with command string, reopen to read status   |
-| Read the Disk Directory         | 580  | Open `$`, skip header, parse BASIC-format lines         |
-| Complete File I/O Program Template | 709 | Full program with init, read, error paths, CLOSE       |
-| Common Mistakes                 | 872  | CLRCHN, CLOSE on error, SA=0 misuse, LFN conflicts      |
-| Quick Reference: Call Sequences | 920  | One-line summary of every operation                     |
+| Section                            | Line | What it covers                                         |
+|------------------------------------|------|--------------------------------------------------------|
+| Address Definitions                | 18   | Standard KERNAL equates block to paste at top of file  |
+| Load a PRG File                    | 45   | LOAD with SA=0 (file address) and SA=1 (fixed address) |
+| Save a PRG File                    | 139  | SAVE from zero-page pointer to end address             |
+| Read a Sequential File             | 206  | OPEN + CHKIN + CHRIN loop + STATUS EOF check + CLOSE   |
+| Write a Sequential File            | 341  | OPEN + CHKOUT + CHROUT loop + STATUS check + CLOSE     |
+| Send a DOS Command                 | 448  | SA=15 OPEN with command string, reopen to read status  |
+| Read the Disk Directory            | 580  | Open `$`, skip header, parse BASIC-format lines        |
+| Complete File I/O Program Template | 709  | Full program with init, read, error paths, CLOSE       |
+| Common Mistakes                    | 872  | CLRCHN, CLOSE on error, SA=0 misuse, LFN conflicts     |
+| Quick Reference: Call Sequences    | 920  | One-line summary of every operation                    |
 
 ## Address Definitions
 
@@ -324,11 +324,11 @@ read_len:       byte 0          ; number of bytes read
 
 The STATUS byte at `$0096` has these relevant bits for sequential file reads:
 
-| Bit | Mask  | Meaning                              |
-|-----|-------|--------------------------------------|
-| 6   | `$40` | EOF: end of file reached             |
-| 2   | `$04` | Timeout/device not present on read   |
-| 3   | `$08` | Timeout/device not present on write  |
+| Bit | Mask  | Meaning                             |
+|-----|-------|-------------------------------------|
+| 6   | `$40` | EOF: end of file reached            |
+| 2   | `$04` | Timeout/device not present on read  |
+| 3   | `$08` | Timeout/device not present on write |
 
 After the last byte of a file, CHRIN returns the last byte and sets bit 6.
 
@@ -934,14 +934,14 @@ Send `I0` through the command channel at program start to clear the banner.
 
 ## Quick Reference: Call Sequences
 
-| Operation              | Call sequence                                             |
-|------------------------|-----------------------------------------------------------|
-| Load PRG from disk     | SETNAM, SETLFS (SA=0), LOAD                               |
-| Save PRG to disk       | SETNAM, SETLFS (SA=1), SAVE                               |
-| Open SEQ read          | SETNAM, SETLFS (SA=2+), OPEN, CHKIN                       |
-| Read from SEQ file     | CHRIN (loop on STATUS=0), CLRCHN, CLOSE                   |
-| Open SEQ write         | SETNAM, SETLFS (SA=2+), OPEN, CHKOUT                      |
-| Write to SEQ file      | CHROUT (check STATUS), CLRCHN, CLOSE                      |
-| Send DOS command       | SETNAM (cmd as name), SETLFS (SA=15), OPEN, CLOSE         |
-| Read drive status      | SETNAM (empty), SETLFS (SA=15), OPEN, CHKIN, CHRIN, CLOSE |
-| Read disk directory    | SETNAM ("$"), SETLFS (SA=0), OPEN, CHKIN, CHRIN loop      |
+| Operation           | Call sequence                                             |
+|---------------------|-----------------------------------------------------------|
+| Load PRG from disk  | SETNAM, SETLFS (SA=0), LOAD                               |
+| Save PRG to disk    | SETNAM, SETLFS (SA=1), SAVE                               |
+| Open SEQ read       | SETNAM, SETLFS (SA=2+), OPEN, CHKIN                       |
+| Read from SEQ file  | CHRIN (loop on STATUS=0), CLRCHN, CLOSE                   |
+| Open SEQ write      | SETNAM, SETLFS (SA=2+), OPEN, CHKOUT                      |
+| Write to SEQ file   | CHROUT (check STATUS), CLRCHN, CLOSE                      |
+| Send DOS command    | SETNAM (cmd as name), SETLFS (SA=15), OPEN, CLOSE         |
+| Read drive status   | SETNAM (empty), SETLFS (SA=15), OPEN, CHKIN, CHRIN, CLOSE |
+| Read disk directory | SETNAM ("$"), SETLFS (SA=0), OPEN, CHKIN, CHRIN loop      |

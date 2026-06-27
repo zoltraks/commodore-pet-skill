@@ -73,7 +73,6 @@ A branch that crosses a page boundary costs 4 cycles instead of 3.
 
 
 target:
-
 ```
 
 ### Compare-Free Decisions
