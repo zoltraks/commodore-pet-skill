@@ -180,7 +180,7 @@ delay_inner:
 For animation players, trigger a beep at a specific frame and stop after N frames:
 
 ```asm
-sound_frames = $FF      ; ZP: frames remaining for tone
+sound_frames = $FF      ; $FF is documented unused by PET BASIC 2 -- safe to allocate
 
 ; In VBLANK handler or main loop:
 check_sound:

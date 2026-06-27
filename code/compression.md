@@ -45,94 +45,143 @@ $00,$00,$66,$00,$00,$66,$00,$00,$66,$00,$E8,$66
 
 ### Decompressor
 
-Uses self-modifying pointers (`rle_read+1/+2`, `rle_write+1/+2`) for direct access without zero-page indirection.
+Uses self-modifying pointers (`rle_read+1/+2`, `rle_write+1/+2`) for source and destination access -- no zero-page indirection needed. Borrows ZP $FB-$FE for working registers; saves and restores all four.
+
+**Calling convention:** X = low byte, Y = high byte of a 6-byte parameter block in free RAM.
+
+```
+; parameter block layout:
+; +0 src lo  +1 src hi  +2 dst lo  +3 dst hi  +4 len lo  +5 len hi
+```
 
 ```asm
-rle_src  = $88          ; RLE source pointer (16-bit)
-rle_dst  = $8A          ; RLE destination pointer (16-bit)
-rle_len  = $8C          ; RLE bytes remaining (16-bit)
-rle_rpt  = $8E          ; repeat counter
-rle_chr  = $8F          ; repeat character
+; ZP borrowed: $FB = repeat counter  $FC = repeat character
+;              $FD = len lo          $FE = len hi
 
 decompress_rle:
 
-        lda rle_src
-        sta rle_read+1
-        lda rle_src+1
-        sta rle_read+2
-        lda rle_dst
-        sta rle_write+1
-        lda rle_dst+1
-        sta rle_write+2
+        lda $FE
+        pha
+        lda $FD
+        pha
+        lda $FC
+        pha
+        lda $FB
+        pha
 
-        lda #0
-        tax
-        tay
+        stx rle_param+1     ; patch param block address into reader
+        sty rle_param+2
+        ldy #0
+
+rle_param:
+
+        lda $FFFF,y         ; src lo (self-modified to param block)
+        sta rle_read+1
+        iny
+        lda $FFFF,y         ; src hi
+        sta rle_read+2
+        iny
+        lda $FFFF,y         ; dst lo
+        sta rle_write+1
+        iny
+        lda $FFFF,y         ; dst hi
+        sta rle_write+2
+        iny
+        lda $FFFF,y         ; len lo
+        sta $FD
+        iny
+        lda $FFFF,y         ; len hi
+        sta $FE
+
+        ldx #0              ; X = source index
+        ldy #0              ; Y = dest index
 
 rle_loop:
 
         lda #1
-        sta rle_rpt
+        sta $FB             ; repeat count = 1 (literal default)
         jsr rle_read
-        beq rle_escape
+        beq rle_escape      ; $00 begins an escape run
 
 rle_write:
 
-        sta $FFFF,y
+        sta $FFFF,y         ; write to dest (self-modified)
 
-        lda rle_len
+        lda $FD             ; decrement byte count
         bne rle_dec_lo
-        lda rle_len+1
-        beq rle_exit
-        dec rle_len+1
+        lda $FE
+        beq rle_exit        ; count exhausted
+        dec $FE
 
 rle_dec_lo:
 
-        dec rle_len
-        iny
+        dec $FD
+        iny                 ; advance dest index
         bne rle_next
-        inc rle_write+2
+        inc rle_write+2     ; dest page crossed
 
 rle_next:
 
-        dec rle_rpt
-        bne rle_write_back
-        jsr rle_progress
+        dec $FB             ; repeat counter--
+        bne rle_write_back  ; still copies remaining
+        jsr rle_progress    ; advance source past current byte
         jmp rle_loop
 
 rle_write_back:
 
-        lda rle_chr
+        lda $FC             ; reload repeat character
         jmp rle_write
 
 rle_escape:
 
+        jsr rle_progress    ; past $00
+        jsr rle_read
+        sta $FB             ; repeat count from stream
         jsr rle_progress
         jsr rle_read
-        sta rle_rpt
-        jsr rle_progress
-        jsr rle_read
-        sta rle_chr
-        jmp rle_write
+        sta $FC             ; character to repeat
+        jmp rle_write       ; write $FB copies of $FC
 
 rle_exit:
 
+        pla
+        sta $FB
+        pla
+        sta $FC
+        pla
+        sta $FD
+        pla
+        sta $FE
         rts
 
 rle_read:
 
-        lda $FFFF,x
+        lda $FFFF,x         ; self-modified: base = source start
         rts
 
 rle_progress:
 
         inx
-        bne rle_skip
-        inc rle_read+2
+        bne rle_prog_skip
+        inc rle_read+2      ; source page crossed
 
-rle_skip:
+rle_prog_skip:
 
         rts
+```
+
+### Usage Example
+
+```asm
+rle_block:
+
+        word packed_screen  ; src address
+        word $8000          ; dst = screen RAM
+        word $03E8          ; len = 1000 bytes (40x25)
+
+        ldx #<rle_block
+        ldy #>rle_block
+        jsr decompress_rle
 ```
 
 ## Byte-Run (Alternative Simple RLE)
@@ -147,36 +196,92 @@ $00                    ; end marker
 
 ### Byte-Run Decompressor
 
+Uses self-modifying pointers for source reads and a self-modifying absolute write for destination -- no zero-page required.
+
+**Calling convention:** X = low byte, Y = high byte of a 4-byte parameter block in free RAM.
+
+```
+; parameter block layout:
+; +0 src lo  +1 src hi  +2 dst lo  +3 dst hi
+```
+
 ```asm
 decompress_byte_run:
 
+        stx br_param+1      ; patch param block address
+        sty br_param+2
         ldy #0
 
-loop:
+br_param:
 
-        lda (source_lo),y
-        beq done
-        tax
+        lda $FFFF,y         ; src lo (self-modified to param block)
+        sta br_src+1
         iny
-        lda (source_lo),y
-
-run_loop:
-
-        sta (dest_lo),y
-        inc dest_lo
-        bne skip
-        inc dest_hi
-
-skip:
-
-        dex
-        bne run_loop
+        lda $FFFF,y         ; src hi
+        sta br_src+2
         iny
-        bne loop
+        lda $FFFF,y         ; dst lo
+        sta br_write+1
+        iny
+        lda $FFFF,y         ; dst hi
+        sta br_write+2
 
-done:
+        ldx #0              ; X = source index
+
+br_loop:
+
+        jsr br_src          ; read count byte
+        beq br_done         ; count $00 = end of stream
+        tay                 ; Y = number of copies
+        jsr br_advance
+        jsr br_src          ; A = value byte
+        jsr br_advance      ; advance past value; A preserved
+
+br_write:
+
+        sta $FFFF           ; write to dest (self-modified, no index)
+
+        inc br_write+1      ; advance dest address
+        bne br_cnt
+        inc br_write+2
+
+br_cnt:
+
+        dey
+        bne br_write        ; write same value again
+        jmp br_loop
+
+br_done:
 
         rts
+
+br_src:
+
+        lda $FFFF,x         ; self-modified: base = source start
+        rts
+
+br_advance:
+
+        inx
+        bne br_adv_skip
+        inc br_src+2        ; source page crossed
+
+br_adv_skip:
+
+        rts
+```
+
+### Usage Example
+
+```asm
+br_block:
+
+        word packed_data    ; src address
+        word target_buffer  ; dst address
+
+        ldx #<br_block
+        ldy #>br_block
+        jsr decompress_byte_run
 ```
 
 ## Frame-Delta Compression
@@ -196,32 +301,86 @@ $FF $FF               ; end of delta
 
 ### Delta Applier
 
+Uses self-modifying code for source reads; patches each write address directly from the delta record. No zero-page required.
+
+**Calling convention:** X = low byte, Y = high byte of a 2-byte parameter block in free RAM.
+
+```
+; parameter block layout:
+; +0 src lo  +1 src hi
+```
+
 ```asm
 apply_delta:
 
+        stx dl_param+1      ; patch param block address
+        sty dl_param+2
         ldy #0
 
-loop:
+dl_param:
 
-        lda (source_lo),y
-        sta dest_lo
+        lda $FFFF,y         ; src lo (self-modified to param block)
+        sta dl_read+1
         iny
-        lda (source_lo),y
-        sta dest_hi
-        ; check end marker
-        lda dest_lo
-        and dest_hi
+        lda $FFFF,y         ; src hi
+        sta dl_read+2
+
+        ldx #0              ; X = source index
+
+dl_loop:
+
+        jsr dl_read         ; dst lo
+        tay                 ; save dst lo in Y
+        jsr dl_advance
+        jsr dl_read         ; dst hi (in A)
+        cpy #$FF
+        bne dl_not_end      ; dst lo != $FF: not end marker
         cmp #$FF
-        beq done
-        iny
-        lda (source_lo),y
-        sta (dest_lo),y       ; write new value to screen
-        iny
-        bne loop
-        ; (advance source page if needed)
-done:
+        beq dl_done         ; both $FF: end of stream
+
+dl_not_end:
+
+        sty dl_write+1      ; patch dest address lo
+        sta dl_write+2      ; patch dest address hi
+        jsr dl_advance
+        jsr dl_read         ; value to write (in A)
+        jsr dl_advance
+
+dl_write:
+
+        sta $FFFF           ; write to patched screen address
+        jmp dl_loop
+
+dl_done:
 
         rts
+
+dl_read:
+
+        lda $FFFF,x         ; self-modified: base = source start
+        rts
+
+dl_advance:
+
+        inx
+        bne dl_adv_skip
+        inc dl_read+2       ; source page crossed
+
+dl_adv_skip:
+
+        rts
+```
+
+### Usage Example
+
+```asm
+dl_block:
+
+        word frame_delta    ; src address (delta stream)
+
+        ldx #<dl_block
+        ldy #>dl_block
+        jsr apply_delta
 ```
 
 ## Screen-Oriented Packing

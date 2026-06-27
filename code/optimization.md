@@ -16,7 +16,7 @@ This file covers optimization patterns for the PET 3032 in four progressive laye
 
 | Technique                  | Size         | Speed            | Use When                      |
 |----------------------------|--------------|------------------|-------------------------------|
-| ZP indirect `($F7),y`      | 2 bytes      | 5-6c             | Repeated memory access        |
+| ZP indirect `($zp),y`      | 2 bytes      | 5-6c             | Repeated memory access        |
 | Absolute `$8000`           | 3 bytes      | 4c               | One-off access                |
 | Indexed absolute `$8000,x` | 3 bytes      | 4-5c             | Fixed-base table walk         |
 | Unrolled loop              | large        | fastest          | Tight inner loop, small count |
@@ -95,24 +95,48 @@ loop    ; ...
 
 Zero-page access is 1 cycle faster than absolute and 1 byte smaller.
 
-| Access Type   | Bytes | Cycles |
-|---------------|-------|--------|
-| `LDA $F7`     | 2     | 3      |
-| `LDA $8000`   | 3     | 4      |
-| `LDA ($F7),y` | 2     | 5      |
-| `LDA $8000,x` | 3     | 4-5    |
+| Access Type    | Bytes | Cycles |
+|----------------|-------|--------|
+| `LDA $zp`      | 2     | 3      |
+| `LDA $8000`    | 3     | 4      |
+| `LDA ($zp),y`  | 2     | 5      |
+| `LDA $8000,x`  | 3     | 4-5    |
 
-### Keep Pointers in Zero Page
+### Using ZP Pointers
+
+ZP indirect addressing (`($zp),y`) requires two contiguous ZP bytes for the pointer. On PET BASIC 2, most ZP is consumed by the KERNAL and BASIC; there is no free block you can assume. If a routine needs ZP pointers internally, save and restore the bytes it borrows.
+
+Only $FF is documented unused in PET BASIC 2. $FB-$FE are used by KERNAL tape routines; borrow them only when tape I/O will not run concurrently.
 
 ```asm
-source_lo = $F7
-source_hi = $F8
-dest_lo   = $F9
-dest_hi   = $FA
+; Routine borrowing $FB/$FC as a pointer -- saves and restores both.
+copy_block:
 
-        lda (source_lo),y
-        sta (dest_lo),y
+        lda $FC             ; save borrowed ZP bytes
+        pha
+        lda $FB
+        pha
+
+        stx $FB             ; X/Y = address of source in free RAM
+        sty $FC
+
+        ldy #0
+
+copy_loop:
+
+        lda ($FB),y         ; indirect read using borrowed ZP pointer
+        sta $8000,y         ; absolute write to fixed dest
+        iny
+        bne copy_loop
+
+        pla                 ; restore borrowed ZP bytes
+        sta $FB
+        pla
+        sta $FC
+        rts
 ```
+
+For routines that accept an arbitrary source address via X/Y parameter, the self-modifying approach avoids ZP entirely -- see the compression routines in compression.md for worked examples.
 
 ## Stack Shortcuts
 

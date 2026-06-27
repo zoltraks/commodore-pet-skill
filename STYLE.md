@@ -166,6 +166,65 @@ Subroutine snippets omit these and show only the relevant code.
 
 Always define all equates used in a snippet at the top of the same code block.
 
+## Zero-Page Policy
+
+PET BASIC 2 uses nearly all zero-page for the KERNAL and BASIC. Only `$FF` and `$A2` are documented unused. Do not write equates that commit to a specific ZP address as if it is owned by the programmer.
+
+### Parameter Block Convention
+
+Pass multi-byte inputs to subroutines as a data block in free RAM. The caller loads X with the block's low byte and Y with the high byte, then JSRs.
+
+```asm
+win_params:
+        byte 5      ; row
+        byte 10     ; col
+
+        ldx #<win_params
+        ldy #>win_params
+        jsr my_routine
+```
+
+### Borrowing ZP Internally
+
+If a routine needs ZP for `($ptr),y` indirect addressing, it may borrow bytes it does not own provided it saves and restores them on entry and exit.
+
+Prefer `$FB`-`$FE` (KERNAL tape pointers, idle when tape I/O is not running). Document the borrow in the routine comment.
+
+```asm
+; my_routine: X = lo, Y = hi of param block
+; Borrows $FB-$FC; saves and restores both.
+my_routine:
+
+        lda $FC
+        pha
+        lda $FB
+        pha
+        stx $FB
+        sty $FC
+
+        ; ... use ($FB),y ...
+
+        pla
+        sta $FB
+        pla
+        sta $FC
+        rts
+```
+
+### What to Avoid
+
+Do not write equates that name specific ZP addresses without documenting the save/restore obligation:
+
+```asm
+; Wrong: implies these addresses are free to use
+src_lo  = $F7
+src_hi  = $F8
+```
+
+Use raw hex in code (`$FB`, `$FC`) rather than equate names for borrowed bytes; raw hex makes it obvious the bytes are temporarily borrowed, not owned.
+
+The only ZP addresses appropriate for named equates are `$FF` and `$A2`, the two bytes documented unused by PET BASIC 2.
+
 ## Inline Formatting
 
 ### Addresses and Values

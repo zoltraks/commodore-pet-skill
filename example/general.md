@@ -258,12 +258,12 @@ play_animation:
 
 next_frame:
 
-        ; copy frame to screen
+        ; patch frame source into copy_frame's self-modifying read
         lda frame_table,x
-        sta source_lo
+        sta cf_src+1        ; source lo
         inx
         lda frame_table,x
-        sta source_hi
+        sta cf_src+2        ; source hi
         inx
 
         jsr copy_frame
@@ -285,11 +285,15 @@ exit:
 
         rts
 
-; Copy 1000 bytes from (source_lo) to SCREEN
+; copy_frame: copy 1000 bytes to SCREEN. Patch cf_src+1 (lo) and cf_src+2 (hi)
+; with the frame source address before calling. No ZP required.
 copy_frame:
 
-        ldy #$00
-        lda (source_lo),y
+        ldy #0
+
+cf_src:
+
+        lda $FFFF,y         ; self-modified: frame source address
         sta SCREEN,y
         ; ... full 1000-byte copy loop would go here ...
         rts
@@ -315,8 +319,6 @@ frame2:
         byte $20,$20,$20,$20,$20,$20,$20,$20,$20,$20
         ; ... etc ...
 
-source_lo = $F7
-source_hi = $F8
 ```
 
 ## Demo Skeleton Template
@@ -435,11 +437,13 @@ old_cinv:
 
 ; =========================================================
 ; ZP variables
+; $FB-$FC: KERNAL tape pointers -- safe while tape is idle
+; $FF: documented unused by PET BASIC 2
 ; =========================================================
 
-frame_ctr  = $F7            ; current frame byte counter
-frame_hi   = $F8            ; current frame page
-next_frame = $F9            ; set to 1 by IRQ to request frame advance
+frame_ctr  = $FB            ; frame source lo (KERNAL tape ptr -- safe when tape idle)
+frame_hi   = $FC            ; frame source hi (KERNAL tape ptr -- safe when tape idle)
+next_frame = $FF            ; IRQ->main loop flag (documented unused by PET BASIC 2)
 
 ; =========================================================
 ; INIT

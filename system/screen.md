@@ -52,31 +52,31 @@ SCREEN  = $8000
 
 ```asm
 ; X = row (0-24), Y = column (0-39)
-; result in screen_ptr ($FB-$FC)
+; Result written to $FB (lo) and $FC (hi); caller saves/restores if needed.
 
 calc_screen_addr:
 
         lda #<SCREEN
-        sta screen_ptr
+        sta $FB
         lda #>SCREEN
-        sta screen_ptr+1
+        sta $FC
         ; add row * 40
         lda row_mult_lo,x
         clc
-        adc screen_ptr
-        sta screen_ptr
+        adc $FB
+        sta $FB
         lda row_mult_hi,x
-        adc screen_ptr+1
-        sta screen_ptr+1
+        adc $FC
+        sta $FC
         ; add column
         tya
         clc
-        adc screen_ptr
-        sta screen_ptr
-        bcc done
-        inc screen_ptr+1
+        adc $FB
+        sta $FB
+        bcc csa_done
+        inc $FC
 
-done:
+csa_done:
 
         rts
 
@@ -203,6 +203,119 @@ Set the RVS flag before calling CHROUT:
         sta RVS                 ; clear reverse mode
 ```
 
+### Menu Item Highlighting
+
+Set bit 7 on a row's screen codes to highlight the current menu selection. Clear bit 7 to deselect.
+
+`highlight_row` and `unhighlight_row` borrow $FB-$FC as a screen pointer; they save and restore both bytes. `get_row_ptr` is an internal helper and does not save/restore.
+
+```asm
+SCREEN      = $8000
+
+; highlight_row: set reverse video on all 40 chars in screen row X (0-24)
+; Borrows $FB-$FC; saves and restores both.
+highlight_row:
+
+        lda $FC
+        pha
+        lda $FB
+        pha
+        jsr get_row_ptr
+        ldy #39
+
+highlight_loop:
+
+        lda ($FB),y
+        ora #$80                ; set reverse video
+        sta ($FB),y
+        dey
+        bpl highlight_loop
+
+        pla
+        sta $FB
+        pla
+        sta $FC
+        rts
+
+; unhighlight_row: clear reverse video on all 40 chars in screen row X
+; Borrows $FB-$FC; saves and restores both.
+unhighlight_row:
+
+        lda $FC
+        pha
+        lda $FB
+        pha
+        jsr get_row_ptr
+        ldy #39
+
+unhighlight_loop:
+
+        lda ($FB),y
+        and #$7F                ; clear reverse video
+        sta ($FB),y
+        dey
+        bpl unhighlight_loop
+
+        pla
+        sta $FB
+        pla
+        sta $FC
+        rts
+
+; get_row_ptr: set $FB/$FC to address of screen row X (internal helper)
+get_row_ptr:
+
+        lda #<SCREEN
+        sta $FB
+        lda #>SCREEN
+        sta $FC
+        txa
+        beq get_row_done        ; row 0: base is already correct
+
+get_row_loop:
+
+        lda $FB
+        clc
+        adc #40
+        sta $FB
+        bcc get_row_skip
+        inc $FC
+
+get_row_skip:
+
+        dex
+        bne get_row_loop
+
+get_row_done:
+
+        rts
+```
+
+Move the selection down and update the highlight. `$FF` is one of the two ZP bytes explicitly unused by PET BASIC 2 (the other is `$A2`), so it is safe to allocate as a single-byte variable:
+
+```asm
+menu_sel    = $FF               ; safe: $FF unused by PET BASIC 2 KERNAL
+
+menu_move_down:
+
+        ldx menu_sel
+        jsr unhighlight_row
+        inc menu_sel
+        lda menu_sel
+        cmp #menu_count
+        bcc menu_show
+        lda #0
+        sta menu_sel
+
+menu_show:
+
+        ldx menu_sel
+        jsr highlight_row
+        rts
+```
+
+Set `menu_count` to the number of items. Use `menu_move_down` and a mirror `menu_move_up` for arrow key navigation.
+
 ## PETSCII Control Codes (for CHROUT)
 
 These codes are sent to `CHROUT` ($FFD2) to control the cursor and screen.
@@ -285,6 +398,187 @@ fill_checker:
         bne .loop
         rts
 ```
+
+### Drawing a Window Frame
+
+Use the box-drawing characters to draw a bordered window at any screen position. The uppercase + graphics character set must be active (`PCR = PCR_U`).
+
+Pass the window parameters as a 4-byte block in free RAM; put the block's address in X (low byte) and Y (high byte). The routine borrows $FB-$FD internally, saves and restores all three.
+
+```asm
+SCREEN      = $8000
+
+BOX_TL      = $66        ; corner top-left
+BOX_TR      = $67        ; corner top-right
+BOX_BR      = $68        ; corner bottom-right
+BOX_BL      = $69        ; corner bottom-left
+BOX_HTOP    = $62        ; horizontal top edge
+BOX_HBOT    = $64        ; horizontal bottom edge
+BOX_VLEFT   = $65        ; vertical left edge
+BOX_VRIGHT  = $63        ; vertical right edge
+```
+
+Define window parameters as data anywhere in free RAM:
+
+```asm
+win1:
+        byte 5          ; row (0-24)
+        byte 10         ; col (0-39)
+        byte 20         ; width including borders
+        byte 8          ; height including borders
+
+        ldx #<win1
+        ldy #>win1
+        jsr draw_box_xy
+```
+
+Multiple windows use separate labelled byte blocks -- no naming conflicts, no ZP allocation.
+
+```asm
+; draw_box_xy: X = low byte, Y = high byte of 4-byte parameter block
+; Block layout: byte row, col, width, height
+; Borrows $FB-$FD; saves and restores all three.
+draw_box_xy:
+
+        lda $FD
+        pha
+        lda $FC
+        pha
+        lda $FB
+        pha
+
+        stx $FB
+        sty $FC
+
+        ldy #3
+        lda ($FB),y             ; height
+        pha
+        dey
+        lda ($FB),y             ; width
+        sta $FD                 ; keep width in $FD for the whole routine
+        dey
+        lda ($FB),y             ; col
+        pha
+        dey
+        lda ($FB),y             ; row
+        pha
+
+        lda #<SCREEN
+        sta $FB
+        lda #>SCREEN
+        sta $FC
+
+        pla                     ; row
+        tax
+        beq draw_xy_col
+
+draw_xy_rowloop:
+
+        lda $FB
+        clc
+        adc #40
+        sta $FB
+        bcc draw_xy_rskip
+        inc $FC
+
+draw_xy_rskip:
+
+        dex
+        bne draw_xy_rowloop
+
+draw_xy_col:
+
+        pla                     ; col
+        clc
+        adc $FB
+        sta $FB
+        bcc draw_xy_top
+        inc $FC
+
+draw_xy_top:
+
+        ldy #0
+        lda #BOX_TL
+        sta ($FB),y
+        lda #BOX_HTOP
+        ldx $FD
+        dex
+
+draw_xy_toploop:
+
+        iny
+        sta ($FB),y
+        dex
+        bne draw_xy_toploop
+
+        lda #BOX_TR
+        sta ($FB),y
+
+        pla                     ; height
+        sec
+        sbc #2                  ; middle row count
+        tax
+        beq draw_xy_bottom
+
+draw_xy_sides:
+
+        lda $FB
+        clc
+        adc #40
+        sta $FB
+        bcc draw_xy_side
+        inc $FC
+
+draw_xy_side:
+
+        ldy #0
+        lda #BOX_VLEFT
+        sta ($FB),y
+        ldy $FD
+        dey                     ; right border at column width-1
+        lda #BOX_VRIGHT
+        sta ($FB),y
+        dex
+        bne draw_xy_sides
+
+draw_xy_bottom:
+
+        lda $FB
+        clc
+        adc #40
+        sta $FB
+        bcc draw_xy_bot
+        inc $FC
+
+draw_xy_bot:
+
+        ldy #0
+        lda #BOX_BL
+        sta ($FB),y
+        lda #BOX_HBOT
+        ldx $FD
+        dex
+
+draw_xy_botloop:
+
+        iny
+        sta ($FB),y
+        dex
+        bne draw_xy_botloop
+
+        lda #BOX_BR
+        sta ($FB),y
+
+        pla
+        sta $FB
+        pla
+        sta $FC
+        pla
+        sta $FD
+        rts
+```
+
+The parameter block can sit anywhere in free RAM -- after BASIC program end, in a data section, or in tape buffers when tape is not in use.
 
 ## Screen Scrolling
 
