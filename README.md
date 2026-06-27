@@ -37,6 +37,9 @@ Values are hexadecimal (`$NN`) unless noted decimal.
 | "How does PETSCII differ from ASCII?"       | **Yes**                                              |
 | "How do I scan the keyboard matrix?"        | **Yes** - use `system/keyboard.md`                   |
 | "Optimize this 6502 loop"                   | **Yes** - use `code/optimization.md`                 |
+| "How do I read a file from disk?"           | **Yes** - use `system/file.md` + `example/fileio.md` |
+| "How do I send a DOS command to the drive?" | **Yes** - use `system/disk.md`                       |
+| "How do I read the disk directory?"         | **Yes** - use `system/disk.md` + `example/fileio.md` |
 | "General 6502 questions (not PET-specific)" | Partially - `hardware/cpu.md` covers the CPU broadly |
 | "C64-specific programming"                  | No - this skill is PET 3032 focused                  |
 
@@ -127,6 +130,12 @@ gh skill install YOURNAME/commodore-pet-skill commodore-pet
 **Compression**
 > Explain the $00-escape RLE format used for PET screen codes and provide a decompressor in 6502 assembly.
 
+**File I/O**
+> Write a PET 3032 assembly routine that opens a sequential file on device 8, reads all bytes into a buffer, and closes the file. Show the complete DASM code.
+
+**Disk commands**
+> How do I delete a file on a PET disk drive from assembly code? Show me how to send a scratch command through the command channel and read the drive status.
+
 ---
 
 ## What's inside
@@ -143,7 +152,9 @@ commodore-pet-skill/
 │   ├── kernal.md                  # KERNAL jump table, indirect vectors, I/O routines
 │   ├── screen.md                  # Screen RAM, PETSCII, cursor, reverse video
 │   ├── loading.md                 # Tape/disk loading, SETNAM/SETLFS/LOAD, STATUS
-│   └── keyboard.md                # Keyboard matrix, PIA 1 scan, GETIN, multi-key detection
+│   ├── keyboard.md                # Keyboard matrix, PIA 1 scan, GETIN, multi-key detection
+│   ├── file.md                    # KERNAL file I/O: SETNAM/SETLFS/OPEN/CLOSE/CHKIN/CHKOUT/CHRIN/CHROUT/LOAD/SAVE
+│   └── disk.md                    # DOS commands, command channel, directory, error codes, disk images, emulators
 ├── code/
 │   ├── bit.md                     # Bit ops, masks, pointers, stack tricks
 │   ├── optimization.md            # Size/speed trade-offs, unrolled loops, branch tuning
@@ -151,7 +162,8 @@ commodore-pet-skill/
 ├── utility/
 │   └── dasm-assembler.md          # DASM syntax, directives, macros, conventions
 └── example/
-    └── general.md                 # BASIC stub, screen clear, VBLANK, IRQ skeleton
+    ├── general.md                 # BASIC stub, screen clear, VBLANK, IRQ skeleton
+    └── fileio.md                  # Complete DASM file I/O examples: load/save/read/write/command/directory
 ```
 
 The skill activates automatically when you ask about Commodore PET programming, 6502 assembly, DASM, PET hardware, or related topics.
