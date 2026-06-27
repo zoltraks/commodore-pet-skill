@@ -81,7 +81,7 @@ Read these files when you need a complete, runnable starting point.
 | File                 | Read when the task involves                                                              |
 |----------------------|------------------------------------------------------------------------------------------|
 | `example/general.md` | BASIC stub, screen clear, wait-key, VBLANK polling, IRQ skeleton, animation frame player |
-| `example/fileio.md`  | Load PRG, save PRG, read/write sequential file, DOS command, directory, error handling   |
+| `example/file.md`    | Load PRG, save PRG, read/write sequential file, DOS command, directory, error handling   |
 
 ## Common Task Routing
 
@@ -97,14 +97,20 @@ Use this table to pick the right file without reading every option above.
 | Write to the screen or use PETSCII        | `system/screen.md`          |                       |
 | Load a PRG or data file from tape or disk | `system/loading.md`         |                       |
 | Scan the keyboard or detect keypresses    | `system/keyboard.md`        |                       |
-| Open, read, or write a sequential file    | `system/file.md`            | `example/fileio.md`   |
-| Send a DOS command or read the directory  | `system/disk.md`            | `example/fileio.md`   |
+| Open, read, or write a sequential file    | `system/file.md`            | `example/file.md`     |
+| Send a DOS command or read the directory  | `system/disk.md`            | `example/file.md`     |
 | Compress screen data or do frame-delta    | `code/compression.md`       |                       |
 | Optimize a loop or reduce code size       | `code/optimization.md`      |                       |
 | Write DASM source with macros or segments | `utility/dasm-assembler.md` |                       |
 | Build a complete animation player         | `example/general.md`        | `hardware/chip.md`    |
-| Build a complete file I/O program         | `example/fileio.md`         | `system/file.md`      |
+| Build a complete file I/O program         | `example/file.md`           | `system/file.md`      |
 | BASIC stub + SYS1038                      | `example/general.md`        |                       |
+
+## Extending This Skill
+
+When adding or editing files, follow the conventions in `STYLE.md`.
+
+It covers file header structure, table alignment, code block layout, inline formatting, and how to register new files in this routing table.
 
 ## Note on Large Reference Files
 
@@ -115,6 +121,6 @@ Use the table of contents to jump to the relevant section rather than reading th
 | File                 | Lines |
 |----------------------|-------|
 | `system/file.md`     | ~1180 |
-| `example/fileio.md`  | ~930  |
+| `example/file.md`    | ~930  |
 | `system/disk.md`     | ~750  |
 | `example/general.md` | ~550  |

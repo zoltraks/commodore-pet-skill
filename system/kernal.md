@@ -60,18 +60,24 @@ no_key:
 
 The KERNAL uses indirect vectors in low RAM so user programs can intercept calls.
 
-| Address     | Name   | Description            |
-|-------------|--------|------------------------|
-| $0090-$0091 | CINV   | Hardware IRQ vector    |
-| $0092-$0093 | CBINV  | BRK interrupt vector   |
-| $0094-$0095 | NMINV  | NMI vector             |
-| $0326-$0327 | IBSOUT | Indirect CHROUT vector |
-| $0328-$0329 | ISTOP  | Indirect STOP vector   |
-| $032A-$032B | IGETIN | Indirect GETIN vector  |
-| $032C-$032D | ICLALL | Indirect CLALL vector  |
-| $032E-$032F | USRCMD | User-defined vector    |
-| $0330-$0331 | ILOAD  | Indirect LOAD vector   |
-| $0332-$0333 | ISAVE  | Indirect SAVE vector   |
+| Address     | Name    | Description            |
+|-------------|---------|------------------------|
+| $0090-$0091 | CINV    | Hardware IRQ vector    |
+| $0092-$0093 | CBINV   | BRK interrupt vector   |
+| $0094-$0095 | NMINV   | NMI vector             |
+| $031A-$031B | IOPEN   | Indirect OPEN vector   |
+| $031C-$031D | ICLOSE  | Indirect CLOSE vector  |
+| $031E-$031F | ICHKIN  | Indirect CHKIN vector  |
+| $0320-$0321 | ICHKOUT | Indirect CHKOUT vector |
+| $0322-$0323 | ICLRCHN | Indirect CLRCHN vector |
+| $0324-$0325 | ICHRIN  | Indirect CHRIN vector  |
+| $0326-$0327 | IBSOUT  | Indirect CHROUT vector |
+| $0328-$0329 | ISTOP   | Indirect STOP vector   |
+| $032A-$032B | IGETIN  | Indirect GETIN vector  |
+| $032C-$032D | ICLALL  | Indirect CLALL vector  |
+| $032E-$032F | USRCMD  | User-defined vector    |
+| $0330-$0331 | ILOAD   | Indirect LOAD vector   |
+| $0332-$0333 | ISAVE   | Indirect SAVE vector   |
 
 ### Vector Hook Example
 

@@ -13,11 +13,11 @@ The PET KERNAL communicates with the drive using logical files and secondary add
 
 The drive's firmware (Commodore DOS) interprets commands and manages the file system.
 
-| Out of scope                    | See instead         |
-|---------------------------------|---------------------|
-| KERNAL file routine reference   | `system/file.md`    |
-| Complete DASM file I/O examples | `example/fileio.md` |
-| KERNAL jump table               | `system/kernal.md`  |
+| Out of scope                    | See instead        |
+|---------------------------------|--------------------|
+| KERNAL file routine reference   | `system/file.md`   |
+| Complete DASM file I/O examples | `example/file.md`  |
+| KERNAL jump table               | `system/kernal.md` |
 
 ## Contents
 
@@ -620,7 +620,7 @@ No PET code involved.
 
 **Step 3: Access files from PET code.**
 
-Use standard KERNAL routines as documented in `system/file.md` and `example/fileio.md`.
+Use standard KERNAL routines as documented in `system/file.md` and `example/file.md`.
 
 The emulator transparently handles the IEEE-488 protocol simulation.
 

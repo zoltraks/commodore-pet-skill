@@ -429,6 +429,10 @@ old_pcr:
 
         byte 0
 
+old_cinv:
+
+        word 0
+
 ; =========================================================
 ; ZP variables
 ; =========================================================
@@ -453,6 +457,12 @@ init:
         sta frame_ctr
         lda #>frame_data
         sta frame_hi
+
+        ; save original IRQ vector before replacing
+        lda CINV
+        sta old_cinv
+        lda CINV+1
+        sta old_cinv+1
 
         ; install IRQ handler
         sei
@@ -484,9 +494,9 @@ main_loop:
 exit:
 
         sei
-        lda #$E4                ; restore KERNAL IRQ handler (approximate)
+        lda old_cinv            ; restore original IRQ vector
         sta CINV
-        lda #$E4
+        lda old_cinv+1
         sta CINV+1
         cli
 

@@ -288,7 +288,7 @@ read_loop:
         iny
 
         lda STATUS              ; check status
-        bne read_done           ; bit 6 = EOF, bit 2 = timeout error
+        bne read_done           ; any non-zero STATUS = EOF or error; stop reading
 
         cpy #BUF_MAX            ; check buffer full
         bne read_loop
@@ -313,7 +313,7 @@ read_chkin_err:
         jsr CLOSE
         rts
 
-rdname:         byte "SCORES.DAT"
+rdname:         byte "SCORES.DAT,S,R"
 rdname_end:
 
 read_buf:       ds 256,0        ; 256-byte receive buffer
@@ -322,26 +322,30 @@ read_len:       byte 0          ; number of bytes read
 
 ### Checking STATUS for EOF
 
-The STATUS byte at `$0096` has these relevant bits for sequential file reads:
+The STATUS byte at `$0096` has these relevant bits for sequential file reads from disk:
 
-| Bit | Mask  | Meaning                             |
-|-----|-------|-------------------------------------|
-| 6   | `$40` | EOF: end of file reached            |
-| 2   | `$04` | Timeout/device not present on read  |
-| 3   | `$08` | Timeout/device not present on write |
+| Bit | Mask  | Device   | Meaning                              |
+|-----|-------|----------|--------------------------------------|
+| 7   | `$80` | Disk     | EOF: IEEE-488 EOI (end of file)      |
+| 6   | `$40` | Cassette | EOF: tape EOT (end of tape file)     |
+| 1   | `$02` | Disk     | Write timeout (drive not responding) |
+| 0   | `$01` | Disk     | Read timeout (drive not responding)  |
+| 4   | `$10` | Both     | Unrecoverable read error             |
 
-After the last byte of a file, CHRIN returns the last byte and sets bit 6.
+After the last byte of a disk file, CHRIN returns that byte and sets STATUS bit 7 (EOI).
 
-A `bne` after `lda STATUS` exits the read loop on any non-zero status, which covers both EOF and errors.
+The byte is valid on disk EOF -- store it before checking STATUS.
 
-To distinguish EOF from error:
+A `bne` after `lda STATUS` exits the read loop on any non-zero STATUS, which covers both EOF and errors.
+
+To distinguish disk EOF from error:
 
 ```asm
         lda STATUS
         beq read_more           ; zero = no status, continue
-        and #$40
-        bne is_eof              ; bit 6 = clean EOF
-        ; if we get here, STATUS was non-zero but not bit 6 = error
+        and #$80
+        bne is_eof              ; bit 7 = disk EOF (EOI); byte already stored
+        ; non-zero STATUS but bit 7 clear = error (timeout or hardware fault)
         jmp handle_error
 
 read_more:
@@ -350,7 +354,7 @@ read_more:
 
 is_eof:
 
-        ; clean end of file
+        ; clean end of file; last byte was already stored before this check
 ```
 
 ## Write a Sequential File
@@ -446,7 +450,7 @@ write_error:
         jsr CLOSE
         rts
 
-wrname:         byte "LOG.DAT"
+wrname:         byte "LOG.DAT,S,W"
 wrname_end:
 
 write_buf:      byte "HELLO WORLD"
@@ -876,7 +880,7 @@ cfg_chkin_err:
         sec
         rts
 
-cfgname:        byte "CONFIG.DAT"
+cfgname:        byte "CONFIG.DAT,S,R"
 cfgname_end:
 
 CFG_MAX = 128
@@ -934,14 +938,14 @@ Send `I0` through the command channel at program start to clear the banner.
 
 ## Quick Reference: Call Sequences
 
-| Operation           | Call sequence                                             |
-|---------------------|-----------------------------------------------------------|
-| Load PRG from disk  | SETNAM, SETLFS (SA=0), LOAD                               |
-| Save PRG to disk    | SETNAM, SETLFS (SA=1), SAVE                               |
-| Open SEQ read       | SETNAM, SETLFS (SA=2+), OPEN, CHKIN                       |
-| Read from SEQ file  | CHRIN (loop on STATUS=0), CLRCHN, CLOSE                   |
-| Open SEQ write      | SETNAM, SETLFS (SA=2+), OPEN, CHKOUT                      |
-| Write to SEQ file   | CHROUT (check STATUS), CLRCHN, CLOSE                      |
-| Send DOS command    | SETNAM (cmd as name), SETLFS (SA=15), OPEN, CLOSE         |
-| Read drive status   | SETNAM (empty), SETLFS (SA=15), OPEN, CHKIN, CHRIN, CLOSE |
-| Read disk directory | SETNAM ("$"), SETLFS (SA=0), OPEN, CHKIN, CHRIN loop      |
+| Operation           | Call sequence                                                           |
+|---------------------|-------------------------------------------------------------------------|
+| Load PRG from disk  | SETNAM, SETLFS (SA=0), LOAD                                             |
+| Save PRG to disk    | SETNAM, SETLFS (SA=1), SAVE                                             |
+| Open SEQ read       | SETNAM ("NAME,S,R"), SETLFS (SA=2+), OPEN, CHKIN                        |
+| Read from SEQ file  | CHRIN (store byte, then check STATUS bit 7 for disk EOF), CLRCHN, CLOSE |
+| Open SEQ write      | SETNAM ("NAME,S,W"), SETLFS (SA=2+), OPEN, CHKOUT                       |
+| Write to SEQ file   | CHROUT (check STATUS), CLRCHN, CLOSE                                    |
+| Send DOS command    | SETNAM (cmd as name), SETLFS (SA=15), OPEN, CLOSE                       |
+| Read drive status   | SETNAM (empty), SETLFS (SA=15), OPEN, CHKIN, CHRIN, CLOSE               |
+| Read disk directory | SETNAM ("$"), SETLFS (SA=0), OPEN, CHKIN, CHRIN loop                    |

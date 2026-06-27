@@ -37,9 +37,9 @@ Values are hexadecimal (`$NN`) unless noted decimal.
 | "How does PETSCII differ from ASCII?"       | **Yes**                                              |
 | "How do I scan the keyboard matrix?"        | **Yes** - use `system/keyboard.md`                   |
 | "Optimize this 6502 loop"                   | **Yes** - use `code/optimization.md`                 |
-| "How do I read a file from disk?"           | **Yes** - use `system/file.md` + `example/fileio.md` |
+| "How do I read a file from disk?"           | **Yes** - use `system/file.md` + `example/file.md` |
 | "How do I send a DOS command to the drive?" | **Yes** - use `system/disk.md`                       |
-| "How do I read the disk directory?"         | **Yes** - use `system/disk.md` + `example/fileio.md` |
+| "How do I read the disk directory?"         | **Yes** - use `system/disk.md` + `example/file.md` |
 | "General 6502 questions (not PET-specific)" | Partially - `hardware/cpu.md` covers the CPU broadly |
 | "C64-specific programming"                  | No - this skill is PET 3032 focused                  |
 
@@ -143,6 +143,7 @@ gh skill install YOURNAME/commodore-pet-skill commodore-pet
 ```
 commodore-pet-skill/
 ├── SKILL.md                       # Root router - load this first
+├── STYLE.md                       # Formatting rules for all skill documents
 ├── hardware/
 │   ├── cpu.md                     # 6502 registers, flags, instructions, interrupts
 │   ├── chip.md                    # VIA, PIA, CRTC registers, I/O decoding, VBLANK
@@ -163,7 +164,7 @@ commodore-pet-skill/
 │   └── dasm-assembler.md          # DASM syntax, directives, macros, conventions
 └── example/
     ├── general.md                 # BASIC stub, screen clear, VBLANK, IRQ skeleton
-    └── fileio.md                  # Complete DASM file I/O examples: load/save/read/write/command/directory
+    └── file.md                  # Complete DASM file I/O examples: load/save/read/write/command/directory
 ```
 
 The skill activates automatically when you ask about Commodore PET programming, 6502 assembly, DASM, PET hardware, or related topics.

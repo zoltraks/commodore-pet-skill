@@ -13,12 +13,12 @@ All KERNAL routine addresses for the PET 3032 are documented here.
 
 Do not use C64 addresses - they differ.
 
-| Out of scope               | See instead         |
-|----------------------------|---------------------|
-| DOS commands and directory | `system/disk.md`    |
-| Complete DASM examples     | `example/fileio.md` |
-| KERNAL jump table overview | `system/kernal.md`  |
-| Safe memory zones          | `system/memory.md`  |
+| Out of scope               | See instead        |
+|----------------------------|--------------------|
+| DOS commands and directory | `system/disk.md`   |
+| Complete DASM examples     | `example/file.md`  |
+| KERNAL jump table overview | `system/kernal.md` |
+| Safe memory zones          | `system/memory.md` |
 
 ## Contents
 
@@ -466,16 +466,16 @@ CHRIN   = $FFCF
 STATUS  = $0096
 
         jsr CHRIN               ; read one byte
-        pha                     ; save the byte
-        lda STATUS
+        sta byte_buf            ; store byte before checking STATUS
+        lda STATUS              ; check status AFTER storing
         bne got_eof_or_error    ; non-zero STATUS = stop reading
-        pla                     ; restore byte
-        ; process the byte...
+        ; process byte_buf...
         jmp read_loop
 
 got_eof_or_error:
 
-        pla                     ; discard byte (may be invalid on error)
+        ; byte_buf is valid on disk EOF (STATUS bit 7 = EOI) -- process it
+        ; byte_buf may be invalid on error (STATUS bits 0-5 without bit 7)
 ```
 
 ---
@@ -867,7 +867,7 @@ read_chkin_err:
 
 The correct sequence for writing a sequential file:
 
-1. Call SETNAM with filename.
+1. Call SETNAM with filename. For disk, include `,S,W` in the filename string (e.g. `"OUTPUT,S,W"`). Without `,W`, CBM DOS defaults to read mode and the write will fail.
 2. Call SETLFS with LFN, device, SA (use SA 2-14 for sequential).
 3. Call OPEN.
 4. Call CHKOUT with LFN to set as output channel.
