@@ -16,21 +16,22 @@ This file covers DASM for PET 3032 work in four progressive layers:
 
 | Section                  | Line | What it covers                                         |
 |--------------------------|------|--------------------------------------------------------|
-| Command Line             | 15   | Invocation flags: `-f3`, `-o`, `-I`, `-D`              |
-| Processor Directive      | 35   | `processor 6502` requirement                           |
-| Origin Directive         | 43   | `org $0401` and relocation                             |
-| Addressing Modes         | 59   | Immediate, ZP, absolute, indexed, indirect syntax      |
-| Data Directives          | 76   | `byte`, `word`, `hex`, `ds`, `dc`                      |
-| Labels and Equates       | 125  | Local labels, `equ`/`=`, forward references            |
-| Comments                 | 192  | Semicolon style, block comments                        |
-| Macros                   | 204  | `mac`/`endm`, arguments, nesting                       |
-| Conditional Assembly     | 226  | `ifconst`, `ifnconst`, `else`, `endif`                 |
-| Repeat Loops             | 249  | `repeat`/`repend`                                      |
-| Segments                 | 259  | `seg`, `seg.u` for BSS, linking multiple segments      |
-| Naming Conventions       | 270  | Label case, scope, PET-specific patterns               |
-| Column Alignment         | 284  | Tab stops for opcode/operand/comment columns           |
-| PET-Specific Conventions | 298  | BASIC stub, KERNAL equates, PETSCII strings            |
-| Common Errors            | 358  | Undefined label, wrong format flag, forward-ref issues |
+| Command Line             | 35   | Invocation flags: `-f3`, `-o`, `-I`, `-D`              |
+| Docker                   | 55   | Container-based invocation via dasm-container image    |
+| Processor Directive      | 77   | `processor 6502` requirement                           |
+| Origin Directive         | 85   | `org $0401` and relocation                             |
+| Addressing Modes         | 101  | Immediate, ZP, absolute, indexed, indirect syntax      |
+| Data Directives          | 118  | `byte`, `word`, `hex`, `ds`, `dc`                      |
+| Labels and Equates       | 167  | Local labels, `equ`/`=`, forward references            |
+| Comments                 | 234  | Semicolon style, block comments                        |
+| Macros                   | 246  | `mac`/`endm`, arguments, nesting                       |
+| Conditional Assembly     | 268  | `ifconst`, `ifnconst`, `else`, `endif`                 |
+| Repeat Loops             | 291  | `repeat`/`repend`                                      |
+| Segments                 | 301  | `seg`, `seg.u` for BSS, linking multiple segments      |
+| Naming Conventions       | 312  | Label case, scope, PET-specific patterns               |
+| Column Alignment         | 326  | Tab stops for opcode/operand/comment columns           |
+| PET-Specific Conventions | 340  | BASIC stub, KERNAL equates, PETSCII strings            |
+| Common Errors            | 400  | Undefined label, wrong format flag, forward-ref issues |
 
 ## Command Line
 
@@ -51,6 +52,28 @@ Common options:
 | `-Idir`     | Add include search path                   |
 
 For PET programs, always use `-f3` to produce raw binary loadable via BASIC `SYS` or monitor `L` command.
+
+## Docker
+
+The `dasm-container` project wraps DASM in a Debian-based Docker image.
+
+Build it once by cloning https://github.com/zoltraks/dasm-container and running:
+
+```bash
+./build.sh
+```
+
+This downloads DASM 2.20.14.1 and creates a local image named `dasm`.
+
+Invoke by mounting the project directory to `/src` inside the container:
+
+```bash
+docker run --rm -v $(pwd):/src dasm dasm source.asm -f3 -osource.prg
+```
+
+The container working directory is `/src`, so all paths in the command are relative to the mounted host directory.
+
+All flags from the Command Line table above apply unchanged.
 
 ## Processor Directive
 

@@ -69,11 +69,12 @@ Read these files for implementation techniques and algorithmic patterns.
 | `code/optimization.md` | Loop unrolling, branch tuning, size/speed trade-offs, compare-free countdown      |
 | `code/compression.md`  | $00-escape RLE for PET screen codes, byte-run encoding, frame-delta for animation |
 
-### Build Tool
+### Build and Utility Tools
 
-| File                        | Read when the task involves                                     |
-|-----------------------------|-----------------------------------------------------------------|
-| `utility/dasm-assembler.md` | DASM syntax, directives, macros, segments, command-line options |
+| File                        | Read when the task involves                                         |
+|-----------------------------|---------------------------------------------------------------------|
+| `utility/dasm-assembler.md` | DASM syntax, directives, macros, segments, command-line options     |
+| `utility/vice-emulator.md`  | Running PRG files in xpet, VICE monitor, breakpoints, debug scripts |
 
 ### Examples
 
@@ -104,6 +105,7 @@ Use this table to pick the right file without reading every option above.
 | Compress screen data or do frame-delta    | `code/compression.md`       |                       |
 | Optimize a loop or reduce code size       | `code/optimization.md`      |                       |
 | Write DASM source with macros or segments | `utility/dasm-assembler.md` |                       |
+| Run or debug a PRG in the VICE emulator   | `utility/vice-emulator.md`  |                       |
 | Build a complete animation player         | `example/general.md`        | `hardware/chip.md`    |
 | Build a complete file I/O program         | `example/file.md`           | `system/file.md`      |
 | BASIC stub + SYS1038                      | `example/general.md`        |                       |
