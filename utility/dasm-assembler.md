@@ -3,7 +3,7 @@
 ## Purpose
 
 > **Scope:** DASM syntax, directives, macros, segments, conditional assembly, command-line options
-> **Key items:** `processor 6502`, `org $0401`, `byte`, `word`, `hex`, `equ`, `mac`/`endm`, `-f3` raw binary
+> **Key items:** `processor 6502`, `org $0401`, `byte`, `word`, `hex`, `equ`, `mac`/`endm`, `-f1` PRG format
 
 This file covers DASM for PET 3032 work in four progressive layers:
 
@@ -25,7 +25,7 @@ This file covers DASM for PET 3032 work in four progressive layers:
 
 | Section              | Line | What it covers                                         |
 |----------------------|------|--------------------------------------------------------|
-| Command Line         | 45   | Invocation flags: `-f3`, `-o`, `-I`, `-D`              |
+| Command Line         | 45   | Invocation flags: `-f1`, `-o`, `-I`, `-D`              |
 | Docker               | 65   | dasm-container image: build, compile, includes, output |
 | Processor Directive  | 142  | `processor 6502` requirement                           |
 | Origin Directive     | 150  | `org $0401` and relocation                             |
@@ -45,22 +45,22 @@ For file structure, formatting conventions, naming rules, column alignment, comm
 ## Command Line
 
 ```bash
-dasm source.asm -f3 -obinary.bin
+dasm source.asm -f1 -osource.prg
 ```
 
 Common options:
 
-| Option      | Description                               |
-|-------------|-------------------------------------------|
-| `-f3`       | Output raw binary without header          |
-| `-f2`       | RAS format (origin + length + data hunks) |
-| `-f1`       | Default: 2-byte origin header + data      |
-| `-o<file>`  | Set output file name                      |
-| `-v#`       | Verbosity 0-4                             |
-| `-Dsym=val` | Predefine symbol                          |
-| `-Idir`     | Add include search path                   |
+| Option      | Description                                |
+|-------------|--------------------------------------------|
+| `-f1`       | Default: 2-byte load address header + data |
+| `-f2`       | RAS format (origin + length + data hunks)  |
+| `-f3`       | Output raw binary without header           |
+| `-o<file>`  | Set output file name                       |
+| `-v#`       | Verbosity 0-4                              |
+| `-Dsym=val` | Predefine symbol                           |
+| `-Idir`     | Add include search path                    |
 
-For PET programs, always use `-f3` to produce raw binary loadable via BASIC `SYS` or monitor `L` command.
+For PET programs, always use `-f1` to produce a PRG file with a 2-byte load address header. This is the format expected by BASIC `LOAD` and `RUN` -- the first two bytes tell the PET where to place the program in memory (matching the `org` directive).
 
 ## Docker
 
@@ -99,7 +99,7 @@ IMAGE=my-dasm ./build.sh
 The container working directory is `/src`. Mount the project directory there and pass DASM arguments after the image name:
 
 ```bash
-docker run --rm -v $(pwd):/src dasm dasm source.asm -f3 -osource.prg
+docker run --rm -v $(pwd):/src dasm dasm source.asm -f1 -osource.prg
 ```
 
 All flags from the Command Line table above apply unchanged. The output file is written back to the mounted host directory.
@@ -111,7 +111,7 @@ All flags from the Command Line table above apply unchanged. The output file is 
 ```bash
 # source uses: include "pet.inc"
 # pet.inc lives in src/
-docker run --rm -v $(pwd):/src dasm dasm src/main.asm -f3 -obuild/main.prg -Isrc
+docker run --rm -v $(pwd):/src dasm dasm src/main.asm -f1 -obuild/main.prg -Isrc
 ```
 
 ### Output Directories
@@ -120,7 +120,7 @@ DASM does not create output directories. If the `-o` path points to a subdirecto
 
 ```bash
 mkdir -p build
-docker run --rm -v $(pwd):/src dasm dasm src/main.asm -f3 -obuild/main.prg
+docker run --rm -v $(pwd):/src dasm dasm src/main.asm -f1 -obuild/main.prg
 ```
 
 ### Verbose Output
@@ -128,7 +128,7 @@ docker run --rm -v $(pwd):/src dasm dasm src/main.asm -f3 -obuild/main.prg
 Pass `-v3` to see symbol table and pass information:
 
 ```bash
-docker run --rm -v $(pwd):/src dasm dasm source.asm -f3 -osource.prg -v3
+docker run --rm -v $(pwd):/src dasm dasm source.asm -f1 -osource.prg -v3
 ```
 
 ### Checking the Version

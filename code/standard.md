@@ -39,7 +39,7 @@ Follow these rules when writing new `.asm` files or editing existing ones to kee
 
 ## Toolchain
 
-- **DASM**: macro assembler producing raw 6502 binary. Invoked as `dasm source.asm -f3 -obinary.bin`.
+- **DASM**: macro assembler producing 6502 PRG files. Invoked as `dasm source.asm -f1 -osource.prg`.
 - **Target CPU**: MOS 6502 (`processor 6502` directive required at the top of every file).
 - **Target hardware**: Commodore PET 3032 -- 32 KB RAM, screen RAM at `$8000`, 60 Hz VBLANK, KERNAL at `$FFD2`/`$FFE4`.
 - **Load address**: `$0401` via `org $0401`.

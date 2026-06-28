@@ -49,9 +49,9 @@ start:
         rts                     ; machine code starts here at $040F (1039 decimal)
 ```
 
-Assemble: `dasm stub.asm -f3 -ostub.bin`
+Assemble: `dasm stub.asm -f1 -ostub.prg`
 
-Load on PET: `LOAD "STUB.BIN",1` then `RUN` (executes `SYS 1038`).
+Load on PET: `LOAD "STUB",1` then `RUN` (executes `SYS 1038`).
 
 ## Clear Screen
 
