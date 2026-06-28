@@ -135,7 +135,7 @@ The common technique is to disable the parts of the system you do not need, whic
 ```asm
         tsx
         inx
-        inx             ; adjust if needed
+        inx                     ; adjust if needed
         txs
 ```
 
@@ -148,18 +148,14 @@ Keep stack usage moderate in IRQ handlers.
 A subroutine can read its own return address off the stack to find embedded data after the `JSR`, avoiding zero-page allocation:
 
 ```asm
-        ; Caller:
-        jsr my_routine
-        .byte $01, $02, $03   ; data table after JSR
+        jsr my_routine          ; Caller:
+        .byte $01, $02, $03     ; data table after JSR
 
-        ; Callee:
+my_routine:             ; Callee:
 
-my_routine:
-
-        pla                  ; pop low byte of return PC
+        pla                     ; pop low byte of return PC
         sta data_ptr
-        pla                  ; pop high byte
+        pla                     ; pop high byte
         sta data_ptr+1
-        ; Now data_ptr points past JSR
-        rts
+        rts                     ; Now data_ptr points past JSR
 ```

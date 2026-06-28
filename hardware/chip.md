@@ -82,10 +82,9 @@ The interrupt flag remains set until the PIA is acknowledged by **reading PIA 1 
 If a custom IRQ handler does not read $E813, the interrupt re-fires immediately after `RTI`, locking the CPU.
 
 ```asm
-; Inside a custom VBLANK IRQ handler:
 my_vblank_irq:
 
-        bit $E813               ; read PIA1 CRB to acknowledge VBLANK IRQ
+        bit $E813               ; Inside a custom VBLANK IRQ handler: read PIA1 CRB to acknowledge VBLANK IRQ
         ; ... handler body ...
         rti
 ```
@@ -99,9 +98,9 @@ To wait for VBLANK without enabling interrupts:
 ```asm
 wait_vblank:
 
-        lda $E840       ; VIA PORT B
-        and #$20        ; mask bit 5 (screen retrace)
-        beq wait_vblank ; wait until high
+        lda $E840               ; VIA PORT B
+        and #$20                ; mask bit 5 (screen retrace)
+        beq wait_vblank         ; wait until high
 ```
 
 ### Cassette Motor Control
@@ -111,13 +110,12 @@ Motor control uses PIA 1 CRB bit 2 (CB2 output).
 Bit 2 low = motor on. Bit 2 high = motor off.
 
 ```asm
-        lda $E813       ; PIA 1 CRB
-        and #$FB        ; clear bit 2 -> motor on
+        lda $E813               ; PIA 1 CRB
+        and #$FB                ; clear bit 2 -> motor on
         sta $E813
 
-        ; turn motor off:
-        lda $E813
-        ora #$04        ; set bit 2 -> motor off
+        lda $E813               ; turn motor off:
+        ora #$04                ; set bit 2 -> motor off
         sta $E813
 ```
 
@@ -186,9 +184,8 @@ PCR_L   = $08           ; CA2 low:  lowercase / text charset
 
 ```asm
         lda #$FF
-        sta $E844       ; T1C-L = $FF
-        sta $E845       ; T1C-H = $FF -> starts countdown
-        ; T1 now counting down from $FFFF at 1 MHz
+        sta $E844               ; T1C-L = $FF
+        sta $E845               ; T1C-H = $FF -> starts countdown; T1 now counting down from $FFFF at 1 MHz
 ```
 
 ### VIA Sound via CB2 and Shift Register
@@ -235,10 +232,10 @@ The PET 3032 uses board #3.
 ### CRTC Register Access
 
 ```asm
-        lda #$0C        ; select R12 (screen start high)
-        sta $E880       ; write to address register
-        lda #$80        ; screen high byte
-        sta $E881       ; write to data register
+        lda #$0C                ; select R12 (screen start high)
+        sta $E880               ; write to address register
+        lda #$80                ; screen high byte
+        sta $E881               ; write to data register
 ```
 
 ## Character Generator
@@ -256,13 +253,12 @@ The PET 3032 uses board #3.
 
 ```asm
         lda PCR
-        and #$F7        ; clear bit 3 (CA2 low)
-        ora #$08        ; ensure CA2 low -> lowercase/text
+        and #$F7                ; clear bit 3 (CA2 low)
+        ora #$08                ; ensure CA2 low -> lowercase/text
         sta PCR
 
-        ; or switch back to uppercase/graphics:
-        lda PCR
-        ora #$0C        ; CA2 high
+        lda PCR                 ; or switch back to uppercase/graphics:
+        ora #$0C                ; CA2 high
         sta PCR
 ```
 

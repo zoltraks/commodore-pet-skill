@@ -9,6 +9,8 @@ This document defines the formatting conventions for all files in the commodore-
 
 Follow these rules when adding new files or editing existing ones to keep style uniform across the skill.
 
+For the assembly coding standard (file structure, labels, comments, section headers, naming, column alignment), see `code/standard.md`.
+
 ## File Header Structure
 
 Every topic file follows this top-to-bottom layout:
@@ -82,9 +84,7 @@ Write qualifiers as plain sentences in the section body instead.
 
 ## Tables
 
-Table formatting follows the rules in `/home/desktop/PROJECT/ROOT/ai-dev/docs/TABLE.md`.
-
-The key rules are summarised here.
+The key formatting rules are summarised here.
 
 ### Separators
 
@@ -95,9 +95,9 @@ Use hyphens flush against the pipe characters -- no spaces between pipes and hyp
 The number of hyphens in each separator cell equals the column width plus two (one for each side space).
 
 ```markdown
-| Name   | Address | Description             |
-|--------|---------|-------------------------|
-| CHROUT | `$FFD2` | Output byte to channel  |
+| Name   | Address | Description            |
+|--------|---------|------------------------|
+| CHROUT | `$FFD2` | Output byte to channel |
 ```
 
 ### Column Widths
@@ -111,6 +111,14 @@ Remove any padding that exceeds the widest cell -- do not over-pad.
 The minimum column width is three characters.
 
 Include backticks, asterisks, and all other Markdown formatting characters in the width measurement.
+
+### Reformat After Editing
+
+When you add, remove, or modify any cell in an existing table, you must reformat the entire table afterwards.
+
+Adding or shortening a cell can change the widest cell in a column, which means every other cell in that column -- and the separator row -- must be re-padded to match.
+
+A table is only considered fully edited when every column is re-padded to its new width and every separator cell matches the new column width plus two.
 
 ### Addresses and Values in Tables
 
@@ -134,16 +142,17 @@ Do not leave a blank line as the first or last line inside a code block.
 
 ### Column Layout
 
-Assembly source uses the column positions defined in `utility/dasm-assembler.md`.
+Assembly source uses the column positions defined in `code/standard.md`.
 
-| Element                         | Position             |
-|---------------------------------|----------------------|
-| Labels                          | Column 1 (no indent) |
-| Instructions and directives     | 8-space indent       |
-| Global equate `=`               | 8-space indent       |
-| Zero-page equate `=`            | 16-space indent      |
-| Inline comments on equates      | Column 25            |
-| Inline comments on instructions | Column 33            |
+| Element                         | Position                                           |
+|---------------------------------|----------------------------------------------------|
+| Labels                          | Column 1 (no indent)                               |
+| Instructions and directives     | 8-space indent                                     |
+| Global equate `=`               | 8-space indent                                     |
+| Zero-page equate `=`            | 16-space indent                                    |
+| Inline comments on equates      | Column 25                                          |
+| Inline comments on labels       | Column 25                                          |
+| Inline comments on instructions | Column 33, 41, 49, 57, 65, ... (tab stops every 8) |
 
 ### Equate Style
 
@@ -287,13 +296,13 @@ Use a hyphen for multi-word names: `dasm-assembler.md`.
 
 ### Folder Assignment
 
-| Folder      | Contents                                        |
-|-------------|-------------------------------------------------|
-| `hardware/` | Chip registers, timing, hardware-level facts    |
-| `system/`   | OS routines, memory layout, I/O protocols       |
-| `code/`     | Implementation techniques, algorithmic patterns |
-| `utility/`  | Tools, assembler, build system                  |
-| `example/`  | Complete runnable programs and templates        |
+| Folder      | Contents                                                          |
+|-------------|-------------------------------------------------------------------|
+| `hardware/` | Chip registers, timing, hardware-level facts                      |
+| `system/`   | OS routines, memory layout, I/O protocols                         |
+| `code/`     | Implementation techniques, algorithmic patterns, coding standards |
+| `utility/`  | Tools, assembler, build system                                    |
+| `example/`  | Complete runnable programs and templates                          |
 
 ### Required Sections
 

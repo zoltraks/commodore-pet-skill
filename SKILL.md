@@ -48,26 +48,27 @@ Read these files for chip register behavior, timing, and hardware-level facts.
 
 Read these files for OS routines, memory layout, and I/O protocols.
 
-| File                 | Read when the task involves                                                                       |
-|----------------------|---------------------------------------------------------------------------------------------------|
-| `system/memory.md`   | RAM layout, zero page map, BASIC workspace, screen RAM range, safe zones for machine code         |
-| `system/kernal.md`   | KERNAL jump table ($FFB7-$FFEA), indirect vectors, CHROUT/GETIN/CLALL                             |
-| `system/irq.md`      | VBLANK IRQ setup, CINV vector, PIA1 CRB acknowledgement, handler template, VBLANK polling         |
-| `system/screen.md`   | Screen RAM layout, PETSCII vs screen codes, control codes, reverse video, cursor, scrolling       |
-| `system/load.md`     | Loading PRG files from tape or disk, LOAD call sequence, tape file format                         |
-| `system/keyboard.md` | PIA 1 keyboard matrix scan, GETIN vs direct scan, special keys, multi-key detection               |
-| `system/file.md`     | Full file I/O: SETNAM/SETLFS/OPEN/CLOSE/CHKIN/CHKOUT/CLRCHN/CHRIN/CHROUT/LOAD/SAVE               |
-| `system/disk.md`     | DOS commands, command channel (SA=15), directory reading, drive errors, disk images               |
+| File                 | Read when the task involves                                                                 |
+|----------------------|---------------------------------------------------------------------------------------------|
+| `system/memory.md`   | RAM layout, zero page map, BASIC workspace, screen RAM range, safe zones for machine code   |
+| `system/kernal.md`   | KERNAL jump table ($FFB7-$FFEA), indirect vectors, CHROUT/GETIN/CLALL                       |
+| `system/irq.md`      | VBLANK IRQ setup, CINV vector, PIA1 CRB acknowledgement, handler template, VBLANK polling   |
+| `system/screen.md`   | Screen RAM layout, PETSCII vs screen codes, control codes, reverse video, cursor, scrolling |
+| `system/load.md`     | Loading PRG files from tape or disk, LOAD call sequence, tape file format                   |
+| `system/keyboard.md` | PIA 1 keyboard matrix scan, GETIN vs direct scan, special keys, multi-key detection         |
+| `system/file.md`     | Full file I/O: SETNAM/SETLFS/OPEN/CLOSE/CHKIN/CHKOUT/CLRCHN/CHRIN/CHROUT/LOAD/SAVE          |
+| `system/disk.md`     | DOS commands, command channel (SA=15), directory reading, drive errors, disk images         |
 
 ### Code Patterns
 
 Read these files for implementation techniques and algorithmic patterns.
 
-| File                   | Read when the task involves                                                       |
-|------------------------|-----------------------------------------------------------------------------------|
-| `code/bit.md`          | Bit shifts, rotates, masking, flag testing, 16-bit pointer increment/decrement    |
-| `code/optimization.md` | Loop unrolling, branch tuning, size/speed trade-offs, compare-free countdown      |
-| `code/compression.md`  | $00-escape RLE for PET screen codes, byte-run encoding, frame-delta for animation |
+| File                   | Read when the task involves                                                                             |
+|------------------------|---------------------------------------------------------------------------------------------------------|
+| `code/standard.md`     | File structure, formatting, labels, comments, section headers, naming, column alignment, flag semantics |
+| `code/bit.md`          | Bit shifts, rotates, masking, flag testing, 16-bit pointer increment/decrement                          |
+| `code/optimization.md` | Loop unrolling, branch tuning, size/speed trade-offs, compare-free countdown                            |
+| `code/compression.md`  | $00-escape RLE, byte-run encoding, frame-delta, LZ4 block format for animation                          |
 
 ### Build and Utility Tools
 
@@ -89,26 +90,30 @@ Read these files when you need a complete, runnable starting point.
 
 Use this table to pick the right file without reading every option above.
 
-| Task                                      | Open first                  | Open second if needed |
-|-------------------------------------------|-----------------------------|-----------------------|
-| Write or explain a 6502 instruction       | `hardware/cpu.md`           |                       |
-| Use VIA, PIA, or CRTC registers           | `hardware/chip.md`          |                       |
-| Generate a tone on the PET speaker        | `hardware/sound.md`         |                       |
-| Find a safe memory address for code/data  | `system/memory.md`          |                       |
-| Call a KERNAL routine by address          | `system/kernal.md`          |                       |
-| Set up a VBLANK IRQ or poll VBLANK        | `system/irq.md`             |                       |
-| Write to the screen or use PETSCII        | `system/screen.md`          |                       |
-| Load a PRG or data file from tape or disk | `system/load.md`            |                       |
-| Scan the keyboard or detect keypresses    | `system/keyboard.md`        |                       |
-| Open, read, or write a sequential file    | `system/file.md`            | `example/file.md`     |
-| Send a DOS command or read the directory  | `system/disk.md`            | `example/file.md`     |
-| Compress screen data or do frame-delta    | `code/compression.md`       |                       |
-| Optimize a loop or reduce code size       | `code/optimization.md`      |                       |
-| Write DASM source with macros or segments | `utility/dasm-assembler.md` |                       |
-| Run or debug a PRG in the VICE emulator   | `utility/vice-emulator.md`  |                       |
-| Build a complete animation player         | `example/general.md`        | `hardware/chip.md`    |
-| Build a complete file I/O program         | `example/file.md`           | `system/file.md`      |
-| BASIC stub + SYS1038                      | `example/general.md`        |                       |
+| Task                                      | Open first                  | Open second if needed       |
+|-------------------------------------------|-----------------------------|-----------------------------|
+| Write or explain a 6502 instruction       | `hardware/cpu.md`           |                             |
+| Use VIA, PIA, or CRTC registers           | `hardware/chip.md`          |                             |
+| Generate a tone on the PET speaker        | `hardware/sound.md`         |                             |
+| Find a safe memory address for code/data  | `system/memory.md`          |                             |
+| Call a KERNAL routine by address          | `system/kernal.md`          |                             |
+| Set up a VBLANK IRQ or poll VBLANK        | `system/irq.md`             |                             |
+| Write to the screen or use PETSCII        | `system/screen.md`          |                             |
+| Load a PRG or data file from tape or disk | `system/load.md`            |                             |
+| Scan the keyboard or detect keypresses    | `system/keyboard.md`        |                             |
+| Open, read, or write a sequential file    | `system/file.md`            | `example/file.md`           |
+| Send a DOS command or read the directory  | `system/disk.md`            | `example/file.md`           |
+| Structure or format a DASM source file    | `code/standard.md`          | `utility/dasm-assembler.md` |
+| Label, comment, or section header rules   | `code/standard.md`          |                             |
+| Check which instructions affect flags     | `hardware/cpu.md`           | `code/standard.md`          |
+| Compress screen data or do frame-delta    | `code/compression.md`       |                             |
+| Decompress LZ4 block data                 | `code/compression.md`       | `code/standard.md`          |
+| Optimize a loop or reduce code size       | `code/optimization.md`      |                             |
+| Write DASM source with macros or segments | `utility/dasm-assembler.md` |                             |
+| Run or debug a PRG in the VICE emulator   | `utility/vice-emulator.md`  |                             |
+| Build a complete animation player         | `example/general.md`        | `hardware/chip.md`          |
+| Build a complete file I/O program         | `example/file.md`           | `system/file.md`            |
+| BASIC stub + SYS1038                      | `example/general.md`        | `code/standard.md`          |
 
 ## Extending This Skill
 

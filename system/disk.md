@@ -137,9 +137,11 @@ read_stat_done:
         jsr CLRCHN
         rts
 
-status_buf:     byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-                byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-                byte 0,0,0,0,0,0,0,0,0,0
+status_buf:
+
+        byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+        byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+        byte 0,0,0,0,0,0,0,0,0,0
 ```
 
 ### Sending a DOS Command
@@ -166,13 +168,14 @@ send_cmd:
         lda #15
         jsr CLOSE               ; close sends the command and waits
 
-        ; Reopen command channel to read status
-        jsr open_cmd_ch
+        jsr open_cmd_ch         ; Reopen command channel to read status
         jsr read_status
-        ; check status_buf[0..1] for "00" = success
-        rts
+        rts                     ; check status_buf[0..1] for "00" = success
 
-cmd:        byte "S0:OLDNAME"
+cmd:
+
+        byte "S0:OLDNAME"
+
 cmd_end:
 ```
 
@@ -201,7 +204,10 @@ I0
 ```
 
 ```asm
-init_cmd:   byte "I0"
+init_cmd:
+
+        byte "I0"
+
 init_end:
 ```
 
@@ -220,7 +226,10 @@ S0:FILENAME
 The `0:` prefix specifies drive 0 (use `1:` for drive 1 on dual drives).
 
 ```asm
-scratch_cmd:    byte "S0:MYFILE"
+scratch_cmd:
+
+        byte "S0:MYFILE"
+
 scratch_end:
 ```
 
@@ -235,7 +244,10 @@ R0:NEWNAME=0:OLDNAME
 ```
 
 ```asm
-rename_cmd:     byte "R0:NEWNAME=0:OLDNAME"
+rename_cmd:
+
+        byte "R0:NEWNAME=0:OLDNAME"
+
 rename_end:
 ```
 
@@ -246,7 +258,10 @@ C0:DEST=0:SOURCE
 ```
 
 ```asm
-copy_cmd:       byte "C0:BACKUP=0:ORIGINAL"
+copy_cmd:
+
+        byte "C0:BACKUP=0:ORIGINAL"
+
 copy_end:
 ```
 
@@ -269,7 +284,10 @@ N0:DISKNAME,ID
 The disk ID is a two-character identifier stored in the disk header.
 
 ```asm
-format_cmd:     byte "N0:MY DISK,01"
+format_cmd:
+
+        byte "N0:MY DISK,01"
+
 format_end:
 ```
 
@@ -284,7 +302,10 @@ V0
 ```
 
 ```asm
-validate_cmd:   byte "V0"
+validate_cmd:
+
+        byte "V0"
+
 validate_end:
 ```
 
@@ -358,7 +379,9 @@ open_directory:
         jsr CHKIN               ; set as input channel
         rts
 
-dir_name:   byte "$"
+dir_name:
+
+        byte "$"
 ```
 
 ### Skipping the BASIC Load Header
@@ -391,12 +414,10 @@ After skipping the header, each entry consists of:
 
 read_dir_line:
 
-        ; Skip next-line pointer (2 bytes)
-        jsr CHRIN
+        jsr CHRIN               ; Skip next-line pointer (2 bytes)
         jsr CHRIN               ; skip low and high of next pointer
 
-        ; Check for end-of-directory: both line number bytes = 0
-        jsr CHRIN               ; block count low
+        jsr CHRIN               ; Check for end-of-directory: block count low
         pha
         jsr CHRIN               ; block count high
         tax
@@ -405,14 +426,11 @@ read_dir_line:
         bne not_end
         cpx #0
         bne not_end
-        ; both zero = end of directory
-        ldy #0
+        ldy #0                  ; both zero = end of directory
         rts
 
 not_end:
-        ; Store block count (low byte in A, high in X) if needed
-        ; Read text bytes until 00
-        ldy #0
+        ldy #0                  ; Store block count (low byte in A, high in X) if needed; read text bytes until 00
 
 read_line_loop:
 
@@ -437,11 +455,13 @@ dir_eof:
         ldy #0
         rts
 
-line_buf:   byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-            byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-            byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-            byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-            byte 0
+line_buf:
+
+        byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+        byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+        byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+        byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+        byte 0
 ```
 
 ### Closing the Directory
@@ -513,19 +533,16 @@ Check for code 73 on first open and discard it - it is not an error.
 ; After an OPEN or file close, check drive status:
 check_drive_error:
 
-        ; Read first two characters of status_buf
-        lda status_buf          ; tens digit of error code
+        lda status_buf          ; Read first two chars: tens digit of error code
         cmp #'0'                ; ASCII '0'
         bne has_error
         lda status_buf+1        ; units digit
         cmp #'0'
         bne has_error
-        ; "00" = no error
-        rts
+        rts                     ; "00" = no error
 
 has_error:
-        ; error: status_buf contains the full string
-        rts
+        rts                     ; error: status_buf contains the full string
 ```
 
 ## Disk Images and Emulators
@@ -627,8 +644,7 @@ The emulator transparently handles the IEEE-488 protocol simulation.
 **Example sequence in PET code after image is mounted:**
 
 ```asm
-        ; Load a file from the mounted image
-        lda #6
+        lda #6                  ; Load a file from the mounted image
         ldx #<fname
         ldy #>fname
         jsr SETNAM
@@ -676,15 +692,15 @@ They are the standard approach for ML programs.
 All KERNAL calls are documented in `system/file.md`.
 
 ```asm
-jsr SETNAM
-jsr SETLFS
-jsr OPEN
-ldx #2
-jsr CHKIN
-jsr CHRIN   ; read bytes
-jsr CLRCHN
-lda #2
-jsr CLOSE
+        jsr SETNAM
+        jsr SETLFS
+        jsr OPEN
+        ldx #2
+        jsr CHKIN
+        jsr CHRIN               ; read bytes
+        jsr CLRCHN
+        lda #2
+        jsr CLOSE
 ```
 
 ### Direct IEEE-488 Bus Access

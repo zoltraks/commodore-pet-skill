@@ -83,7 +83,7 @@ my_irq:
         pha                     ; save Y
         cld                     ; mandatory: NMOS 6502 does not clear D on IRQ entry
         bit $E813               ; read PIA1 CRB -- acknowledges VBLANK IRQ
-        ; --- your handler code here ---
+        ; ... your handler code here ...
         pla
         tay
         pla
@@ -118,7 +118,7 @@ my_irq:
         pha
         cld
         bit $E813               ; acknowledge VBLANK
-        ; --- your code here ---
+        ; ... your code here ...
         pla
         tay
         pla
@@ -159,10 +159,10 @@ The polling approach does not require reading `$E813`.
 
 ## Common Mistakes
 
-| Mistake                          | Consequence                         | Fix                                    |
-|----------------------------------|-------------------------------------|----------------------------------------|
-| Skip `$E813` read                | IRQ re-fires, CPU locked            | Always read `$E813` in VBLANK handler  |
-| Skip `CLD`                       | Wrong ADC/SBC results in handler    | Add `CLD` after register saves         |
+| Mistake                          | Consequence                           | Fix                                     |
+|----------------------------------|---------------------------------------|-----------------------------------------|
+| Skip `$E813` read                | IRQ re-fires, CPU locked              | Always read `$E813` in VBLANK handler   |
+| Skip `CLD`                       | Wrong ADC/SBC results in handler      | Add `CLD` after register saves          |
 | No `SEI`/`CLI` around CINV write | IRQ fires during partial vector write | Always bracket CINV update with SEI/CLI |
-| Don't restore CINV on exit       | KERNAL broken after program exits   | Save `old_cinv`, restore in cleanup    |
-| Use `JSR` to chain               | `RTI` returns to wrong address      | Use `JMP` to chain to KERNAL handler   |
+| Don't restore CINV on exit       | KERNAL broken after program exits     | Save `old_cinv`, restore in cleanup     |
+| Use `JSR` to chain               | `RTI` returns to wrong address        | Use `JMP` to chain to KERNAL handler    |

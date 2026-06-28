@@ -40,18 +40,15 @@ It returns `$00` in A if no key is waiting.
 ```asm
 GETIN   = $FFE4
 
-; Wait for any key press:
 wait_key:
 
-        jsr GETIN
+        jsr GETIN               ; Wait for any key press
         beq wait_key            ; loop until A != 0
-        ; A now contains PETSCII code of pressed key
-        rts
+        rts                     ; A now contains PETSCII code of pressed key
 
-; Poll without blocking:
 poll_key:
 
-        jsr GETIN               ; returns 0 if no key
+        jsr GETIN               ; Poll without blocking: returns 0 if no key
         rts
 ```
 
@@ -67,12 +64,9 @@ The STOP key has a dedicated KERNAL routine at $FFE1.
 STOP    = $FFE1
 
         jsr STOP                ; sets Z=1 if STOP is held
-        beq stop_pressed
-        ; continue normally
+        beq stop_pressed        ; continue normally if not pressed
 
-stop_pressed:
-
-        ; handle break
+stop_pressed:           ; handle break
 ```
 
 The STOP key is also returned by GETIN as PETSCII `$03` (ETX / RUN/STOP).
@@ -114,12 +108,9 @@ This allows detection of multiple simultaneous keys.
 PIA1_PA = $E810         ; PIA 1 PORT A: row select
 PIA1_PB = $E812         ; PIA 1 PORT B: column data
 
-; Scan row 1 (Q W E R T Y U I):
-        lda #$FD                ; select row 1
+        lda #$FD                ; select row 1 (Q W E R T Y U I)
         sta PIA1_PA
-        lda PIA1_PB             ; read columns
-        ; bit 7 = Q, bit 6 = W, ..., bit 0 = I
-        ; bit = 0 means key is pressed
+        lda PIA1_PB             ; read columns: bit 7=Q, bit 6=W, ..., bit 0=I; 0 = pressed
 ```
 
 ### Check a Specific Key
@@ -137,7 +128,9 @@ To test whether 'Q' (row 1, column 7) is pressed:
 ### Scan All Rows
 
 ```asm
-key_table:  byte $FE,$FD,$FB,$F7,$EF,$DF,$BF,$7F     ; 8 rows
+key_table:              ; 8 rows
+
+        byte $FE,$FD,$FB,$F7,$EF,$DF,$BF,$7F
 
 scan_all:
 
@@ -154,7 +147,9 @@ scan_loop:
         bne scan_loop
         rts
 
-key_state:  byte 0,0,0,0,0,0,0,0   ; 8 bytes: one per row
+key_state:              ; 8 bytes: one per row
+
+        byte 0,0,0,0,0,0,0,0
 ```
 
 After `scan_all`, each byte in `key_state` holds the column bitmap for that row.
@@ -168,23 +163,18 @@ Direct scanning is required for simultaneous key detection.
 GETIN returns only one key at a time and cannot detect chords.
 
 ```asm
-; Check if both SHIFT keys are pressed simultaneously:
-; Left shift: row 6, bit 1
-; Right shift: row 6, bit 5
-
 check_shift:
 
-        lda #$BF                ; select row 6
+        lda #$BF                ; select row 6 (check both SHIFT keys pressed)
         sta PIA1_PA
         lda PIA1_PB
-        and #$22                ; mask bits 5 and 1
+        and #$22                ; mask bits 5 and 1 (left shift=bit 1, right shift=bit 5)
         beq both_shifts         ; both 0 = both pressed
         cmp #$20
         beq right_shift_only
         cmp #$02
         beq left_shift_only
-        ; no shift
-        rts
+        rts                     ; no shift
 
 both_shifts:
 right_shift_only:

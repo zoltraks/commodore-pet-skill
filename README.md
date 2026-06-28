@@ -37,9 +37,12 @@ Values are hexadecimal (`$NN`) unless noted decimal.
 | "How does PETSCII differ from ASCII?"       | **Yes**                                              |
 | "How do I scan the keyboard matrix?"        | **Yes** - use `system/keyboard.md`                   |
 | "Optimize this 6502 loop"                   | **Yes** - use `code/optimization.md`                 |
-| "How do I read a file from disk?"           | **Yes** - use `system/file.md` + `example/file.md` |
+| "How should I structure my DASM source?"    | **Yes** - use `code/standard.md`                     |
+| "Which instructions affect flags?"          | **Yes** - use `hardware/cpu.md` + `code/standard.md` |
+| "How do I decompress LZ4 data?"             | **Yes** - use `code/compression.md`                  |
+| "How do I read a file from disk?"           | **Yes** - use `system/file.md` + `example/file.md`   |
 | "How do I send a DOS command to the drive?" | **Yes** - use `system/disk.md`                       |
-| "How do I read the disk directory?"         | **Yes** - use `system/disk.md` + `example/file.md` |
+| "How do I read the disk directory?"         | **Yes** - use `system/disk.md` + `example/file.md`   |
 | "General 6502 questions (not PET-specific)" | Partially - `hardware/cpu.md` covers the CPU broadly |
 | "C64-specific programming"                  | No - this skill is PET 3032 focused                  |
 
@@ -158,9 +161,10 @@ commodore-pet-skill/
 │   ├── file.md                    # KERNAL file I/O: SETNAM/SETLFS/OPEN/CLOSE/CHKIN/CHKOUT/CHRIN/CHROUT/LOAD/SAVE
 │   └── disk.md                    # DOS commands, command channel, directory, error codes, disk images, emulators
 ├── code/
+│   ├── standard.md                # Assembly engineering standards: file structure, formatting, labels, comments, naming, flag semantics
 │   ├── bit.md                     # Bit ops, masks, pointers, stack tricks
 │   ├── optimization.md            # Size/speed trade-offs, unrolled loops, branch tuning
-│   └── compression.md             # $00-escape RLE, byte-run, frame-delta
+│   └── compression.md             # $00-escape RLE, byte-run, frame-delta, LZ4
 ├── utility/
 │   └── dasm-assembler.md          # DASM syntax, directives, macros, conventions
 └── example/

@@ -51,25 +51,20 @@ SCREEN  = $8000
 ### Calculating Screen Address from (row, col)
 
 ```asm
-; X = row (0-24), Y = column (0-39)
-; Result written to $FB (lo) and $FC (hi); caller saves/restores if needed.
-
 calc_screen_addr:
 
-        lda #<SCREEN
+        lda #<SCREEN            ; X = row (0-24), Y = column (0-39); result in $FB (lo) and $FC (hi); caller saves/restores if needed.
         sta $FB
         lda #>SCREEN
         sta $FC
-        ; add row * 40
-        lda row_mult_lo,x
+        lda row_mult_lo,x       ; add row * 40
         clc
         adc $FB
         sta $FB
         lda row_mult_hi,x
         adc $FC
         sta $FC
-        ; add column
-        tya
+        tya                     ; add column
         clc
         adc $FB
         sta $FB
@@ -212,9 +207,7 @@ Set bit 7 on a row's screen codes to highlight the current menu selection. Clear
 ```asm
 SCREEN      = $8000
 
-; highlight_row: set reverse video on all 40 chars in screen row X (0-24)
-; Borrows $FB-$FC; saves and restores both.
-highlight_row:
+highlight_row:          ; set reverse video on all 40 chars in screen row X (0-24); borrows $FB-$FC; saves and restores both.
 
         lda $FC
         pha
@@ -237,9 +230,7 @@ highlight_loop:
         sta $FC
         rts
 
-; unhighlight_row: clear reverse video on all 40 chars in screen row X
-; Borrows $FB-$FC; saves and restores both.
-unhighlight_row:
+unhighlight_row:        ; clear reverse video on all 40 chars in screen row X; borrows $FB-$FC; saves and restores both.
 
         lda $FC
         pha
@@ -262,8 +253,7 @@ unhighlight_loop:
         sta $FC
         rts
 
-; get_row_ptr: set $FB/$FC to address of screen row X (internal helper)
-get_row_ptr:
+get_row_ptr:            ; set $FB/$FC to address of screen row X (internal helper)
 
         lda #<SCREEN
         sta $FB
@@ -374,11 +364,11 @@ Key screen codes for demoscene and animation:
 The most common animation primitive is alternating solid blocks and spaces:
 
 ```asm
-        lda #$A0        ; solid block (reversed space)
-        sta SCREEN,x    ; filled cell
+        lda #$A0                ; solid block (reversed space)
+        sta SCREEN,x            ; filled cell
 
-        lda #$20        ; space
-        sta SCREEN,x    ; empty cell
+        lda #$20                ; space
+        sta SCREEN,x            ; empty cell
 ```
 
 ### Checkerboard Fill
@@ -388,7 +378,10 @@ fill_checker:
 
         ldx #$00
         lda #$20
-.loop   sta SCREEN,x            ; even column: space
+
+.loop
+
+        sta SCREEN,x            ; even column: space
         lda #$A0
         sta SCREEN+1,x          ; odd column: solid
         lda #$20
@@ -408,24 +401,25 @@ Pass the window parameters as a 4-byte block in free RAM; put the block's addres
 ```asm
 SCREEN      = $8000
 
-BOX_TL      = $66        ; corner top-left
-BOX_TR      = $67        ; corner top-right
-BOX_BR      = $68        ; corner bottom-right
-BOX_BL      = $69        ; corner bottom-left
-BOX_HTOP    = $62        ; horizontal top edge
-BOX_HBOT    = $64        ; horizontal bottom edge
-BOX_VLEFT   = $65        ; vertical left edge
-BOX_VRIGHT  = $63        ; vertical right edge
+BOX_TL      = $66       ; corner top-left
+BOX_TR      = $67       ; corner top-right
+BOX_BR      = $68       ; corner bottom-right
+BOX_BL      = $69       ; corner bottom-left
+BOX_HTOP    = $62       ; horizontal top edge
+BOX_HBOT    = $64       ; horizontal bottom edge
+BOX_VLEFT   = $65       ; vertical left edge
+BOX_VRIGHT  = $63       ; vertical right edge
 ```
 
 Define window parameters as data anywhere in free RAM:
 
 ```asm
 win1:
-        byte 5          ; row (0-24)
-        byte 10         ; col (0-39)
-        byte 20         ; width including borders
-        byte 8          ; height including borders
+
+        byte 5                  ; row (0-24)
+        byte 10                 ; col (0-39)
+        byte 20                 ; width including borders
+        byte 8                  ; height including borders
 
         ldx #<win1
         ldy #>win1
@@ -435,10 +429,7 @@ win1:
 Multiple windows use separate labelled byte blocks -- no naming conflicts, no ZP allocation.
 
 ```asm
-; draw_box_xy: X = low byte, Y = high byte of 4-byte parameter block
-; Block layout: byte row, col, width, height
-; Borrows $FB-$FD; saves and restores all three.
-draw_box_xy:
+draw_box_xy:            ; X = low byte, Y = high byte of 4-byte parameter block; layout: row, col, width, height; borrows $FB-$FD; saves and restores all three.
 
         lda $FD
         pha
@@ -603,8 +594,7 @@ loop:
         sta SCREEN+$200,x
         inx
         bne loop
-        ; clear bottom row
-        ldx #39
+        ldx #39                 ; clear bottom row
         lda #$20
 
 clr:

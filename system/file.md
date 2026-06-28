@@ -169,7 +169,10 @@ Must be called before OPEN, LOAD, or SAVE.
 
 SETNAM  = $FFBD
 
-fname:  byte "MYDATA"
+fname:
+
+        byte "MYDATA"
+
 fend:
 
         lda #fend-fname         ; length = 6
@@ -268,8 +271,7 @@ OPEN    = $FFC0
 
         jsr OPEN                ; open the file
         bcc open_ok             ; carry clear = no error
-        ; A = error code
-        jmp open_error
+        jmp open_error          ; A = error code
 
 open_ok:
 ```
@@ -350,8 +352,7 @@ CHKIN   = $FFC6
 
         ldx #2                  ; logical file number 2
         jsr CHKIN
-        bcc chkin_ok
-        ; C=1 means error: file not open or not readable
+        bcc chkin_ok            ; C=1 means error: file not open or not readable
 
 chkin_ok:
 ```
@@ -394,8 +395,7 @@ CHKOUT  = $FFC9
 
         ldx #2                  ; logical file number 2
         jsr CHKOUT
-        bcc chkout_ok
-        ; C=1 means error
+        bcc chkout_ok           ; C=1 means error
 
 chkout_ok:
 ```
@@ -469,13 +469,9 @@ STATUS  = $0096
         sta byte_buf            ; store byte before checking STATUS
         lda STATUS              ; check status AFTER storing
         bne got_eof_or_error    ; non-zero STATUS = stop reading
-        ; process byte_buf...
-        jmp read_loop
+        jmp read_loop           ; process byte_buf...
 
-got_eof_or_error:
-
-        ; byte_buf is valid on disk EOF (STATUS bit 7 = EOI) -- process it
-        ; byte_buf may be invalid on error (STATUS bits 0-5 without bit 7)
+got_eof_or_error:       ; byte_buf valid on disk EOF (bit 7=EOI); may be invalid on error (bits 0-5)
 ```
 
 ---
@@ -623,30 +619,28 @@ SETNAM  = $FFBD
 LOAD    = $FFD5
 STATUS  = $0096
 
-        ; Step 1: set filename
-        lda #6                  ; filename length
+        lda #6                  ; Step 1: set filename (length 6)
         ldx #<fname
         ldy #>fname
         jsr SETNAM
 
-        ; Step 2: set file parameters
-        lda #1                  ; logical file number (ignored by LOAD but required)
+        lda #1                  ; Step 2: set file parameters (LFN, ignored by LOAD)
         ldx #8                  ; device: disk drive
         ldy #0                  ; SA=0: relocating load (use address from file)
         jsr SETLFS
 
-        ; Step 3: load
-        lda #0                  ; 0 = LOAD (not VERIFY)
+        lda #0                  ; Step 3: load (0 = LOAD, not VERIFY)
         jsr LOAD
         bcs load_error          ; C=1 = error
-        ; X/Y now = first byte past end of loaded data
-        rts
+        rts                     ; X/Y now = first byte past end of loaded data
 
 load_error:
-        ; A = error code
-        rts
 
-fname:  byte "PLAYER"
+        rts                     ; A = error code
+
+fname:
+
+        byte "PLAYER"
 ```
 
 ---
@@ -695,26 +689,22 @@ STATUS  = $0096
 
 save_start = $FB             ; zero page: two bytes for start address
 
-        ; Store start address in ZP
-        lda #<$4000
+        lda #<$4000             ; Store start address in ZP
         sta save_start
         lda #>$4000
         sta save_start+1
 
-        ; Set filename
-        lda #6
+        lda #6                  ; Set filename
         ldx #<sname
         ldy #>sname
         jsr SETNAM
 
-        ; Set file parameters
-        lda #1                  ; logical file number
+        lda #1                  ; Set file parameters: logical file number
         ldx #8                  ; device: disk
         ldy #1                  ; SA=1 for save
         jsr SETLFS
 
-        ; Save: A = ZP ptr, X/Y = end+1
-        lda #save_start         ; ZP address of start pointer
+        lda #save_start         ; Save: A = ZP ptr, X/Y = end+1
         ldx #<$5000             ; end address + 1 (low)
         ldy #>$5000             ; end address + 1 (high)
         jsr SAVE
@@ -722,9 +712,12 @@ save_start = $FB             ; zero page: two bytes for start address
         rts
 
 save_error:
+
         rts
 
-sname:  byte "PLAYER"
+sname:
+
+        byte "PLAYER"
 ```
 
 ---
@@ -783,13 +776,10 @@ CLALL   = $FFE7
 ```asm
 STOP    = $FFE1
 
-; Poll STOP during a long file write loop:
-write_loop:
+write_loop:             ; Poll STOP during a long file write loop
 
-        ; ... write one byte ...
-        jsr STOP
-        beq user_abort          ; STOP pressed
-        ; continue loop
+        jsr STOP                ; ... write one byte ...
+        beq user_abort          ; STOP pressed, else continue loop
 ```
 
 ## Call Sequences
@@ -817,8 +807,7 @@ CLOSE   = $FFC3
 STATUS  = $0096
 
 ; --- read_file: reads sequential file into dest_buf ---
-; Expects: fname/fend defined, dest_buf defined
-read_file:
+read_file:              ; Expects: fname/fend defined, dest_buf defined
 
         lda #fend-fname
         ldx #<fname
@@ -937,22 +926,19 @@ Do not call OPEN before LOAD.
 LOAD handles the file open/close internally.
 
 ```asm
-        ; Set filename
-        lda #fname_len
+        lda #fname_len          ; Set filename
         ldx #<fname
         ldy #>fname
         jsr SETNAM
 
-        ; SA=0: relocating load (use address from file header)
-        lda #1
+        lda #1                  ; SA=0: relocating load (use address from file header)
         ldx #8
         ldy #0
         jsr SETLFS
 
         lda #0                  ; 0=load, 1=verify
         jsr LOAD
-        bcs load_err
-        ; loaded successfully; X/Y = end+1
+        bcs load_err            ; loaded successfully; X/Y = end+1
 ```
 
 ### Save a Program File
@@ -1025,14 +1011,14 @@ check_eof:
         beq read_ok             ; zero = no EOF, no error
         and #$C0                ; bits 6 and 7 = EOF conditions
         bne is_eof
-        ; bits 0-5 set without 6 or 7 = error
-        jmp read_error
+        jmp read_error          ; bits 0-5 set without 6 or 7 = error
 
 is_eof:
-        ; normal end of file
-        rts
+
+        rts                     ; normal end of file
 
 read_ok:
+
         rts
 ```
 
@@ -1061,8 +1047,7 @@ For IEEE-488 devices, if the device does not respond, STATUS bit 1 will be set a
 ```asm
         jsr OPEN
         bcs open_failed
-        ; check STATUS for timeout
-        lda STATUS
+        lda STATUS              ; check STATUS for timeout
         and #$03                ; bits 0 and 1: read/write timeout
         bne device_not_present
 ```
@@ -1074,20 +1059,16 @@ Disk drives report file-not-found through the DOS error channel (SA=15), not thr
 After OPEN, open the command channel and read it to check:
 
 ```asm
-        ; After OPEN for a data file:
-        lda STATUS
+        lda STATUS              ; After OPEN for a data file
         bne open_hardware_error ; KERNAL-level hardware error
 
-        ; Open command channel to check DOS status
-        lda #0                  ; no filename for status read
+        lda #0                  ; Open command channel; no filename for status read
         jsr SETNAM
         lda #15                 ; logical file 15
         ldx #8                  ; same drive
         ldy #15                 ; SA=15 = command channel
         jsr SETLFS
-        jsr OPEN
-        ; then read error string via CHKIN/CHRIN
-        ; see system/disk.md for complete pattern
+        jsr OPEN                ; then read error string via CHKIN/CHRIN; see system/disk.md
 ```
 
 ### Resource Leak Prevention
@@ -1095,8 +1076,7 @@ After OPEN, open the command channel and read it to check:
 Always close files on all code paths, including error paths.
 
 ```asm
-        ; Safe cleanup pattern:
-safe_close:
+safe_close:             ; Safe cleanup pattern
 
         jsr CLRCHN              ; always restore I/O first
         lda #2                  ; close logical file 2
@@ -1152,8 +1132,7 @@ A common pattern is to have a data channel and a command channel open at the sam
 ; Open data file on LFN 2, SA 2
 ; Open command channel on LFN 15, SA 15
 
-        ; File 1: data
-        lda #5
+        lda #5                  ; File 1: data
         ldx #<dfname
         ldy #>dfname
         jsr SETNAM
@@ -1163,19 +1142,13 @@ A common pattern is to have a data channel and a command channel open at the sam
         jsr SETLFS
         jsr OPEN
 
-        ; File 2: command channel
-        lda #0                  ; no filename = open command channel for status
+        lda #0                  ; File 2: command channel (no filename for status)
         jsr SETNAM
         lda #15
         ldx #8
         ldy #15
         jsr SETLFS
-        jsr OPEN
-
-        ; Now LFN 2 is data; LFN 15 is command channel
-        ; Use CHKIN/CHRIN on LFN 2 for data
-        ; Use CHKIN/CHRIN on LFN 15 to read drive status
-        ; Always call CLRCHN after each channel switch
+        jsr OPEN                ; LFN 2=data, LFN 15=cmd; CHKIN/CHRIN per channel; CLRCHN after each switch
 ```
 
 ## Troubleshooting

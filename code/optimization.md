@@ -54,8 +54,7 @@ clear_row_fast:
         sta row_start+0
         sta row_start+1
         sta row_start+2
-        ; ... repeat 40 times ...
-        sta row_start+39
+        sta row_start+39        ; ... repeat 40 times ...
         rts
 ```
 
@@ -66,11 +65,9 @@ clear_row_fast:
 A branch that crosses a page boundary costs 4 cycles instead of 3.
 
 ```asm
-        ; Bad: target is on next page
-        .org $01FE
-        bne target      ; 4 cycles, page cross
+        .org $01FE              ; Bad: target is on next page
+        bne target              ; 4 cycles, page cross
         .org $0200
-
 
 target:
 ```
@@ -78,16 +75,14 @@ target:
 ### Compare-Free Decisions
 
 ```asm
-        ; Instead of:
-        cpx #$10
+        cpx #$10                ; Instead of:
         bcs big
 
-        ; Use:
-        cpx #$10        ; still need CMP/CPX for threshold checks
-        ; But for simple loops, count down to zero:
-        ldx #$10
-loop    ; ...
-        dex
+        cpx #$10                ; Use: still need CMP/CPX for threshold checks
+        ldx #$10                ; But for simple loops, count down to zero:
+loop:
+
+        dex                     ; ...
         bne loop
 ```
 
@@ -95,12 +90,12 @@ loop    ; ...
 
 Zero-page access is 1 cycle faster than absolute and 1 byte smaller.
 
-| Access Type    | Bytes | Cycles |
-|----------------|-------|--------|
-| `LDA $zp`      | 2     | 3      |
-| `LDA $8000`    | 3     | 4      |
-| `LDA ($zp),y`  | 2     | 5      |
-| `LDA $8000,x`  | 3     | 4-5    |
+| Access Type   | Bytes | Cycles |
+|---------------|-------|--------|
+| `LDA $zp`     | 2     | 3      |
+| `LDA $8000`   | 3     | 4      |
+| `LDA ($zp),y` | 2     | 5      |
+| `LDA $8000,x` | 3     | 4-5    |
 
 ### Using ZP Pointers
 
@@ -109,27 +104,26 @@ ZP indirect addressing (`($zp),y`) requires two contiguous ZP bytes for the poin
 Only $FF is documented unused in PET BASIC 2. $FB-$FE are used by KERNAL tape routines; borrow them only when tape I/O will not run concurrently.
 
 ```asm
-; Routine borrowing $FB/$FC as a pointer -- saves and restores both.
 copy_block:
 
-        lda $FC             ; save borrowed ZP bytes
+        lda $FC                 ; Routine borrowing $FB/$FC as a pointer -- saves and restores both. save borrowed ZP bytes
         pha
         lda $FB
         pha
 
-        stx $FB             ; X/Y = address of source in free RAM
+        stx $FB                 ; X/Y = address of source in free RAM
         sty $FC
 
         ldy #0
 
 copy_loop:
 
-        lda ($FB),y         ; indirect read using borrowed ZP pointer
-        sta $8000,y         ; absolute write to fixed dest
+        lda ($FB),y             ; indirect read using borrowed ZP pointer
+        sta $8000,y             ; absolute write to fixed dest
         iny
         bne copy_loop
 
-        pla                 ; restore borrowed ZP bytes
+        pla                     ; restore borrowed ZP bytes
         sta $FB
         pla
         sta $FC
@@ -179,8 +173,7 @@ All graphics are character-based. Animation requires writing to screen RAM direc
 Scrolling requires copying screen RAM in software. Optimize by copying in blocks:
 
 ```asm
-; Copy 40 bytes (one row) as fast as possible
-        ldx #39
+        ldx #39                 ; Copy 40 bytes (one row) as fast as possible
 
 loop:
 
@@ -199,9 +192,10 @@ Sound requires bit-banging the VIA user port or using the internal beeper via KE
 ### Down-Count with BNE
 
 ```asm
-        ldx #$28        ; 40 iterations
-loop    ; ... body ...
-        dex
+        ldx #$28                ; 40 iterations
+loop:
+
+        dex                     ; ... body ...
         bne loop
 ```
 
@@ -209,18 +203,20 @@ loop    ; ... body ...
 
 ```asm
         ldx #$00
-loop    ; ... body ...
-        inx
-        bpl loop        ; stops at 128 iterations
+loop:
+
+        inx                     ; ... body ...
+        bpl loop                ; stops at 128 iterations
 ```
 
 ### X-Driven Table Walk (0 to N-1)
 
 ```asm
         ldx #$00
-loop    lda table,x
-        ; ... use A ...
-        inx
+loop:
+
+        lda table,x
+        inx                     ; ... use A ...
         cpx #size
         bne loop
 ```

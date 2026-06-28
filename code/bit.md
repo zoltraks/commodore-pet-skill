@@ -24,18 +24,15 @@ This file covers bit-operation patterns for the PET 3032 in four progressive lay
 | Test bit N   | `AND #(1<<N)` then check Z | 2      |
 
 ```asm
-; Set bit 7
-        lda value
+        lda value               ; Set bit 7
         ora #$80
         sta value
 
-; Clear bit 3
-        lda value
+        lda value               ; Clear bit 3
         and #$F7
         sta value
 
-; Toggle bit 0
-        lda value
+        lda value               ; Toggle bit 0
         eor #$01
         sta value
 ```
@@ -43,8 +40,8 @@ This file covers bit-operation patterns for the PET 3032 in four progressive lay
 ### Bit Test Without Load (BIT instruction)
 
 ```asm
-        bit $E84D       ; test VIA IFR against A without changing A
-        bvs timer1_irq  ; branch if bit 6 (V flag) set
+        bit $E84D               ; test VIA IFR against A without changing A
+        bvs timer1_irq          ; branch if bit 6 (V flag) set
 ```
 
 ## Shifts and Rotates
@@ -60,14 +57,14 @@ This file covers bit-operation patterns for the PET 3032 in four progressive lay
 
 ```asm
         asl value_lo
-        rol value_hi    ; C shifts into bit 0 of high byte
+        rol value_hi            ; C shifts into bit 0 of high byte
 ```
 
 ### 16-Bit Right Shift
 
 ```asm
         lsr value_hi
-        ror value_lo    ; C shifts into bit 7 of low byte
+        ror value_lo            ; C shifts into bit 7 of low byte
 ```
 
 ## 16-Bit Pointer Arithmetic
@@ -123,15 +120,14 @@ done:
 ### Nibble Swap
 
 ```asm
-        asl             ; shift high nibble to low via C
+        asl                     ; shift high nibble to low via C
         adc #$80
         asl
         adc #$80
         asl
         adc #$80
         asl
-        adc #$80
-        ; A now has nibbles swapped
+        adc #$80                ; A now has nibbles swapped
 ```
 
 ### Table-Driven Bit Reverse
@@ -143,8 +139,7 @@ done:
 bit_reverse_table:
 
         byte $00,$80,$40,$C0,$20,$A0,$60,$E0
-        byte $10,$90,$50,$D0,$30,$B0,$70,$F0
-        ; ... (256 bytes total)
+        byte $10,$90,$50,$D0,$30,$B0,$70,$F0    ; ... (256 bytes total)
 ```
 
 ## Stack Tricks
@@ -157,8 +152,7 @@ save_regs:
         sta save_a
         stx save_x
         sty save_y
-        ; ... work ...
-        lda save_a
+        lda save_a              ; ... work ...
         ldx save_x
         ldy save_y
         rts

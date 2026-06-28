@@ -39,11 +39,11 @@ ACR     = $E84B
 SR      = $E84A
 T2_LO   = $E848
 
-        lda #$10        ; ACR bits 4-2 = 100: shift out free running at T2 rate
+        lda #$10                ; ACR bits 4-2 = 100: shift out free running at T2 rate
         sta ACR
-        lda #$0F        ; square wave pattern, lowest octave
+        lda #$0F                ; square wave pattern, lowest octave
         sta SR
-        lda #$EE        ; T2 divider: approx 261 Hz (middle C)
+        lda #$EE                ; T2 divider: approx 261 Hz (middle C)
         sta T2_LO
 ```
 
@@ -53,7 +53,7 @@ The tone starts immediately and plays until ACR is cleared.
 
 ```asm
         lda #$00
-        sta ACR         ; disable shift register -> CB2 goes idle -> no sound
+        sta ACR                 ; disable shift register -> CB2 goes idle -> no sound
 ```
 
 Always stop the tone before returning to BASIC or the sound will continue.
@@ -118,9 +118,7 @@ ACR     = $E84B
 SR_REG  = $E84A
 T2_LO   = $E848
 
-; play_tone: A = T2 divider, X = SR pattern
-; call once; tone plays until stop_tone
-play_tone:
+play_tone:              ; A = T2 divider, X = SR pattern; call once; tone plays until stop_tone
 
         pha
         lda #$10
@@ -130,8 +128,7 @@ play_tone:
         sta T2_LO
         rts
 
-; stop_tone: silence CB2
-stop_tone:
+stop_tone:              ; silence CB2
 
         lda #$00
         sta ACR
@@ -141,8 +138,8 @@ stop_tone:
 Usage:
 
 ```asm
-        lda #$EE        ; middle C
-        ldx #$0F        ; base octave
+        lda #$EE                ; middle C
+        ldx #$0F                ; base octave
         jsr play_tone
 
         ; ... do animation frame work ...
@@ -155,11 +152,11 @@ Usage:
 A blocking beep using a delay loop:
 
 ```asm
-        lda #$D5        ; D4
+        lda #$D5                ; D4
         ldx #$0F
         jsr play_tone
 
-        ldx #$20        ; delay ~100ms at 1 MHz
+        ldx #$20                ; delay ~100ms at 1 MHz
 
 delay_outer:
 
@@ -182,10 +179,9 @@ For animation players, trigger a beep at a specific frame and stop after N frame
 ```asm
 sound_frames = $FF      ; $FF is documented unused by PET BASIC 2 -- safe to allocate
 
-; In VBLANK handler or main loop:
 check_sound:
 
-        lda sound_frames
+        lda sound_frames        ; In VBLANK handler or main loop:
         beq no_sound
         dec sound_frames
         bne no_sound
@@ -221,9 +217,7 @@ Both can be active simultaneously.
 A simpler but CPU-blocking method: toggle CB2 via PCR directly.
 
 ```asm
-; PCR CB2 output: $CC = CB2 high (off), $EC = CB2 low (on)
-; Combined with CA2 high (uppercase charset):
-PCR_CB2_HIGH = $CC      ; CA2 high, CB2 high
+PCR_CB2_HIGH = $CC      ; PCR CB2 output: $CC = CB2 high (off), $EC = CB2 low (on); Combined with CA2 high (uppercase charset): CA2 high, CB2 high
 PCR_CB2_LOW  = $EC      ; CA2 high, CB2 low
 
 beep_toggle:

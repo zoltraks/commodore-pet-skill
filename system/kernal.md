@@ -51,9 +51,8 @@ Each entry is a 3-byte `JMP` instruction.
 
         jsr GETIN               ; read keyboard
         beq no_key              ; A=$00 means buffer empty
-        ; A now contains PETSCII code
 
-no_key:
+no_key:                 ; A now contains PETSCII code
 ```
 
 ## Indirect Vectors
@@ -100,7 +99,7 @@ my_irq:
         pha
         cld
         ; ... your code ...
-        jmp $E62B             ; or chain to original KERNAL handler
+        jmp $E62B               ; or chain to original KERNAL handler
 ```
 
 ## I/O Device Numbers
@@ -128,12 +127,9 @@ For direct polling:
 
 ```asm
         jsr STOP                ; $FFE1
-        beq stop_pressed        ; Z=1 if STOP key held
-        ; continue
+        beq stop_pressed        ; Z=1 if STOP key held, else continue
 
-stop_pressed:
-
-        ; exit or handle break
+stop_pressed:           ; exit or handle break
 ```
 
 ## File I/O Patterns
@@ -144,8 +140,7 @@ stop_pressed:
         lda #1                  ; logical file number
         ldx #8                  ; device number (disk)
         ldy #0                  ; secondary address
-        jsr SETLFS              ; $FFBA: set logical file parameters
-        ; then set filename and call OPEN ($FFC0)
+        jsr SETLFS              ; $FFBA: set logical file parameters, then set filename and call OPEN ($FFC0)
 ```
 
 **Note:** The PET KERNAL file OPEN/SETLFS/CLOSE patterns are similar to the C64 but at different addresses.

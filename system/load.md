@@ -5,11 +5,11 @@
 > **Scope:** Loading PRG and binary data files from cassette tape and IEEE-488 disk via the LOAD KERNAL call
 > **Key items:** LOAD=$FFD5, SETLFS=$FFBA, SETNAM=$FFBD, SA=0 (header addr), SA=1 (fixed addr), device 1=tape, device 8=disk
 
-| Out of scope               | See instead        |
-|----------------------------|--------------------|
-| KERNAL routine reference   | `system/kernal.md` |
-| Sequential file I/O        | `system/file.md`   |
-| Safe memory zones          | `system/memory.md` |
+| Out of scope             | See instead        |
+|--------------------------|--------------------|
+| KERNAL routine reference | `system/kernal.md` |
+| Sequential file I/O      | `system/file.md`   |
+| Safe memory zones        | `system/memory.md` |
 
 ## Loading a Binary File (LOAD)
 

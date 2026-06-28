@@ -31,8 +31,7 @@ Every PET machine-code program starts with a BASIC stub at `$0401`:
 
         org $0401
 
-; BASIC stub: 10 SYS1038
-        word nextline
+        word nextline           ; BASIC stub: 10 SYS1038
         word 10
         byte $9E
         byte "1","0","3","8",0
@@ -47,8 +46,7 @@ old_pcr:
 
 start:
 
-        ; machine code starts here at $040F (1039 decimal)
-        rts
+        rts                     ; machine code starts here at $040F (1039 decimal)
 ```
 
 Assemble: `dasm stub.asm -f3 -ostub.bin`
@@ -64,8 +62,7 @@ SCREEN  = $8000
 
         org $0401
 
-; BASIC stub: 10 SYS1038
-        word nextline
+        word nextline           ; BASIC stub: 10 SYS1038
         word 10
         byte $9E
         byte "1","0","3","8",0
@@ -99,8 +96,7 @@ GETIN   = $FFE4
 
         org $0401
 
-; BASIC stub: 10 SYS1038
-        word nextline
+        word nextline           ; BASIC stub: 10 SYS1038
         word 10
         byte $9E
         byte "1","0","3","8",0
@@ -127,8 +123,7 @@ VIA_PORTB = $E840
 
         org $0401
 
-; BASIC stub: 10 SYS1038
-        word nextline
+        word nextline           ; BASIC stub: 10 SYS1038
         word 10
         byte $9E
         byte "1","0","3","8",0
@@ -154,8 +149,7 @@ SCREEN  = $8000
 
         org $0401
 
-; BASIC stub: 10 SYS1038
-        word nextline
+        word nextline           ; BASIC stub: 10 SYS1038
         word 10
         byte $9E
         byte "1","0","3","8",0
@@ -164,10 +158,8 @@ nextline:
 
         word 0
 
-; Copy 1000 bytes from source to destination
-; Both must be page-aligned for this simple version
-source  = $8400               ; source screen buffer
-dest    = SCREEN              ; destination screen
+source  = $8400         ; Copy 1000 bytes from source to destination -- source screen buffer
+dest    = SCREEN        ; Both must be page-aligned for this simple version -- destination screen
 
 copy_screen:
 
@@ -199,8 +191,7 @@ PCR_L   = $08
 
         org $0401
 
-; BASIC stub: 10 SYS1038
-        word nextline
+        word nextline           ; BASIC stub: 10 SYS1038
         word 10
         byte $9E
         byte "1","0","3","8",0
@@ -235,8 +226,7 @@ GETIN     = $FFE4
 
         org $0401
 
-; BASIC stub: 10 SYS1038
-        word nextline
+        word nextline           ; BASIC stub: 10 SYS1038
         word 10
         byte $9E
         byte "1","0","3","8",0
@@ -245,8 +235,7 @@ nextline:
 
         word 0
 
-; Frame table: pointers to 1000-byte screen frames
-frame_table:
+frame_table:            ; Frame table: pointers to 1000-byte screen frames
 
         word frame1
         word frame2
@@ -258,25 +247,21 @@ play_animation:
 
 next_frame:
 
-        ; patch frame source into copy_frame's self-modifying read
-        lda frame_table,x
-        sta cf_src+1        ; source lo
+        lda frame_table,x       ; patch frame source into copy_frame's self-modifying read
+        sta cf_src+1            ; source lo
         inx
         lda frame_table,x
-        sta cf_src+2        ; source hi
+        sta cf_src+2            ; source hi
         inx
 
         jsr copy_frame
 
-        ; wait for VBLANK
-        jsr wait_vblank
+        jsr wait_vblank         ; wait for VBLANK
 
-        ; check for key to exit
-        jsr GETIN
+        jsr GETIN               ; check for key to exit
         bne exit
 
-        ; loop frames
-        cpx #6                  ; 3 frames * 2 bytes
+        cpx #6                  ; loop frames (3 frames * 2 bytes)
         bne next_frame
         ldx #$00
         beq next_frame
@@ -285,15 +270,13 @@ exit:
 
         rts
 
-; copy_frame: copy 1000 bytes to SCREEN. Patch cf_src+1 (lo) and cf_src+2 (hi)
-; with the frame source address before calling. No ZP required.
-copy_frame:
+copy_frame:             ; copy_frame: copy 1000 bytes to SCREEN. Patch cf_src+1 (lo) and cf_src+2 (hi) with the frame source address before calling. No ZP required
 
         ldy #0
 
 cf_src:
 
-        lda $FFFF,y         ; self-modified: frame source address
+        lda $FFFF,y             ; self-modified: frame source address
         sta SCREEN,y
         ; ... full 1000-byte copy loop would go here ...
         rts
@@ -305,8 +288,7 @@ wait_vblank:
         beq wait_vblank
         rts
 
-; Example frame data (first row only)
-frame1:
+frame1:                 ; Example frame data (first row only)
 
         byte $20,$20,$20,$20,$20,$20,$20,$20,$20,$20
         byte $20,$20,$20,$20,$20,$20,$20,$20,$20,$20
@@ -394,13 +376,11 @@ wait_vblank:
 
 update:
 
-        ; update game state here
-        rts
+        rts                     ; update game state here
 
 render:
 
-        ; write to screen RAM here
-        rts
+        rts                     ; write to screen RAM here
 ```
 
 ## IRQ-Driven Animation Skeleton
@@ -413,8 +393,8 @@ Uses the 60 Hz VBLANK IRQ to advance frames. The KERNAL IRQ handler is replaced 
 SCREEN    = $8000
 GETIN     = $FFE4
 CHROUT    = $FFD2
-CINV      = $0090           ; hardware IRQ vector (ZP)
-PIA1_CRB  = $E813           ; must read to clear VBLANK IRQ flag
+CINV      = $0090       ; hardware IRQ vector (ZP)
+PIA1_CRB  = $E813       ; must read to clear VBLANK IRQ flag
 
         org $0401
 
@@ -441,9 +421,9 @@ old_cinv:
 ; $FF: documented unused by PET BASIC 2
 ; =========================================================
 
-frame_ctr  = $FB            ; frame source lo (KERNAL tape ptr -- safe when tape idle)
-frame_hi   = $FC            ; frame source hi (KERNAL tape ptr -- safe when tape idle)
-next_frame = $FF            ; IRQ->main loop flag (documented unused by PET BASIC 2)
+frame_ctr  = $FB        ; frame source lo (KERNAL tape ptr -- safe when tape idle)
+frame_hi   = $FC        ; frame source hi (KERNAL tape ptr -- safe when tape idle)
+next_frame = $FF        ; IRQ->main loop flag (documented unused by PET BASIC 2)
 
 ; =========================================================
 ; INIT
@@ -462,14 +442,12 @@ init:
         lda #>frame_data
         sta frame_hi
 
-        ; save original IRQ vector before replacing
-        lda CINV
+        lda CINV                ; save original IRQ vector before replacing
         sta old_cinv
         lda CINV+1
         sta old_cinv+1
 
-        ; install IRQ handler
-        sei
+        sei                     ; install IRQ handler
         lda #<irq_handler
         sta CINV
         lda #>irq_handler
@@ -512,9 +490,7 @@ exit:
 ; IRQ HANDLER
 ; =========================================================
 
-; KERNAL IRQ entry at $E442 already saved A/X/Y on stack.
-; It dispatches to CINV ($0090) after register save.
-irq_handler:
+irq_handler:             ; KERNAL IRQ entry at $E442 already saved A/X/Y on stack. It dispatches to CINV ($0090) after register save.
 
         bit PIA1_CRB            ; acknowledge VBLANK IRQ - mandatory
         lda #1
@@ -525,8 +501,7 @@ irq_handler:
 ; RENDER
 ; =========================================================
 
-; Copy 1000 bytes from frame pointer to screen
-render_frame:
+render_frame:            ; Copy 1000 bytes from frame pointer to screen
 
         ldy #$00
         ldx #4                  ; 4 pages of 250 bytes each (approx)
@@ -540,8 +515,7 @@ render_page:
         inc frame_hi
         dex
         bne render_page
-        ; advance frame_ctr to next frame (add 1000 to frame pointer)
-        rts
+        rts                     ; advance frame_ctr to next frame (add 1000 to frame pointer)
 
 ; =========================================================
 ; FRAME DATA
@@ -549,8 +523,7 @@ render_page:
 
 frame_data:
 
-        ; frame 0: 1000 bytes of screen data here
-        byte $20,$20,$20,$20,$20,$20,$20,$20,$20,$20
+        byte $20,$20,$20,$20,$20,$20,$20,$20,$20,$20    ; frame 0: 1000 bytes of screen data here
         ; ... 990 more bytes ...
 ```
 

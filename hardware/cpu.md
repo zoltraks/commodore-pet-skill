@@ -27,6 +27,7 @@ The PET 3032 uses a 1 MHz NMOS 6502.
 |-------------------------------------|------------------------------------|
 | Register descriptions               | Registers                          |
 | Flag bits / P-register layout       | Flag Bits (P Register)             |
+| Which instructions affect flags     | Flag Update Reference              |
 | Load and store instructions         | Load and Store                     |
 | Arithmetic and logical instructions | Arithmetic and Logical             |
 | Branch and jump instructions        | Branch and Jump                    |
@@ -63,6 +64,30 @@ The PET 3032 uses a 1 MHz NMOS 6502.
 **Critical nuance:** NMOS 6502 does NOT auto-clear D on IRQ entry.
 
 Always `CLD` in interrupt handlers that use ADC/SBC.
+
+### Flag Update Reference
+
+Branch instructions test flags set by the **most recent instruction that updates flags**. Many instructions do not affect flags at all -- placing them between a flag-setting instruction and a branch changes which flags the branch tests.
+
+| Instruction(s)             | Flags Affected    |
+|----------------------------|-------------------|
+| `lda`, `ldx`, `ldy`        | N, Z              |
+| `sta`, `stx`, `sty`        | none              |
+| `inx`, `dex`, `iny`, `dey` | N, Z              |
+| `inc`, `dec` (memory)      | N, Z              |
+| `asl`, `lsr`, `rol`, `ror` | N, Z, C           |
+| `adc`, `sbc`               | N, V, Z, C        |
+| `cmp`, `cpx`, `cpy`        | N, Z, C           |
+| `and`, `ora`, `eor`        | N, Z              |
+| `tax`, `txa`, `tay`, `tya` | N, Z              |
+| `jsr`, `rts`, `jmp`, `rti` | none              |
+| `pha`, `pla`, `php`, `plp` | N, Z (`pla` only) |
+| `txs`, `tsx`               | N, Z (`tsx` only) |
+| `clc`, `sec`, `cld`, `sed` | C or D (single)   |
+| `clv`                      | V                 |
+| `bit`                      | N, V, Z           |
+
+The most common bug from misunderstanding flag updates is the branch-after-load pattern, where `sta` (which affects no flags) between `dex` and `bne` causes the branch to test the loaded value instead of the counter. See `code/standard.md` for the full bug pattern and decision rule.
 
 ## Load and Store
 

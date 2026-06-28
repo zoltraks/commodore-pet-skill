@@ -91,38 +91,40 @@ nextline:
 
 load_prg:
 
-        ; set filename
-        lda #progname_end-progname
+        lda #progname_end-progname      ; set filename
         ldx #<progname
         ldy #>progname
         jsr SETNAM
 
-        ; LFN=1, device=8, SA=0 (use file's load address)
-        lda #1
+        lda #1                  ; LFN=1, device=8, SA=0 (use file's load address)
         ldx #8
         ldy #0
         jsr SETLFS
 
-        ; LOAD: A=0 means load, A=1 would mean verify
-        lda #0
+        lda #0                  ; LOAD: A=0 means load, A=1 would mean verify
         jsr LOAD
         bcs load_error          ; carry set = error, A = error code
 
-        ; success: X/Y = address of last byte loaded + 1
-        stx end_lo
+        stx end_lo              ; success: X/Y = address of last byte loaded + 1
         sty end_hi
         rts
 
 load_error:
 
-        ; A = KERNAL error code (4=file not found, 5=device not present, etc.)
-        rts
+        rts                     ; A = KERNAL error code (4=file not found, 5=device not present, etc.)
 
-progname:       byte "PROG.BIN"
+progname:
+
+        byte "PROG.BIN"
 progname_end:
 
-end_lo:         byte 0
-end_hi:         byte 0
+end_lo:
+
+        byte 0
+
+end_hi:
+
+        byte 0
 ```
 
 ### Load to a Specific Address
@@ -130,8 +132,7 @@ end_hi:         byte 0
 To load a file at a fixed address regardless of its embedded load address, use SA=1 and put the target address in X/Y before calling LOAD:
 
 ```asm
-        ; load SCREEN.BIN to $8000 regardless of file header
-        lda #scrname_end-scrname
+        lda #scrname_end-scrname        ; load SCREEN.BIN to $8000 regardless of file header
         ldx #<scrname
         ldy #>scrname
         jsr SETNAM
@@ -147,7 +148,9 @@ To load a file at a fixed address regardless of its embedded load address, use S
         jsr LOAD
         bcs load_err
 
-scrname:        byte "SCREEN.BIN"
+scrname:
+
+        byte "SCREEN.BIN"
 scrname_end:
 ```
 
@@ -189,20 +192,17 @@ save_prg:
         ldy #>savname
         jsr SETNAM
 
-        ; LFN=1, device=8, SA=1 (PRG save)
-        lda #1
+        lda #1                  ; LFN=1, device=8, SA=1 (PRG save)
         ldx #8
         ldy #1
         jsr SETLFS
 
-        ; set start address in zero page pointer
-        lda #<$040F
+        lda #<$040F             ; set start address in zero page pointer
         sta SAVE_PTR
         lda #>$040F
         sta SAVE_PTR+1
 
-        ; SAVE: A = zero-page address of start pointer, X/Y = end+1
-        lda #SAVE_PTR
+        lda #SAVE_PTR           ; SAVE: A = zero-page address of start pointer, X/Y = end+1
         ldx #<$0800             ; end+1 low
         ldy #>$0800             ; end+1 high
         jsr SAVE
@@ -214,7 +214,9 @@ save_error:
 
         rts
 
-savname:        byte "MYFILE"
+savname:
+
+        byte "MYFILE"
 savname_end:
 ```
 
@@ -259,14 +261,12 @@ nextline:
 
 read_seq:
 
-        ; set filename
-        lda #rdname_end-rdname
+        lda #rdname_end-rdname  ; set filename
         ldx #<rdname
         ldy #>rdname
         jsr SETNAM
 
-        ; LFN=2, device=8, SA=2 (sequential read)
-        lda #2
+        lda #2                  ; LFN=2, device=8, SA=2 (sequential read)
         ldx #8
         ldy #2
         jsr SETLFS
@@ -274,8 +274,7 @@ read_seq:
         jsr OPEN
         bcs read_open_err       ; carry set = KERNAL error
 
-        ; redirect input to LFN 2
-        ldx #2
+        ldx #2                  ; redirect input to LFN 2
         jsr CHKIN
         bcs read_chkin_err
 
@@ -304,8 +303,7 @@ read_done:
 
 read_open_err:
 
-        ; A = error code
-        rts
+        rts                     ; A = error code
 
 read_chkin_err:
 
@@ -313,11 +311,18 @@ read_chkin_err:
         jsr CLOSE
         rts
 
-rdname:         byte "SCORES.DAT,S,R"
+rdname:
+
+        byte "SCORES.DAT,S,R"
 rdname_end:
 
-read_buf:       ds 256,0        ; 256-byte receive buffer
-read_len:       byte 0          ; number of bytes read
+read_buf:
+
+        ds 256,0                ; 256-byte receive buffer
+
+read_len:
+
+        byte 0                  ; number of bytes read
 ```
 
 ### Checking STATUS for EOF
@@ -345,16 +350,11 @@ To distinguish disk EOF from error:
         beq read_more           ; zero = no status, continue
         and #$80
         bne is_eof              ; bit 7 = disk EOF (EOI); byte already stored
-        ; non-zero STATUS but bit 7 clear = error (timeout or hardware fault)
-        jmp handle_error
+        jmp handle_error        ; non-zero STATUS but bit 7 clear = error (timeout or hardware fault)
 
-read_more:
+read_more:              ; continue reading
 
-        ; continue reading
-
-is_eof:
-
-        ; clean end of file; last byte was already stored before this check
+is_eof:                 ; clean end of file; last byte was already stored before this check
 ```
 
 ## Write a Sequential File
@@ -395,8 +395,7 @@ write_seq:
         ldy #>wrname
         jsr SETNAM
 
-        ; LFN=3, device=8, SA=3 (sequential write)
-        lda #3
+        lda #3                  ; LFN=3, device=8, SA=3 (sequential write)
         ldx #8
         ldy #3
         jsr SETLFS
@@ -404,8 +403,7 @@ write_seq:
         jsr OPEN
         bcs write_open_err
 
-        ; redirect output to LFN 3
-        ldx #3
+        ldx #3                  ; redirect output to LFN 3
         jsr CHKOUT
         bcs write_chkout_err
 
@@ -450,12 +448,19 @@ write_error:
         jsr CLOSE
         rts
 
-wrname:         byte "LOG.DAT,S,W"
+wrname:
+
+        byte "LOG.DAT,S,W"
 wrname_end:
 
-write_buf:      byte "HELLO WORLD"
+write_buf:
+
+        byte "HELLO WORLD"
 write_buf_end:
-write_len:      byte write_buf_end-write_buf
+
+write_len:
+
+        byte write_buf_end-write_buf
 ```
 
 **Important:** Always call CLOSE after writing.
@@ -500,8 +505,7 @@ nextline:
 
 scratch_file:
 
-        ; send S0:OLDFILE as the filename to SA=15
-        lda #cmd_end-cmd
+        lda #cmd_end-cmd        ; send S0:OLDFILE as the filename to SA=15
         ldx #<cmd
         ldy #>cmd
         jsr SETNAM
@@ -517,8 +521,7 @@ scratch_file:
         lda #15
         jsr CLOSE               ; close to flush and execute
 
-        ; reopen command channel with no filename to read status
-        lda #0
+        lda #0                  ; reopen command channel with no filename to read status
         jsr SETNAM              ; no filename = read-only open
 
         lda #15
@@ -564,10 +567,14 @@ stat_err:
 
         rts
 
-cmd:    byte "S0:OLDFILE"
+cmd:
+
+        byte "S0:OLDFILE"
 cmd_end:
 
-stat_buf:       ds 41,0         ; 40 chars + null
+stat_buf:
+
+        ds 41,0                 ; 40 chars + null
 ```
 
 ### Checking the Status Result
@@ -587,13 +594,11 @@ check_stat:
         lda stat_buf+1          ; units digit
         cmp #'0'
         bne is_error
-        ; "00" = OK
-        rts
+        rts                     ; "00" = OK
 
 is_error:
 
-        ; error: display stat_buf or handle as needed
-        rts
+        rts                     ; error: display stat_buf or handle as needed
 ```
 
 ## Read the Disk Directory
@@ -634,8 +639,7 @@ nextline:
 
 list_directory:
 
-        ; open "$" on device 8, SA=0
-        lda #1
+        lda #1                  ; open "$" on device 8, SA=0
         ldx #<dir_dollar
         ldy #>dir_dollar
         jsr SETNAM
@@ -651,21 +655,17 @@ list_directory:
         ldx #2
         jsr CHKIN
 
-        ; skip 2-byte BASIC load address
-        jsr CHRIN               ; discard low byte
+        jsr CHRIN               ; skip 2-byte BASIC load address
         jsr CHRIN               ; discard high byte
 
 dir_line_loop:
 
-        ; skip next-line pointer (2 bytes)
-        jsr CHRIN
+        jsr CHRIN               ; skip next-line pointer (2 bytes)
         jsr CHRIN
 
-        ; read block count low byte
-        jsr CHRIN
+        jsr CHRIN               ; read block count low byte
         pha                     ; save low byte
-        ; read block count high byte
-        jsr CHRIN
+        jsr CHRIN               ; read block count high byte
         tax                     ; high byte in X
 
         pla                     ; restore low byte
@@ -677,8 +677,7 @@ dir_line_loop:
 
 not_end:
 
-        ; read line text until $00
-        ldy #0
+        ldy #0                  ; read line text until $00
 
 dir_char_loop:
 
@@ -693,8 +692,7 @@ dir_char_loop:
 
 dir_line_done:
 
-        ; print the line to the screen
-        ldy #0
+        ldy #0                  ; print the line to the screen
 
 dir_print_loop:
 
@@ -704,8 +702,7 @@ dir_print_loop:
         jsr CHROUT
         iny
         bne dir_print_loop
-        ; newline
-        lda #$0D
+        lda #$0D                ; newline
         jsr CHROUT
         jmp dir_line_loop
 
@@ -720,8 +717,13 @@ dir_open_err:
 
         rts
 
-dir_dollar:     byte "$"
-line_buf:       ds LINE_MAX,0
+dir_dollar:
+
+        byte "$"
+
+line_buf:
+
+        ds LINE_MAX,0
 line_buf_end    = line_buf+LINE_MAX
 ```
 
@@ -774,16 +776,12 @@ nextline:
 
 main:
 
-        ; initialize drive (clears power-on status)
-        jsr init_drive
+        jsr init_drive          ; initialize drive (clears power-on status)
 
-        ; do file I/O
-        jsr read_config
+        jsr read_config         ; do file I/O
         bcs fatal_error
 
-        ; ...program logic...
-
-        rts
+        rts                     ; ...program logic...
 
 fatal_error:
 
@@ -809,8 +807,7 @@ init_drive:
         bcs init_err
         lda #15
         jsr CLOSE
-        ; discard power-on status (code 73 is informational)
-        clc
+        clc                     ; discard power-on status (code 73 is informational)
         rts
 
 init_err:
@@ -818,7 +815,9 @@ init_err:
         sec
         rts
 
-init_cmd:       byte "I0"
+init_cmd:
+
+        byte "I0"
 init_cmd_end:
 
 ; =========================================================
@@ -880,12 +879,20 @@ cfg_chkin_err:
         sec
         rts
 
-cfgname:        byte "CONFIG.DAT,S,R"
+cfgname:
+
+        byte "CONFIG.DAT,S,R"
 cfgname_end:
 
 CFG_MAX = 128
-config_buf:     ds CFG_MAX,0
-config_len:     byte 0
+
+config_buf:
+
+        ds CFG_MAX,0
+
+config_len:
+
+        byte 0
 ```
 
 ## Common Mistakes

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-> **Scope:** DASM syntax, directives, macros, segments, conditional assembly, PET conventions
+> **Scope:** DASM syntax, directives, macros, segments, conditional assembly, command-line options
 > **Key items:** `processor 6502`, `org $0401`, `byte`, `word`, `hex`, `equ`, `mac`/`endm`, `-f3` raw binary
 
 This file covers DASM for PET 3032 work in four progressive layers:
@@ -12,26 +12,35 @@ This file covers DASM for PET 3032 work in four progressive layers:
 - **Working code examples** - verified ASM snippets
 - **Deep reference notes** - edge cases, caveats, implementation rules
 
+| Out of scope                  | See instead        |
+|-------------------------------|--------------------|
+| File structure and formatting | `code/standard.md` |
+| Naming conventions            | `code/standard.md` |
+| Column alignment              | `code/standard.md` |
+| BASIC stub layout             | `code/standard.md` |
+| Comment placement rules       | `code/standard.md` |
+| Section header banners        | `code/standard.md` |
+
 ## Contents
 
-| Section                  | Line | What it covers                                         |
-|--------------------------|------|--------------------------------------------------------|
-| Command Line             | 35   | Invocation flags: `-f3`, `-o`, `-I`, `-D`              |
-| Docker                   | 55   | Container-based invocation via dasm-container image    |
-| Processor Directive      | 77   | `processor 6502` requirement                           |
-| Origin Directive         | 85   | `org $0401` and relocation                             |
-| Addressing Modes         | 101  | Immediate, ZP, absolute, indexed, indirect syntax      |
-| Data Directives          | 118  | `byte`, `word`, `hex`, `ds`, `dc`                      |
-| Labels and Equates       | 167  | Local labels, `equ`/`=`, forward references            |
-| Comments                 | 234  | Semicolon style, block comments                        |
-| Macros                   | 246  | `mac`/`endm`, arguments, nesting                       |
-| Conditional Assembly     | 268  | `ifconst`, `ifnconst`, `else`, `endif`                 |
-| Repeat Loops             | 291  | `repeat`/`repend`                                      |
-| Segments                 | 301  | `seg`, `seg.u` for BSS, linking multiple segments      |
-| Naming Conventions       | 312  | Label case, scope, PET-specific patterns               |
-| Column Alignment         | 326  | Tab stops for opcode/operand/comment columns           |
-| PET-Specific Conventions | 340  | BASIC stub, KERNAL equates, PETSCII strings            |
-| Common Errors            | 400  | Undefined label, wrong format flag, forward-ref issues |
+| Section              | Line | What it covers                                         |
+|----------------------|------|--------------------------------------------------------|
+| Command Line         | 45   | Invocation flags: `-f3`, `-o`, `-I`, `-D`              |
+| Docker               | 65   | Container-based invocation via dasm-container image    |
+| Processor Directive  | 87   | `processor 6502` requirement                           |
+| Origin Directive     | 95   | `org $0401` and relocation                             |
+| Addressing Modes     | 111  | Immediate, ZP, absolute, indexed, indirect syntax      |
+| Data Directives      | 128  | `byte`, `word`, `hex`, `ds`, `dc`                      |
+| Labels and Equates   | 177  | Local labels, `equ`/`=`, forward references            |
+| Comments             | 246  | Semicolon style, tab-stop alignment                    |
+| Macros               | 258  | `mac`/`endm`, arguments, nesting                       |
+| Conditional Assembly | 280  | `ifconst`, `ifnconst`, `else`, `endif`                 |
+| Repeat Loops         | 303  | `repeat`/`repend`                                      |
+| Segments             | 313  | `seg`, `seg.u` for BSS, linking multiple segments      |
+| Include Files        | 324  | `include` and `incbin` directives                      |
+| Common Errors        | 336  | Undefined label, wrong format flag, forward-ref issues |
+
+For file structure, formatting conventions, naming rules, column alignment, comment placement, section headers, and BASIC stub layout, see `code/standard.md`.
 
 ## Command Line
 
@@ -159,8 +168,8 @@ Define raw hex data compactly (no `$` prefix):
 ### Low/High Byte Extraction
 
 ```asm
-        byte <screen_data      ; low byte of address
-        byte >screen_data      ; high byte of address
+        byte <screen_data       ; low byte of address
+        byte >screen_data       ; high byte of address
 ```
 
 The `<` operator extracts the low byte. The `>` operator extracts the high byte.
@@ -169,7 +178,7 @@ The `<` operator extracts the low byte. The `>` operator extracts the high byte.
 
 ### Labels
 
-Labels are case-sensitive and end with a colon:
+Labels are case-sensitive and end with a colon. They are declared at column 0 on their own line:
 
 ```asm
 nextline:
@@ -190,6 +199,8 @@ Labels can be used as addresses in instructions:
         lda screen_data,x
 ```
 
+For label spacing rules (blank lines before and after), subroutine boundary spacing, and naming conventions, see `code/standard.md`.
+
 ### Temporary Labels
 
 Local labels start with a dot and are scoped by `SUBROUTINE` blocks:
@@ -197,12 +208,18 @@ Local labels start with a dot and are scoped by `SUBROUTINE` blocks:
 ```asm
 main    subroutine
         ldx #10
-.1      dex
+
+.1
+
+        dex
         bne .1
 
 other   subroutine
         ldx #20
-.1      dex                 ; different .1 from above
+
+.1
+
+        dex                     ; different .1 from above
         bne .1
 ```
 
@@ -234,22 +251,25 @@ COUNT   set     COUNT + 1
 
 ## Comments
 
-Comments start with a semicolon. Inline comments on instructions start at column 33. If the instruction is too long, ensure at least one space before the semicolon.
+Comments start with a semicolon. Inline comments on instructions start at column 33 and follow tab-stop alignment (33, 41, 49, ...).
 
 ```asm
-        lda #$00        ; load accumulator with zero
-        lda #$93        ; PETSCII CLR/HOME
-        sta PCR         ; CA2 high: uppercase / graphics charset
+        lda #$00                ; load accumulator with zero
+        lda #$93                ; PETSCII CLR/HOME
+        sta PCR                 ; CA2 high: uppercase / graphics charset
 ```
 
-Comment only what is not evident from the instruction and its operands. Do not comment what the mnemonic already says. Do not leave commented-out code.
+For the full comment placement rules -- block intent comments, label description comments, subroutine boundary spacing, and what to avoid -- see `code/standard.md`.
 
 ## Macros
 
 ```asm
         mac     copy_row
         ldx     #39
-.1      lda     {1},x
+
+.1
+
+        lda     {1},x
         sta     {2},x
         dex
         bpl     .1
@@ -264,7 +284,7 @@ Arguments referenced with `{1}`, `{2}`, etc. `{0}` is the entire argument line.
         copy_row src_row, dst_row
 ```
 
-Macros are supported by DASM but are not used in the PET LAB code generation pipeline.
+Macros are supported by DASM but are not used in the standard PET coding conventions -- see `code/standard.md`.
 
 ## Conditional Assembly
 
@@ -276,8 +296,7 @@ Macros are supported by DASM but are not used in the PET LAB code generation pip
         sta CINV+1
         endif
 
-        ifnconst DEBUG
-        ; skip debug code if DEBUG not defined
+        ifnconst DEBUG          ; skip debug code if DEBUG not defined
         endif
 ```
 
@@ -302,91 +321,12 @@ Generates 10 space bytes. Labels inside REPEAT should be temporary labels inside
 ## Segments
 
 ```asm
-        seg     code
-        ; initialized code/data
+        seg     code            ; initialized code/data
 
-        seg.u   vars
-        ; uninitialized segment (no output)
-        ; useful for RAM allocation labels
+        seg.u   vars            ; uninitialized segment (no output) -- useful for RAM allocation labels
 ```
 
-## Naming Conventions
-
-| Kind                      | Convention         | Example                    |
-|---------------------------|--------------------|----------------------------|
-| Hardware / KERNAL equates | `UPPER_SNAKE_CASE` | `PCR`, `CHROUT`, `PCR_U`   |
-| Zero page equates         | `snake_case`       | `source_lo`, `dest_hi`     |
-| Code labels               | `snake_case`       | `decompress_rle`           |
-| Loop labels               | `snake_case`       | `copy_loop_1`, `lz4_token` |
-| Data labels               | `snake_case`       | `screen_data`, `old_pcr`   |
-
-Prefixes group related labels.
-
-A subroutine and all its internal branch targets share the same prefix.
-
-## Column Alignment
-
-Column numbers are 1-indexed.
-
-| Element                          | Column |
-|----------------------------------|--------|
-| `processor`, `org` directives    | 8      |
-| Instructions and data directives | 8      |
-| `=` in global equates            | 8      |
-| `=` in zero page equate group    | 16     |
-| Inline comments on equates       | 25     |
-| Inline comments on instructions  | 33     |
-| Labels                           | 0      |
-
-## PET-Specific DASM Conventions
-
-### File Structure
-
-Every generated `.asm` file follows this top-to-bottom layout:
-
-1. `processor 6502` directive
-2. Blank line
-3. Global equates (hardware addresses and KERNAL routines)
-4. Blank line
-5. `org $0401`
-6. Blank line
-7. BASIC stub section
-8. Data labels embedded in stub (`nextline:`, `old_pcr:`)
-9. One or more major code and data sections
-
-Sections are separated by major section header banners. There is no footer or end-of-file marker.
-
-### Standard File Header
-
-```asm
-        processor 6502
-
-SCREEN  = $8000
-GETIN   = $FFE4
-CHROUT  = $FFD2
-
-PCR     = $E84C
-PCR_U   = $0C
-PCR_L   = $08
-
-        org $0401
-
-; BASIC stub: SYS1038
-        word nextline
-        word 10
-        byte $9E
-        byte "1","0","3","8",0
-
-nextline:
-
-        word 0
-
-old_pcr:
-
-        byte 0
-```
-
-### Include Files
+## Include Files
 
 ```asm
         include "pet_constants.asm"
