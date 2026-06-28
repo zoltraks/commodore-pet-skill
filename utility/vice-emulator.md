@@ -13,20 +13,21 @@
 
 ## Contents
 
-| Section               | Line | What it covers                                                          |
-|-----------------------|------|-------------------------------------------------------------------------|
-| Invocation            | 25   | Minimal command form and model flag                                     |
-| PET ROM Setup         | 35   | How VICE finds ROMs; symlinking from a known location                   |
-| Drive Types on PET    | 80   | `-drive8type 2031` for D64; never 1541 on PET                           |
-| Running a PRG         | 105  | Autostart modes, why disk autostart is most reliable                    |
-| Headless Debugging    | 165  | Remote monitor over TCP, cycle limits, screen dumps, warp timing        |
-| Decoding Screen Codes | ~260 | Reading dumped `$8000-$83E7` bytes back into characters; row arithmetic |
-| Memory Landmarks      | ~300 | Addresses worth checking during diagnostics                             |
-| Diagnosing Crashes    | ~340 | KERNAL hang, SP depth, breakpoint silence, VIA PCR hazard               |
-| Built-in Monitor      | ~395 | Opening the monitor and essential commands                              |
-| Breakpoints           | ~450 | initbreak, break, watch, warp-mode timing                               |
-| Monitor Scripts       | ~510 | moncommands file for automated debug sessions                           |
-| Useful Flags          | ~535 | warp, speed, keybuf, logging                                            |
+| Section               | Line | What it covers                                                             |
+|-----------------------|------|----------------------------------------------------------------------------|
+| Invocation            | 32   | Minimal command form and model flag                                        |
+| PET ROM Setup         | 42   | How VICE finds ROMs; symlinking from a known location                      |
+| Drive Types on PET    | 88   | `-drive8type 2031` for D64; never 1541 on PET                              |
+| Running a PRG         | 104  | Autostart modes, why disk autostart is most reliable                       |
+| Headless Debugging    | 156  | Remote monitor over TCP, cycle limits, screen dumps, warp timing           |
+| Decoding Screen Codes | 294  | Reading dumped `$8000-$83E7` bytes back into characters; row arithmetic    |
+| Memory Landmarks      | 347  | Addresses worth checking during diagnostics                                |
+| Diagnosing Crashes    | 375  | KERNAL hang, SP depth, breakpoint silence, VIA PCR hazard                  |
+| Debugging Workflow    | 419  | Step-by-step recipe: check if program ran, breakpoint, step, watch, trace  |
+| Built-in Monitor      | 518  | Opening the monitor, full command reference, register modification, memory |
+| Breakpoints           | 669  | initbreak, break, watch, trace, conditional, warp-mode timing              |
+| Monitor Scripts       | 718  | moncommands file for automated debug sessions                              |
+| Useful Flags          | 744  | warp, speed, keybuf, logging                                               |
 
 ## Invocation
 
@@ -415,6 +416,105 @@ Writing `$0C` to PCR sets bits 7:5 = `000` → CB2 in **input** mode. With NDAC 
 
 **Diagnosis**: if OPEN hangs and the PCR contains `$0C`, this is the cause.
 
+## Debugging Workflow
+
+When a PET program does not behave correctly, follow this sequence to narrow down the cause.
+
+### Step 1: Check Whether the Program Ran at All
+
+Launch with `-warp` and `-limitcycles`, then dump screen RAM and check VARTAB:
+
+```bash
+xpet -model 3032 -drive8type 2031 -warp -limitcycles 100000000 \
+     -remotemonitor -remotemonitoraddress 127.0.0.1:6510 \
+     -autostart work.d64 > /tmp/xpet.log 2>&1 &
+sleep 5
+( echo 'm $002A $002B'
+  echo 'm $8000 $8027'
+  echo 'r'
+  echo 'q'
+) | nc -w 2 127.0.0.1 6510 > /tmp/probe.txt
+kill %1 2>/dev/null
+```
+
+Interpret the results:
+
+- VARTAB (`$002A-$002B`) still `$01 $04` (little-endian `$0401`) means LOAD never ran -- autostart failed before RUN.
+- Screen RAM at `$8000` is all `$20` (spaces) with `READY.` at the bottom means the program never wrote to the screen.
+- Screen RAM shows partial output means the program ran but crashed partway through.
+
+### Step 2: Set a Breakpoint at the Program Entry
+
+Create a monitor script with a breakpoint at the program's first instruction (the address `SYS` jumps to, typically `$040E`):
+
+```bash
+cat > debug.mon << 'EOF'
+break $040E
+x
+EOF
+
+xpet -model 3032 -drive8type 2031 -warp -limitcycles 100000000 \
+     -remotemonitor -remotemonitoraddress 127.0.0.1:6510 \
+     -moncommands debug.mon \
+     -autostart work.d64 > /tmp/xpet.log 2>&1 &
+sleep 5
+```
+
+Connect and verify the breakpoint fired:
+
+```bash
+( echo 'r'
+  echo 'd $040E'
+  echo 'q'
+) | nc -w 2 127.0.0.1 6510
+```
+
+If the breakpoint never fires, the crash is before `$040E` -- the BASIC stub itself is malformed. Check the disassembly at `$0401` to verify the stub bytes.
+
+### Step 3: Step Through the Program
+
+Once stopped at the entry point, step through instructions one at a time:
+
+```
+z          ; step into (follows JSR)
+n          ; step over (treats JSR as one step)
+ret        ; step out (run until next RTS)
+```
+
+After each step, check registers with `r` and relevant memory with `m`.
+
+### Step 4: Set Watchpoints on Suspicious Addresses
+
+If a screen location or zero-page variable gets corrupted, set a watchpoint to catch the write:
+
+```
+watch store $8050
+x
+```
+
+The monitor stops and shows the instruction that wrote to the address, along with the register state.
+
+### Step 5: Use Conditional Breakpoints for Loop Iterations
+
+If a bug only appears on a specific loop iteration, use a condition:
+
+```
+break $0420 if X==$0A
+x
+```
+
+This only stops when the breakpoint at `$0420` is hit with X = `$0A`.
+
+### Step 6: Check the Call Stack
+
+Use `bt` (backtrace) to see the JSR call chain that led to the current PC:
+
+```
+bt
+```
+
+Output shows stack offsets relative to SP+1, most recent call first. This helps identify unexpected recursion or a subroutine called from the wrong place.
+
 ## Built-in Monitor
 
 The VICE built-in monitor is a 6502 machine-level debugger.
@@ -431,22 +531,77 @@ xpet -model 3032 -nativemonitor -autostart program.prg
 
 These are the essential commands for debugging PET programs.
 
-| Command              | Action                                      |
-|----------------------|---------------------------------------------|
-| `r`                  | Show CPU registers (A, X, Y, SP, PC, flags) |
-| `d <addr>`           | Disassemble from address                    |
-| `m <start> <end>`    | Hex dump memory range                       |
-| `g`                  | Resume from current PC (continue)           |
-| `g <addr>`           | Jump to address and run from there          |
-| `z`                  | Step into (execute one instruction)         |
-| `n`                  | Step over (treats JSR as one step)          |
-| `break <addr>`       | Set execution breakpoint at address         |
-| `watch load <addr>`  | Break on memory read from address           |
-| `watch store <addr>` | Break on memory write to address            |
-| `del <num>`          | Delete breakpoint or watchpoint by number   |
-| `bk`                 | List all breakpoints and watchpoints        |
-| `x`                  | Exit monitor, resume emulation              |
-| `q`                  | Quit VICE / disconnect remote monitor       |
+#### Machine State
+
+| Command            | Action                                                 |
+|--------------------|--------------------------------------------------------|
+| `r`                | Show CPU registers (A, X, Y, SP, PC, flags)            |
+| `r A=$42`          | Set accumulator to `$42`                               |
+| `r PC=$0400`       | Set program counter to `$0400`                         |
+| `r X=$10, Y=$20`   | Set multiple registers at once                         |
+| `r FL=$00`         | Set status flags byte (`FL` = flags register)          |
+| `d <addr>`         | Disassemble from address                               |
+| `m <start> <end>`  | Hex dump memory range                                  |
+| `i <start> <end>`  | Display memory as PETSCII text                         |
+| `ii <start> <end>` | Display memory as screen code text                     |
+| `io`               | Display all I/O register ranges                        |
+| `io <addr>`        | Display details for the chip at the given base address |
+| `bt`               | Print JSR call chain (backtrace, most recent first)    |
+| `chis`             | Print recently executed instructions (CPU history)     |
+| `stopwatch`        | Print CPU cycle counter                                |
+| `stopwatch reset`  | Reset cycle counter to zero                            |
+
+#### Execution Control
+
+| Command     | Action                                                         |
+|-------------|----------------------------------------------------------------|
+| `g`         | Resume from current PC (continue)                              |
+| `g <addr>`  | Jump to address and run from there                             |
+| `z`         | Step into (execute one instruction)                            |
+| `z 5`       | Step into 5 instructions                                       |
+| `n`         | Step over (treats JSR as one step)                             |
+| `n 5`       | Step over 5 instructions                                       |
+| `ret`       | Step out (run until next RTS or RTI)                           |
+| `un <addr>` | Run until address reached (temporary breakpoint, auto-deleted) |
+| `warp on`   | Enable warp mode (max speed)                                   |
+| `warp off`  | Disable warp mode                                              |
+
+#### Checkpoints (Breakpoints, Watchpoints, Tracepoints)
+
+| Command                | Action                                             |
+|------------------------|----------------------------------------------------|
+| `break <addr>`         | Set execution breakpoint at address                |
+| `break <start> <end>`  | Set breakpoint for an address range                |
+| `watch load <addr>`    | Break on memory read from address                  |
+| `watch store <addr>`   | Break on memory write to address                   |
+| `trace <addr>`         | Trace: print PC at address, do not stop            |
+| `trace exec <addr>`    | Trace only execution at address                    |
+| `cond <num> if A==$00` | Add condition to checkpoint `<num>`                |
+| `ignore <num> <count>` | Ignore checkpoint `<num>` for `<count>` crossings  |
+| `command <num> "r"`    | Run monitor command when checkpoint `<num>` is hit |
+| `del <num>`            | Delete checkpoint by number                        |
+| `dis <num>`            | Disable checkpoint by number                       |
+| `en <num>`             | Enable checkpoint by number                        |
+| `bk`                   | List all checkpoints                               |
+
+#### Memory Manipulation
+
+| Command            | Action                                                   |
+|--------------------|----------------------------------------------------------|
+| `> <addr> <bytes>` | Write bytes to address (e.g. `> $0410 ea ea ea`)         |
+| `f <range> <data>` | Fill memory range with data (repeated if shorter)        |
+| `t <range> <dest>` | Move (transfer) memory from range to destination         |
+| `c <range> <dest>` | Compare memory range with destination, show mismatches   |
+| `h <range> <data>` | Hunt (search) for byte pattern in range; `xx` = wildcard |
+
+#### Monitor State
+
+| Command           | Action                                                  |
+|-------------------|---------------------------------------------------------|
+| `x`               | Exit monitor, resume emulation                          |
+| `q`               | Quit VICE / disconnect remote monitor                   |
+| `radix H`         | Set default radix to hex (D=decimal, O=octal, B=binary) |
+| `keybuf <string>` | Stuff string into keyboard buffer                       |
 
 Address notation in the monitor uses `$` prefix: `d $0410`, `m $8000 $805F`.
 
@@ -469,6 +624,47 @@ Write a byte directly into RAM (useful for patching without reassembling):
 ```
 
 The `>` command writes bytes: `> <addr> <hex bytes...>`.
+
+Set the PC to the program entry point and resume:
+
+```
+r PC=$040E
+g
+```
+
+Search screen RAM for the letter sequence "HI" (screen codes `$08` `$09`):
+
+```
+h $8000 $83E7 08 09
+```
+
+### Conditional Breakpoints
+
+A breakpoint can include a condition so it only fires when the condition is true. This is useful for catching a specific iteration of a loop or a specific register value:
+
+```
+break $0420 if A==$00
+break $0420 if X==Y
+break $8000 if @io:$E84C==$0C
+```
+
+The condition expression supports registers (A, X, Y, PC, SP, FL), comparison operators (`==`, `!=`, `<`, `>`, `<=`, `>=`), arithmetic (`+`, `-`, `*`, `/`), and logical operators (`&&`, `||`). Memory locations can be tested with `@<bank>:$<addr>`.
+
+### Tracepoints
+
+A tracepoint prints the current PC and register state without stopping execution. Use it to log execution flow without interrupting the program:
+
+```
+trace $0420
+```
+
+Output appears as:
+
+```
+#1 (Trace  exec 0420)  .C:0420  A9 20       LDA #$20        - A:00 X:00 Y:00 SP:FF ..-..IZC
+```
+
+Delete a tracepoint with `del <num>`, same as a breakpoint.
 
 ## Breakpoints
 

@@ -72,10 +72,10 @@ Read these files for implementation techniques and algorithmic patterns.
 
 ### Build and Utility Tools
 
-| File                        | Read when the task involves                                         |
-|-----------------------------|---------------------------------------------------------------------|
-| `utility/dasm-assembler.md` | DASM syntax, directives, macros, segments, command-line options     |
-| `utility/vice-emulator.md`  | Running PRG files in xpet, VICE monitor, breakpoints, debug scripts |
+| File                        | Read when the task involves                                                                                                                                                             |
+|-----------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `utility/dasm-assembler.md` | DASM syntax, directives, macros, segments, command-line options                                                                                                                         |
+| `utility/vice-emulator.md`  | Running PRG files in xpet, VICE monitor, breakpoints, watchpoints, tracepoints, conditional breakpoints, register modification, headless debugging, crash diagnosis, debugging workflow |
 
 ### Examples
 
@@ -112,6 +112,9 @@ Use this table to pick the right file without reading every option above.
 | Optimize a loop or reduce code size       | `code/optimization.md`      |                             |
 | Write DASM source with macros or segments | `utility/dasm-assembler.md` |                             |
 | Run or debug a PRG in the VICE emulator   | `utility/vice-emulator.md`  |                             |
+| Diagnose a crash or hang in xpet          | `utility/vice-emulator.md`  | `hardware/chip.md`          |
+| Headless screen capture or scripted test  | `utility/vice-emulator.md`  |                             |
+| Set breakpoints or watchpoints in xpet    | `utility/vice-emulator.md`  |                             |
 | Build a complete animation player         | `example/general.md`        | `hardware/chip.md`          |
 | Build a complete file I/O program         | `example/file.md`           | `system/file.md`            |
 | BASIC stub + SYS1038                      | `example/general.md`        | `code/standard.md`          |
@@ -128,9 +131,10 @@ These files are long and have their own table of contents at the top.
 
 Use the table of contents to jump to the relevant section rather than reading the whole file.
 
-| File                 | Lines |
-|----------------------|-------|
-| `system/file.md`     | ~1180 |
-| `example/file.md`    | ~930  |
-| `system/disk.md`     | ~750  |
-| `example/general.md` | ~550  |
+| File                       | Lines |
+|----------------------------|-------|
+| `system/file.md`           | ~1180 |
+| `example/file.md`          | ~930  |
+| `utility/vice-emulator.md` | ~810  |
+| `system/disk.md`           | ~750  |
+| `example/general.md`       | ~550  |
