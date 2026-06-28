@@ -26,19 +26,19 @@ This file covers DASM for PET 3032 work in four progressive layers:
 | Section              | Line | What it covers                                         |
 |----------------------|------|--------------------------------------------------------|
 | Command Line         | 45   | Invocation flags: `-f3`, `-o`, `-I`, `-D`              |
-| Docker               | 65   | Container-based invocation via dasm-container image    |
-| Processor Directive  | 87   | `processor 6502` requirement                           |
-| Origin Directive     | 95   | `org $0401` and relocation                             |
-| Addressing Modes     | 111  | Immediate, ZP, absolute, indexed, indirect syntax      |
-| Data Directives      | 128  | `byte`, `word`, `hex`, `ds`, `dc`                      |
-| Labels and Equates   | 177  | Local labels, `equ`/`=`, forward references            |
-| Comments             | 246  | Semicolon style, tab-stop alignment                    |
-| Macros               | 258  | `mac`/`endm`, arguments, nesting                       |
-| Conditional Assembly | 280  | `ifconst`, `ifnconst`, `else`, `endif`                 |
-| Repeat Loops         | 303  | `repeat`/`repend`                                      |
-| Segments             | 313  | `seg`, `seg.u` for BSS, linking multiple segments      |
-| Include Files        | 324  | `include` and `incbin` directives                      |
-| Common Errors        | 336  | Undefined label, wrong format flag, forward-ref issues |
+| Docker               | 65   | dasm-container image: build, compile, includes, output |
+| Processor Directive  | 142  | `processor 6502` requirement                           |
+| Origin Directive     | 150  | `org $0401` and relocation                             |
+| Addressing Modes     | 166  | Immediate, ZP, absolute, indexed, indirect syntax      |
+| Data Directives      | 183  | `byte`, `word`, `hex`, `ds`, `dc`                      |
+| Labels and Equates   | 232  | Local labels, `equ`/`=`, forward references            |
+| Comments             | 307  | Semicolon style, tab-stop alignment                    |
+| Macros               | 319  | `mac`/`endm`, arguments, nesting                       |
+| Conditional Assembly | 344  | `ifconst`, `ifnconst`, `else`, `endif`                 |
+| Repeat Loops         | 366  | `repeat`/`repend`                                      |
+| Segments             | 376  | `seg`, `seg.u` for BSS, linking multiple segments      |
+| Include Files        | 384  | `include` and `incbin` directives                      |
+| Common Errors        | 396  | Undefined label, wrong format flag, forward-ref issues |
 
 For file structure, formatting conventions, naming rules, column alignment, comment placement, section headers, and BASIC stub layout, see `code/standard.md`.
 
@@ -64,25 +64,80 @@ For PET programs, always use `-f3` to produce raw binary loadable via BASIC `SYS
 
 ## Docker
 
-The `dasm-container` project wraps DASM in a Debian-based Docker image.
+The `dasm-container` project (https://github.com/zoltraks/dasm-container) wraps DASM in a Debian 12-slim Docker image. Use it when DASM is not installed locally or when a reproducible build environment is needed.
 
-Build it once by cloning https://github.com/zoltraks/dasm-container and running:
+### Building the Image
+
+Clone the repository and run the build script:
 
 ```bash
+git clone https://github.com/zoltraks/dasm-container
+cd dasm-container
 ./build.sh
 ```
 
-This downloads DASM 2.20.14.1 and creates a local image named `dasm`.
+The script downloads the DASM binary release, extracts it, and builds a local image named `dasm`. The default version is `2.20.14.1`.
 
-Invoke by mounting the project directory to `/src` inside the container:
+Customise the build with environment variables:
+
+| Variable  | Default     | Description                             |
+|-----------|-------------|-----------------------------------------|
+| `VERSION` | `2.20.14.1` | DASM version to download and install    |
+| `CACHE`   | `cache`     | Directory for caching the download      |
+| `IMAGE`   | `dasm`      | Name for the resulting Docker image     |
+| `URL`     | (auto)      | Custom download URL (overrides VERSION) |
+
+Examples:
+
+```bash
+VERSION=2.20.13 ./build.sh
+IMAGE=my-dasm ./build.sh
+```
+
+### Compiling with the Container
+
+The container working directory is `/src`. Mount the project directory there and pass DASM arguments after the image name:
 
 ```bash
 docker run --rm -v $(pwd):/src dasm dasm source.asm -f3 -osource.prg
 ```
 
-The container working directory is `/src`, so all paths in the command are relative to the mounted host directory.
+All flags from the Command Line table above apply unchanged. The output file is written back to the mounted host directory.
 
-All flags from the Command Line table above apply unchanged.
+### Include Files
+
+`include` directives resolve relative to the container working directory (`/src`), which maps to the mounted host directory. For include files in a subdirectory, either use a relative path in the source or pass the `-I` flag:
+
+```bash
+# source uses: include "pet.inc"
+# pet.inc lives in src/
+docker run --rm -v $(pwd):/src dasm dasm src/main.asm -f3 -obuild/main.prg -Isrc
+```
+
+### Output Directories
+
+DASM does not create output directories. If the `-o` path points to a subdirectory, create it on the host first:
+
+```bash
+mkdir -p build
+docker run --rm -v $(pwd):/src dasm dasm src/main.asm -f3 -obuild/main.prg
+```
+
+### Verbose Output
+
+Pass `-v3` to see symbol table and pass information:
+
+```bash
+docker run --rm -v $(pwd):/src dasm dasm source.asm -f3 -osource.prg -v3
+```
+
+### Checking the Version
+
+Run the container with no arguments to print the DASM version:
+
+```bash
+docker run --rm dasm
+```
 
 ## Processor Directive
 
