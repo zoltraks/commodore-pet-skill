@@ -1064,9 +1064,9 @@ After OPEN, open the command channel and read it to check:
 
         lda #0                  ; Open command channel; no filename for status read
         jsr SETNAM
-        lda #15                 ; logical file 15
+        lda #$0F                ; logical file 15
         ldx #8                  ; same drive
-        ldy #15                 ; SA=15 = command channel
+        ldy #$0F                ; SA=15 = command channel
         jsr SETLFS
         jsr OPEN                ; then read error string via CHKIN/CHRIN; see system/disk.md
 ```
@@ -1144,9 +1144,9 @@ A common pattern is to have a data channel and a command channel open at the sam
 
         lda #0                  ; File 2: command channel (no filename for status)
         jsr SETNAM
-        lda #15
+        lda #$0F
         ldx #8
-        ldy #15
+        ldy #$0F
         jsr SETLFS
         jsr OPEN                ; LFN 2=data, LFN 15=cmd; CHKIN/CHRIN per channel; CLRCHN after each switch
 ```

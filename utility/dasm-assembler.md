@@ -207,7 +207,7 @@ Local labels start with a dot and are scoped by `SUBROUTINE` blocks:
 
 ```asm
 main    subroutine
-        ldx #10
+        ldx #$0A
 
 .1
 
@@ -215,7 +215,7 @@ main    subroutine
         bne .1
 
 other   subroutine
-        ldx #20
+        ldx #$14
 
 .1
 
@@ -265,7 +265,7 @@ For the full comment placement rules -- block intent comments, label description
 
 ```asm
         mac     copy_row
-        ldx     #39
+        ldx     #$27
 
 .1
 

@@ -186,7 +186,7 @@ Pass multi-byte inputs to subroutines as a data block in free RAM. The caller lo
 ```asm
 win_params:
         byte 5      ; row
-        byte 10     ; col
+        byte $0A     ; col
 
         ldx #<win_params
         ldy #>win_params

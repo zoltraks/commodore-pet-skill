@@ -23,9 +23,18 @@ This file covers PET 3032 screen I/O in four progressive layers:
 
 - Base address: `$8000`
 - 40 columns, 25 rows = 1000 bytes
+- Address range: `$8000-$83E7`
 - Each byte = screen code (not PETSCII)
 - Bit 7 set = reverse video (hardware inverted)
 - Row stride: 40 bytes
+
+### Screen Size Invariant
+
+Screen RAM is exactly 1000 bytes (`$8000-$83E7`), not 1024. A naive 4-page loop (256 x 4 = 1024) writes 24 bytes past the screen into `$83E8-$83FF`, which is not display memory and may overwrite working storage or KERNAL variables.
+
+When clearing, filling, or copying screen RAM, always write exactly 1000 bytes. The standard technique uses page striding for the first 3 full pages (768 bytes), then a 232-byte tail loop for the final partial page (`$8300-$83E7`).
+
+See `code/standard.md` for the full screen clear rule.
 
 ### Row Address Table
 
@@ -156,20 +165,29 @@ PETSCII (the character codes used in BASIC strings and CHROUT) differ from scree
 
 ### Direct Screen Clear
 
+Screen RAM is 1000 bytes (`$8000-$83E7`), not 1024. A naive 4-page loop writes 24 bytes past the screen into `$83E8-$83FF`, which is not display memory. The correct approach writes 3 full pages (768 bytes) with page striding, then a 232-byte tail for the final partial page.
+
 ```asm
 clear_screen:
 
         ldx #$00
         lda #$20                ; space character
 
-loop:
+clear_loop:
 
-        sta SCREEN,x
-        sta SCREEN+$100,x
-        sta SCREEN+$200,x
-        sta SCREEN+$300,x
+        sta SCREEN,x            ; $8000-$80FF
+        sta SCREEN+$100,x       ; $8100-$81FF
+        sta SCREEN+$200,x       ; $8200-$82FF
         inx
-        bne loop
+        bne clear_loop          ; 768 bytes done (3 pages)
+
+        ldx #$E8                ; remaining 232 bytes: $8300-$83E7
+
+clear_tail:
+
+        dex
+        sta SCREEN+$300,x       ; x = 231..0, writes $83E7..$8300
+        bne clear_tail          ; 232 bytes done, total = 1000
         rts
 ```
 
@@ -214,7 +232,7 @@ highlight_row:          ; set reverse video on all 40 chars in screen row X (0-2
         lda $FB
         pha
         jsr get_row_ptr
-        ldy #39
+        ldy #$27
 
 highlight_loop:
 
@@ -237,7 +255,7 @@ unhighlight_row:        ; clear reverse video on all 40 chars in screen row X; b
         lda $FB
         pha
         jsr get_row_ptr
-        ldy #39
+        ldy #$27
 
 unhighlight_loop:
 
@@ -266,7 +284,7 @@ get_row_loop:
 
         lda $FB
         clc
-        adc #40
+        adc #$28
         sta $FB
         bcc get_row_skip
         inc $FC
@@ -387,7 +405,7 @@ fill_checker:
         lda #$20
         inx
         inx
-        cpx #40
+        cpx #$28
         bne .loop
         rts
 ```
@@ -417,8 +435,8 @@ Define window parameters as data anywhere in free RAM:
 win1:
 
         byte 5                  ; row (0-24)
-        byte 10                 ; col (0-39)
-        byte 20                 ; width including borders
+        byte $0A                ; col (0-39)
+        byte $14                ; width including borders
         byte 8                  ; height including borders
 
         ldx #<win1
@@ -467,7 +485,7 @@ draw_xy_rowloop:
 
         lda $FB
         clc
-        adc #40
+        adc #$28
         sta $FB
         bcc draw_xy_rskip
         inc $FC
@@ -515,7 +533,7 @@ draw_xy_sides:
 
         lda $FB
         clc
-        adc #40
+        adc #$28
         sta $FB
         bcc draw_xy_side
         inc $FC
@@ -536,7 +554,7 @@ draw_xy_bottom:
 
         lda $FB
         clc
-        adc #40
+        adc #$28
         sta $FB
         bcc draw_xy_bot
         inc $FC
@@ -594,7 +612,7 @@ loop:
         sta SCREEN+$200,x
         inx
         bne loop
-        ldx #39                 ; clear bottom row
+        ldx #$27                 ; clear bottom row
         lda #$20
 
 clr:

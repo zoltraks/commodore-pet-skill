@@ -76,14 +76,21 @@ clear_screen:
         lda #$20                ; space character
         ldx #$00
 
-loop:
+clear_loop:
 
-        sta SCREEN,x
-        sta SCREEN+$100,x
-        sta SCREEN+$200,x
-        sta SCREEN+$300,x
+        sta SCREEN,x            ; $8000-$80FF
+        sta SCREEN+$100,x       ; $8100-$81FF
+        sta SCREEN+$200,x       ; $8200-$82FF
         inx
-        bne loop
+        bne clear_loop          ; 768 bytes done (3 pages)
+
+        ldx #$E8                ; remaining 232 bytes: $8300-$83E7
+
+clear_tail:
+
+        dex
+        sta SCREEN+$300,x       ; x = 231..0, writes $83E7..$8300
+        bne clear_tail          ; 232 bytes done, total = 1000
         rts
 ```
 
@@ -165,18 +172,25 @@ copy_screen:
 
         ldx #$00
 
-loop:
+copy_loop:
 
-        lda source,x
+        lda source,x            ; $8000-$80FF
         sta dest,x
-        lda source+$100,x
+        lda source+$100,x       ; $8100-$81FF
         sta dest+$100,x
-        lda source+$200,x
+        lda source+$200,x       ; $8200-$82FF
         sta dest+$200,x
-        lda source+$300,x
-        sta dest+$300,x
         inx
-        bne loop
+        bne copy_loop           ; 768 bytes done (3 pages)
+
+        ldx #$E8                ; remaining 232 bytes: $8300-$83E7
+
+copy_tail:
+
+        dex
+        lda source+$300,x       ; x = 231..0, reads $83E7..$8300
+        sta dest+$300,x
+        bne copy_tail           ; 232 bytes done, total = 1000
         rts
 ```
 
@@ -504,17 +518,26 @@ irq_handler:             ; KERNAL IRQ entry at $E442 already saved A/X/Y on stac
 render_frame:            ; Copy 1000 bytes from frame pointer to screen
 
         ldy #$00
-        ldx #4                  ; 4 pages of 250 bytes each (approx)
+        ldx #3                  ; 3 full pages of 256 bytes = 768 bytes
 
 render_page:
 
-        lda (frame_ctr),y       ; indirect ZP read (page 0 = 256 bytes)
+        lda (frame_ctr),y       ; indirect ZP read
         sta SCREEN,y
         iny
         bne render_page
-        inc frame_hi
+        inc frame_hi            ; advance source pointer to next page
         dex
-        bne render_page
+        bne render_page         ; 768 bytes done
+
+        ldy #$E8                ; remaining 232 bytes: $8300-$83E7
+
+render_tail:
+
+        dey
+        lda (frame_ctr),y       ; y = 231..0, reads from frame source
+        sta SCREEN+$300,y       ; writes $83E7..$8300
+        bne render_tail         ; 232 bytes done, total = 1000
         rts                     ; advance frame_ctr to next frame (add 1000 to frame pointer)
 
 ; =========================================================

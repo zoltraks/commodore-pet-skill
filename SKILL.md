@@ -63,12 +63,12 @@ Read these files for OS routines, memory layout, and I/O protocols.
 
 Read these files for implementation techniques and algorithmic patterns.
 
-| File                   | Read when the task involves                                                                             |
-|------------------------|---------------------------------------------------------------------------------------------------------|
-| `code/standard.md`     | File structure, formatting, labels, comments, section headers, naming, column alignment, flag semantics |
-| `code/bit.md`          | Bit shifts, rotates, masking, flag testing, 16-bit pointer increment/decrement                          |
-| `code/optimization.md` | Loop unrolling, branch tuning, size/speed trade-offs, compare-free countdown                            |
-| `code/compression.md`  | $00-escape RLE, byte-run encoding, frame-delta, LZ4 block format for animation                          |
+| File                   | Read when the task involves                                                                                                        |
+|------------------------|------------------------------------------------------------------------------------------------------------------------------------|
+| `code/standard.md`     | File structure, formatting, labels, comments, section headers, naming, column alignment, flag semantics, screen RAM 1000-byte rule |
+| `code/bit.md`          | Bit shifts, rotates, masking, flag testing, 16-bit pointer increment/decrement                                                     |
+| `code/optimization.md` | Loop unrolling, branch tuning, size/speed trade-offs, compare-free countdown                                                       |
+| `code/compression.md`  | $00-escape RLE, byte-run encoding, frame-delta, LZ4 block format for animation                                                     |
 
 ### Build and Utility Tools
 
@@ -106,6 +106,7 @@ Use this table to pick the right file without reading every option above.
 | Structure or format a DASM source file    | `code/standard.md`          | `utility/dasm-assembler.md` |
 | Label, comment, or section header rules   | `code/standard.md`          |                             |
 | Check which instructions affect flags     | `hardware/cpu.md`           | `code/standard.md`          |
+| Clear, fill, or copy screen RAM           | `system/screen.md`          | `code/standard.md`          |
 | Compress screen data or do frame-delta    | `code/compression.md`       |                             |
 | Decompress LZ4 block data                 | `code/compression.md`       | `code/standard.md`          |
 | Optimize a loop or reduce code size       | `code/optimization.md`      |                             |

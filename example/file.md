@@ -241,7 +241,7 @@ CHRIN   = $FFCF
 STATUS  = $0096
 CHROUT  = $FFD2
 
-BUF_MAX = 256               ; maximum bytes to read
+BUF_MAX = $0100               ; maximum bytes to read
 
         org $0401
 
@@ -318,7 +318,7 @@ rdname_end:
 
 read_buf:
 
-        ds 256,0                ; 256-byte receive buffer
+        ds $100,0                ; 256-byte receive buffer
 
 read_len:
 
@@ -510,29 +510,29 @@ scratch_file:
         ldy #>cmd
         jsr SETNAM
 
-        lda #15                 ; LFN 15
+        lda #$0F                 ; LFN 15
         ldx #8                  ; device 8
-        ldy #15                 ; SA=15 = command channel
+        ldy #$0F                 ; SA=15 = command channel
         jsr SETLFS
 
         jsr OPEN                ; the command is sent on OPEN
         bcs cmd_err
 
-        lda #15
+        lda #$0F
         jsr CLOSE               ; close to flush and execute
 
         lda #0                  ; reopen command channel with no filename to read status
         jsr SETNAM              ; no filename = read-only open
 
-        lda #15
+        lda #$0F
         ldx #8
-        ldy #15
+        ldy #$0F
         jsr SETLFS
 
         jsr OPEN
         bcs stat_err
 
-        ldx #15
+        ldx #$0F
         jsr CHKIN               ; set LFN 15 as input
 
         ldx #0
@@ -546,7 +546,7 @@ stat_loop:
         lda STATUS
         bne stat_done
         inx
-        cpx #40
+        cpx #$28
         bne stat_loop
 
 stat_done:
@@ -555,7 +555,7 @@ stat_done:
         sta stat_buf,x          ; null-terminate
 
         jsr CLRCHN
-        lda #15
+        lda #$0F
         jsr CLOSE
         rts
 
@@ -574,7 +574,7 @@ cmd_end:
 
 stat_buf:
 
-        ds 41,0                 ; 40 chars + null
+        ds $29,0                 ; 40 chars + null
 ```
 
 ### Checking the Status Result
@@ -620,7 +620,7 @@ CHRIN   = $FFCF
 STATUS  = $0096
 CHROUT  = $FFD2
 
-LINE_MAX = 64               ; maximum bytes in one directory line
+LINE_MAX = $40               ; maximum bytes in one directory line
 
         org $0401
 
@@ -798,14 +798,14 @@ init_drive:
         ldy #>init_cmd
         jsr SETNAM
 
-        lda #15
+        lda #$0F
         ldx #8
-        ldy #15
+        ldy #$0F
         jsr SETLFS
 
         jsr OPEN
         bcs init_err
-        lda #15
+        lda #$0F
         jsr CLOSE
         clc                     ; discard power-on status (code 73 is informational)
         rts
@@ -884,7 +884,7 @@ cfgname:
         byte "CONFIG.DAT,S,R"
 cfgname_end:
 
-CFG_MAX = 128
+CFG_MAX = $80
 
 config_buf:
 

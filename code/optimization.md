@@ -35,7 +35,7 @@ The PET has no DMA and no hardware copy assist. For maximum speed, unroll loops 
 clear_row:
 
         lda #$20
-        ldx #39
+        ldx #$27
 
 loop:
 
@@ -173,7 +173,7 @@ All graphics are character-based. Animation requires writing to screen RAM direc
 Scrolling requires copying screen RAM in software. Optimize by copying in blocks:
 
 ```asm
-        ldx #39                 ; Copy 40 bytes (one row) as fast as possible
+        ldx #$27                 ; Copy 40 bytes (one row) as fast as possible
 
 loop:
 

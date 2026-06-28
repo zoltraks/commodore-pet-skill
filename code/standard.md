@@ -19,22 +19,23 @@ Follow these rules when writing new `.asm` files or editing existing ones to kee
 
 ## Contents
 
-| Section                  | Line | What it covers                                             |
-|--------------------------|------|------------------------------------------------------------|
-| Toolchain                | 39   | DASM invocation, target CPU, hardware, load address        |
-| File Structure           | 48   | Top-to-bottom layout for every `.asm` file                 |
-| Directives               | 64   | `processor 6502` and `org $0401` placement                 |
-| Equates                  | 82   | Global hardware equates, zero page equates, grouping rules |
-| BASIC Stub               | 127  | Standard SYS1038 stub with `nextline:` and `old_pcr:`      |
-| Labels                   | 155  | Spacing, naming, colon rules, subroutine boundaries        |
-| Instruction Formatting   | 212  | Indentation, tab-stop comments, operand rules              |
-| Comment Placement        | 238  | Block intent comments, label description comments          |
-| Section Headers          | 290  | Major and minor banner format                              |
-| Data Directives          | 316  | `byte`, `word`, string bytes, screen row layout            |
-| End-of-File Format       | 361  | Trailing blank line rule                                   |
-| Naming Conventions       | 365  | Convention table for all identifier kinds                  |
-| Column Alignment Summary | 378  | Column position table for every source element             |
-| 6502 Flag Semantics      | 393  | Flag-affecting instructions, branch-after-load bug pattern |
+| Section                  | Line | What it covers                                              |
+|--------------------------|------|-------------------------------------------------------------|
+| Toolchain                | 39   | DASM invocation, target CPU, hardware, load address         |
+| File Structure           | 48   | Top-to-bottom layout for every `.asm` file                  |
+| Directives               | 64   | `processor 6502` and `org $0401` placement                  |
+| Equates                  | 82   | Global hardware equates, zero page equates, grouping rules  |
+| BASIC Stub               | 127  | Standard SYS1038 stub with `nextline:` and `old_pcr:`       |
+| Labels                   | 155  | Spacing, naming, colon rules, subroutine boundaries         |
+| Instruction Formatting   | 212  | Indentation, tab-stop comments, operand rules               |
+| Comment Placement        | 238  | Block intent comments, label description comments           |
+| Section Headers          | 290  | Major and minor banner format                               |
+| Data Directives          | 316  | `byte`, `word`, string bytes, screen row layout             |
+| Screen RAM Operations    | 361  | 1000-byte screen invariant, 768+232 clear/fill/copy pattern |
+| End-of-File Format       | 391  | Trailing blank line rule                                    |
+| Naming Conventions       | 395  | Convention table for all identifier kinds                   |
+| Column Alignment Summary | 408  | Column position table for every source element              |
+| 6502 Flag Semantics      | 423  | Flag-affecting instructions, branch-after-load bug pattern  |
 
 ## Toolchain
 
@@ -166,7 +167,7 @@ This rule applies to all labels without exception:
         inx
         bne copy_loop_1
 
-        ldx #$E8
+        ldx #$E7
 
 copy_loop_2:
 
@@ -229,11 +230,13 @@ Inline comments on instructions use tab-stop alignment. The first tab stop is co
 
 Rules:
 
+- Numeric literals larger than 9 are written in hexadecimal with the `$` prefix (`#$0A`, `#$27`, `#$E8`). Decimal literals 0-9 are written as-is (`#0`, `#3`, `#8`).
 - Operands are written in lowercase hex (`$FF`, `#$0C`).
 - Mnemonics are lowercase (`lda`, `jsr`, `bne`).
 - Use named equates rather than bare addresses wherever a name exists (`sta PCR` not `sta $E84C`).
 - Use the `<` and `>` operators for low/high byte extraction (`lda #<screen_data`, `lda #>screen_data`).
 - Do not comment obvious instructions. Comment non-obvious values, intent, or side effects.
+- Exception: BASIC line numbers in `word` directives are always decimal (`word 10`) because they represent BASIC source line numbers, not memory values.
 
 ## Comment Placement
 
@@ -357,6 +360,36 @@ PETSCII SYS token and digit strings use quoted single-character `byte` values:
         byte $9E
         byte "1","0","3","8",0
 ```
+
+## Screen RAM Operations
+
+PET 3032 screen RAM is exactly 1000 bytes at `$8000-$83E7` (40 columns x 25 rows). This is not a power of two.
+
+Never use a naive 4-page loop (`sta SCREEN,x` / `sta SCREEN+$100,x` / `sta SCREEN+$200,x` / `sta SCREEN+$300,x` with `inx` / `bne`) to clear, fill, or copy screen RAM. That loop writes 1024 bytes -- 24 bytes past the screen into `$83E8-$83FF`, which is not display memory.
+
+The correct technique writes 3 full pages (768 bytes) with page striding, then a 232-byte tail loop for the final partial page:
+
+```asm
+        ldx #$00
+
+clear_loop:
+
+        sta SCREEN,x            ; $8000-$80FF
+        sta SCREEN+$100,x       ; $8100-$81FF
+        sta SCREEN+$200,x       ; $8200-$82FF
+        inx
+        bne clear_loop          ; 768 bytes done (3 pages)
+
+        ldx #$E8                ; remaining 232 bytes: $8300-$83E7
+
+clear_tail:
+
+        dex
+        sta SCREEN+$300,x       ; x = 231..0, writes $83E7..$8300
+        bne clear_tail          ; 232 bytes done, total = 1000
+```
+
+The same 768 + 232 split applies to any screen-sized operation: clears, fills, copies, and frame transfers. See `system/screen.md` for the full screen layout and row address table.
 
 ## End-of-File Format
 

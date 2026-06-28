@@ -79,9 +79,9 @@ open_cmd_ch:
 
         lda #0                  ; no filename
         jsr SETNAM
-        lda #15                 ; logical file 15
+        lda #$0F                 ; logical file 15
         ldx #8                  ; device 8
-        ldy #15                 ; SA=15 = command channel
+        ldy #$0F                 ; SA=15 = command channel
         jsr SETLFS
         jsr OPEN                ; open
         rts
@@ -113,7 +113,7 @@ CHROUT  = $FFD2
 ; Assumes command channel is open as LFN 15
 read_status:
 
-        ldx #15
+        ldx #$0F
         jsr CHKIN               ; set LFN 15 as input
 
         ldx #0
@@ -127,7 +127,7 @@ read_stat_loop:
         inx
         lda STATUS
         bne read_stat_done      ; EOF or error
-        cpx #40                 ; safety: max 40 chars
+        cpx #$28                 ; safety: max 40 chars
         bne read_stat_loop
 
 read_stat_done:
@@ -157,15 +157,15 @@ send_cmd:
         ldy #>cmd
         jsr SETNAM
 
-        lda #15                 ; logical file 15
+        lda #$0F                 ; logical file 15
         ldx #8                  ; device 8
-        ldy #15                 ; SA=15 = command channel
+        ldy #$0F                 ; SA=15 = command channel
         jsr SETLFS
 
         jsr OPEN                ; sending the command happens on OPEN
         bcs cmd_error
 
-        lda #15
+        lda #$0F
         jsr CLOSE               ; close sends the command and waits
 
         jsr open_cmd_ch         ; Reopen command channel to read status
@@ -440,7 +440,7 @@ read_line_loop:
         iny
         lda STATUS
         bne dir_eof
-        cpy #64                 ; safety limit
+        cpy #$40                 ; safety limit
         bne read_line_loop
 
 line_done:
