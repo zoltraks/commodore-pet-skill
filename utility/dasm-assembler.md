@@ -286,7 +286,7 @@ GETIN   = $FFE4
 CHROUT  = $FFD2
 PCR     = $E84C
 PCR_U   = $0C
-PCR_L   = $08
+PCR_L   = $0E
 ```
 
 Alternate syntax:
@@ -311,7 +311,7 @@ Comments start with a semicolon. Inline comments on instructions start at column
 ```asm
         lda #$00                ; load accumulator with zero
         lda #$93                ; PETSCII CLR/HOME
-        sta PCR                 ; CA2 high: uppercase / graphics charset
+        sta PCR                 ; uppercase / graphics charset
 ```
 
 For the full comment placement rules -- block intent comments, label description comments, subroutine boundary spacing, and what to avoid -- see `code/standard.md`.

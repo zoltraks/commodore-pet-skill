@@ -3,13 +3,13 @@
 ## Purpose
 
 > **Scope:** PET file architecture, logical files, device numbers, secondary addresses, all KERNAL file routines, call sequences, STATUS byte, error handling
-> **Key items:** pet_setnam/pet_setlfs wrappers, OPEN=$FFC0 (use $F524), CLOSE=$FFC3 (use $F2AC), CHKIN=$FFC6, CHKOUT=$FFC9, CLRCHN=$FFCC, CHRIN=$FFCF, CHROUT=$FFD2, LOAD=$FFD5, SAVE=$FFD8, STATUS=$0096
+> **Key items:** pet_setnam/pet_setlfs wrappers, OPEN=$FFC0 (use $F560), CLOSE=$FFC3 (use $F2DD), CHKIN=$FFC6, CHKOUT=$FFC9, CLRCHN=$FFCC, CHRIN=$FFCF, CHROUT=$FFD2, LOAD=$FFD5, SAVE=$FFD8, STATUS=$0096
 
 This file covers the complete PET 3032 KERNAL file I/O system.
 
 The PET 3032 runs BASIC 2.0 and uses a KERNAL that was the ancestor of the C64 KERNAL.
 
-**Critical PET difference:** The PET KERNAL does NOT have `SETNAM` ($FFBD), `SETLFS` ($FFBA), or `READST` ($FFB7) in its jump table — those are C64-only addresses. On the PET, file I/O parameters are set by writing directly to zero-page locations ($D1, $D2, $D3, $D4, $DA, $DB). The PET's `OPEN` and `CLOSE` jump table entries also include BASIC parameter parsing, so machine code must call the low-level ROM entry points ($F524, $F2AC) instead. See the wrapper routines below.
+**Critical PET difference:** The PET KERNAL does NOT have `SETNAM` ($FFBD), `SETLFS` ($FFBA), or `READST` ($FFB7) in its jump table — those are C64-only addresses. On the PET, file I/O parameters are set by writing directly to zero-page locations ($D1, $D2, $D3, $D4, $DA, $DB). The PET's `OPEN` and `CLOSE` jump table entries also include BASIC parameter parsing, so machine code must call the low-level ROM entry points ($F560, $F2DD) instead. See the wrapper routines below.
 
 Do not use C64 addresses - they differ.
 
@@ -149,8 +149,8 @@ PET_SA          = $D3        ; secondary address
 PET_DEV         = $D4        ; device number
 PET_FNADR_LO    = $DA        ; filename address low
 PET_FNADR_HI    = $DB        ; filename address high
-PET_OPEN_LOGIC  = $F524      ; OPEN past BASIC parsing
-PET_CLOSE_LOGIC = $F2AC      ; CLOSE past BASIC parsing
+PET_OPEN_LOGIC  = $F560      ; OPEN past BASIC parsing
+PET_CLOSE_LOGIC = $F2DD      ; CLOSE past BASIC parsing
 STATUS          = $0096      ; I/O status byte (read directly, no READST)
 
 ; pet_setnam: A=length, X=addr_lo, Y=addr_hi
@@ -299,7 +299,7 @@ The PET's OPEN routine does NOT use carry for error reporting. On failure, it ju
 - pet_open does not set the input or output channel - call CHKIN or CHKOUT next.
 - For SA=15 (command channel), OPEN sends the filename string as a DOS command.
 - After OPEN with SA=15 and no filename, the channel is open for reading drive status.
-- This wrapper calls $F524 (low-level OPEN logic), NOT $FFC0 (which includes BASIC parsing).
+- This wrapper calls $F560 (low-level OPEN logic), NOT $FFC0 (which includes BASIC parsing).
 
 ```asm
         jsr pet_open            ; open the file
@@ -1189,7 +1189,7 @@ A common pattern is to have a data channel and a command channel open at the sam
 | Symptom                                | Likely cause                                                          |
 |----------------------------------------|-----------------------------------------------------------------------|
 | `?SYNTAX ERROR` after calling OPEN     | Used `jsr $FFBD` (SETNAM) or `jsr $FFBA` (SETLFS) — these don't exist on PET. Use pet_setnam/pet_setlfs wrappers instead. |
-| `?SYNTAX ERROR` after calling OPEN     | Used `jsr $FFC0` (OPEN jump table) from machine code — it includes BASIC parsing. Use pet_open (calls $F524) instead. |
+| `?SYNTAX ERROR` after calling OPEN     | Used `jsr $FFC0` (OPEN jump table) from machine code — it includes BASIC parsing. Use pet_open (calls $F560) instead. |
 | OPEN jumps to BASIC error handler      | PET OPEN/CLOSE/CHKIN don't use carry for errors — they jump to $CE03 on failure. If they return, they succeeded. |
 | pet_open returns carry set             | File count ($AE) did not increase — OPEN failed internally. Check device, SA, filename. |
 | CHRIN returns garbage after CHKIN      | File not opened for read; wrong SA or file opened for write           |

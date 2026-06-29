@@ -239,7 +239,7 @@ The `nc` approach has reliability issues: timing is fragile, and the `-q` flag b
 import socket, time
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.connect(('127.0.0.1', 6512))
+s.connect(('127.0.0.1', 6502))
 s.settimeout(3)
 
 def send(cmd):
@@ -428,10 +428,11 @@ For finer granularity, nest trace bytes inside subroutines using a separate rang
 init:
     lda #$10
     sta $7f01       ; trace: entered init, before OPEN
-    jsr $ffc0       ; KERNAL OPEN
+    jsr pet_open    ; PET OPEN wrapper (never call $FFC0 directly from ML)
     lda #$11
     sta $7f01       ; trace: OPEN done
-    jsr $ffc6       ; KERNAL CHKIN
+    ldx #1          ; logical file number
+    jsr CHKIN       ; CHKIN is safe to call directly ($FFC6)
     lda #$12
     sta $7f01       ; trace: CHKIN done
     rts
@@ -519,7 +520,7 @@ The bytes at `$FFBD` are `$AA` (the `TAX` instruction), so `jsr $FFBD` executes 
 | `?SYNTAX ERROR IN 10` after `jsr $FFBA`  | `$FFBA` is not SETLFS on PET; same fall-through into OPEN        |
 | OPEN hangs or returns garbage            | OPEN received uninitialised filename/length pointers             |
 
-**Fix**: use PET-specific wrappers that set the zero-page locations directly instead of calling non-existent KERNAL entries. On the PET, the filename length goes to `$D1`, the filename address to `$DA/$DB`, the logical file number to `$D2`, the secondary address to `$D3`, and the device number to `$D4`. Set those locations directly in your code before calling the low-level OPEN logic at `$F524` (not the jump table entry at `$FFC0`, which includes BASIC parameter parsing). See `system/kernal.md` for the complete wrapper routines.
+**Fix**: use PET-specific wrappers that set the zero-page locations directly instead of calling non-existent KERNAL entries. On the PET, the filename length goes to `$D1`, the filename address to `$DA/$DB`, the logical file number to `$D2`, the secondary address to `$D3`, and the device number to `$D4`. Set those locations directly in your code before calling the low-level OPEN logic at `$F560` (not the jump table entry at `$FFC0`, which includes BASIC parameter parsing). See `system/kernal.md` for the complete wrapper routines.
 
 ### No Breakpoint Ever Fires
 
@@ -573,14 +574,14 @@ Launch with `-warp` and `-limitcycles`, then dump screen RAM and check VARTAB:
 
 ```bash
 xpet -model 3032 -drive8type 2031 -warp -limitcycles 100000000 \
-     -remotemonitor -remotemonitoraddress 127.0.0.1:6510 \
+     -remotemonitor -remotemonitoraddress 127.0.0.1:6502 \
      -autostart work.d64 > /tmp/xpet.log 2>&1 &
 sleep 5
 ( echo 'm $002A $002B'
   echo 'm $8000 $8027'
   echo 'r'
   echo 'q'
-) | nc -w 2 127.0.0.1 6510 > /tmp/probe.txt
+) | nc -w 2 127.0.0.1 6502 > /tmp/probe.txt
 kill %1 2>/dev/null
 ```
 
@@ -601,7 +602,7 @@ x
 EOF
 
 xpet -model 3032 -drive8type 2031 -warp -limitcycles 100000000 \
-     -remotemonitor -remotemonitoraddress 127.0.0.1:6510 \
+     -remotemonitor -remotemonitoraddress 127.0.0.1:6502 \
      -moncommands debug.mon \
      -autostart work.d64 > /tmp/xpet.log 2>&1 &
 sleep 5
@@ -613,7 +614,7 @@ Connect and verify the breakpoint fired:
 ( echo 'r'
   echo 'd $040E'
   echo 'q'
-) | nc -w 2 127.0.0.1 6510
+) | nc -w 2 127.0.0.1 6502
 ```
 
 If the breakpoint never fires, the crash is before `$040E` -- the BASIC stub itself is malformed. Check the disassembly at `$0401` to verify the stub bytes.
@@ -941,13 +942,13 @@ xpet -model 3032 -logfile vice.log -autostart program.prg
 `-remotemonitor` opens a TCP port that accepts the same text commands as the native monitor.
 
 ```bash
-xpet -model 3032 -remotemonitor -remotemonitoraddress 127.0.0.1:6510 -autostart program.prg
+xpet -model 3032 -remotemonitor -remotemonitoraddress 127.0.0.1:6502 -autostart program.prg
 ```
 
 Connect with `nc` or `telnet`:
 
 ```bash
-nc 127.0.0.1 6510
+nc 127.0.0.1 6502
 ```
 
 This lets an external script drive the monitor without focus on the emulator window. See "Headless Debugging" above for the full recipe.

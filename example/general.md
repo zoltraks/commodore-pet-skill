@@ -46,7 +46,7 @@ old_pcr:
 
 start:
 
-        rts                     ; machine code starts here at $040F (1039 decimal)
+        rts                     ; machine code starts here at $040E (1038 decimal)
 ```
 
 Assemble: `dasm stub.asm -f1 -ostub.prg`
@@ -201,7 +201,7 @@ copy_tail:
 
 PCR     = $E84C
 PCR_U   = $0C
-PCR_L   = $08
+PCR_L   = $0E
 
         org $0401
 
@@ -216,13 +216,17 @@ nextline:
 
 set_uppercase:
 
-        lda #PCR_U
+        lda PCR
+        and #$F1                ; clear bits 3:1 (CA2 mode), preserve CB2 bits
+        ora #PCR_U              ; bits 3:1 = 110 -> uppercase/graphics
         sta PCR
         rts
 
 set_lowercase:
 
-        lda #PCR_L
+        lda PCR
+        and #$F1                ; clear bits 3:1, preserve CB2 bits
+        ora #PCR_L              ; bits 3:1 = 111 -> lowercase/text
         sta PCR
         rts
 ```
@@ -399,7 +403,7 @@ render:
 
 ## IRQ-Driven Animation Skeleton
 
-Uses the 60 Hz VBLANK IRQ to advance frames. The KERNAL IRQ handler is replaced at `CINV`. The handler acknowledges the IRQ by reading PIA1 CRB ($E813) to prevent re-entry, then chains back to the original KERNAL handler for keyboard and clock.
+Uses the 60 Hz VBLANK IRQ to advance frames. The KERNAL IRQ handler is replaced at `CINV`. The handler acknowledges the IRQ by reading PIA1 Port B ($E812) to prevent re-entry, then chains back to the original KERNAL handler for keyboard and clock.
 
 ```asm
         processor 6502
@@ -407,8 +411,8 @@ Uses the 60 Hz VBLANK IRQ to advance frames. The KERNAL IRQ handler is replaced 
 SCREEN    = $8000
 GETIN     = $FFE4
 CHROUT    = $FFD2
-CINV      = $0090       ; hardware IRQ vector (ZP)
-PIA1_CRB  = $E813       ; must read to clear VBLANK IRQ flag
+CINV         = $0090    ; hardware IRQ vector (ZP)
+PIA1_PORTB   = $E812    ; read to clear VBLANK IRQ flag (CB1 flag clears on Port B read)
 
         org $0401
 
@@ -504,41 +508,60 @@ exit:
 ; IRQ HANDLER
 ; =========================================================
 
-irq_handler:             ; KERNAL IRQ entry at $E442 already saved A/X/Y on stack. It dispatches to CINV ($0090) after register save.
+irq_handler:             ; KERNAL IRQ entry at $E442 saves A/X/Y then dispatches to CINV ($0090)
 
-        bit PIA1_CRB            ; acknowledge VBLANK IRQ - mandatory
+        bit PIA1_PORTB          ; acknowledge VBLANK IRQ: read PIA1 Port B - mandatory
         lda #1
         sta next_frame          ; signal main loop
-        jmp $E962               ; chain to KERNAL: keyboard scan + clock update
+        jmp (old_cinv)          ; chain to original KERNAL handler (keyboard scan + clock)
 
 ; =========================================================
 ; RENDER
 ; =========================================================
 
-render_frame:            ; Copy 1000 bytes from frame pointer to screen
+render_frame:            ; Copy 1000 bytes from frame pointer to screen; frame_ctr:frame_hi restored on exit
+
+        lda frame_hi
+        pha                     ; save frame_hi; inc'd 3 times below, restored at end
 
         ldy #$00
-        ldx #3                  ; 3 full pages of 256 bytes = 768 bytes
 
-render_page:
+render_p1:
 
-        lda (frame_ctr),y       ; indirect ZP read
-        sta SCREEN,y
+        lda (frame_ctr),y       ; source bytes 0-255
+        sta SCREEN,y            ; dest $8000-$80FF
         iny
-        bne render_page
-        inc frame_hi            ; advance source pointer to next page
-        dex
-        bne render_page         ; 768 bytes done
+        bne render_p1
+        inc frame_hi
+
+render_p2:
+
+        lda (frame_ctr),y       ; source bytes 256-511
+        sta SCREEN+$100,y       ; dest $8100-$81FF
+        iny
+        bne render_p2
+        inc frame_hi
+
+render_p3:
+
+        lda (frame_ctr),y       ; source bytes 512-767
+        sta SCREEN+$200,y       ; dest $8200-$82FF
+        iny
+        bne render_p3
+        inc frame_hi
 
         ldy #$E8                ; remaining 232 bytes: $8300-$83E7
 
 render_tail:
 
         dey
-        lda (frame_ctr),y       ; y = 231..0, reads from frame source
-        sta SCREEN+$300,y       ; writes $83E7..$8300
+        lda (frame_ctr),y       ; source bytes 768-999 (y = 231..0)
+        sta SCREEN+$300,y       ; dest $83E7..$8300
         bne render_tail         ; 232 bytes done, total = 1000
-        rts                     ; advance frame_ctr to next frame (add 1000 to frame pointer)
+
+        pla
+        sta frame_hi            ; restore frame_hi to original value
+        rts
 
 ; =========================================================
 ; FRAME DATA
@@ -553,8 +576,8 @@ frame_data:
 **Notes:**
 
 - The KERNAL IRQ entry at `$E442` saves A/X/Y before dispatching to CINV, so the custom handler does not need to preserve registers.
-- `$E962` is the KERNAL clock/keyboard handler. Its exact address may vary between ROM versions; read from the KERNAL ROM if portability is needed.
-- Reading `PIA1_CRB` ($E813) is mandatory in any custom IRQ handler that replaces CINV completely.
+- Chaining via `jmp (old_cinv)` is portable across ROM versions; the original CINV value points to the KERNAL keyboard scan and clock update handler.
+- Reading `PIA1_PORTB` ($E812) is mandatory in any custom IRQ handler that replaces CINV completely. On the 6520 PIA, the CB1 interrupt flag clears only on a Port B read — reading CRB ($E813) does not clear it.
 
 ## Screen Data Row Format
 

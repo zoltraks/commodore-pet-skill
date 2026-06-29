@@ -92,8 +92,8 @@ GETIN   = $FFE4
 CHROUT  = $FFD2         ; KERNAL: Output character
 
 PCR     = $E84C         ; PET Character Set Register
-PCR_U   = $0C           ; CA2 high: uppercase / graphics charset
-PCR_L   = $08           ; CA2 low:  lowercase / text charset
+PCR_U   = $0C           ; uppercase / graphics charset (PCR bits 3:1 = 110)
+PCR_L   = $0E           ; lowercase / text charset (PCR bits 3:1 = 111)
 ```
 
 Rules:
@@ -127,7 +127,7 @@ For the zero-page borrowing and save/restore policy, see `STYLE.md`.
 
 ## BASIC Stub
 
-The BASIC stub is always the first section in the file. It produces a one-line BASIC program (`10 SYS1038`) that jumps to machine code at address `$0406` (decimal 1038).
+The BASIC stub is always the first section in the file. It produces a one-line BASIC program (`10 SYS1038`) that jumps to machine code at address `$040E` (decimal 1038).
 
 ```asm
 ; =========================================================

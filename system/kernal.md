@@ -30,8 +30,8 @@ Each entry is a 3-byte `JMP` instruction.
 |---------|--------|------------------------------------|-----------------------------------------------|----------------------|
 | $FFC0   | OPEN   | Open logical file (BASIC parsing!) | (params set via ZP, see below)                | jumps to error on fail |
 | $FFC3   | CLOSE  | Close logical file (BASIC parsing!) | A = logical file number                      | jumps to error on fail |
-| $FFC6   | CHKIN  | Set input channel                  | X = logical file number                       | jumps to error on fail |
-| $FFC9   | CHKOUT | Set output channel                 | X = logical file number                       | jumps to error on fail |
+| $FFC6   | CHKIN  | Set input channel                  | X = logical file number                       | C=0 ok, C=1 error      |
+| $FFC9   | CHKOUT | Set output channel                 | X = logical file number                       | C=0 ok, C=1 error      |
 | $FFCC   | CLRCHN | Clear channels                     | -                                             | -                    |
 | $FFCF   | BASIN  | Read byte from current input       | -                                             | A = byte             |
 | $FFD2   | CHROUT | Output character to current output | A = PETSCII char                              | -                    |
@@ -58,8 +58,8 @@ To call OPEN or CLOSE from machine code, use the **low-level ROM entry points** 
 
 | Routine   | Jump table  | Low-level (ML-safe) | What the low-level entry skips    |
 |-----------|-------------|---------------------|-----------------------------------|
-| OPEN      | $FFC0       | $F524               | BASIC param parse at $F4CE        |
-| CLOSE     | $FFC3       | $F2AC               | BASIC param parse at $F4CE        |
+| OPEN      | $FFC0       | $F560               | BASIC param parse at $F4CE        |
+| CLOSE     | $FFC3       | $F2DD               | BASIC param parse at $F4CE        |
 
 CHKIN, CHKOUT, CLRCHN, CHRIN, CHROUT, GETIN, CLALL, and STOP work correctly from the jump table — they do NOT include BASIC parsing.
 
@@ -90,8 +90,8 @@ PET_SA          = $D3
 PET_DEV         = $D4
 PET_FNADR_LO    = $DA
 PET_FNADR_HI    = $DB
-PET_OPEN_LOGIC  = $F524       ; OPEN past BASIC parsing
-PET_CLOSE_LOGIC = $F2AC       ; CLOSE past BASIC parsing
+PET_OPEN_LOGIC  = $F560       ; OPEN past BASIC parsing
+PET_CLOSE_LOGIC = $F2DD       ; CLOSE past BASIC parsing
 
 ; pet_setnam: A=length, X=addr_lo, Y=addr_hi
 pet_setnam:
@@ -132,7 +132,7 @@ pet_close:
         rts
 ```
 
-**Error handling note:** The PET's OPEN, CLOSE, CHKIN, and CHKOUT do NOT use the carry flag for error reporting. On failure, they jump directly to the BASIC error handler (`$CE03`), which prints `?SYNTAX ERROR` or similar and returns to BASIC. If the routine returns at all, it succeeded. The `pet_open` wrapper above detects OPEN success by checking if `$AE` (file count) increased.
+**Error handling note:** The PET's OPEN and CLOSE do NOT use the carry flag for error reporting. On failure, they jump directly to the BASIC error handler (`$CE03`), which prints `?SYNTAX ERROR` or similar and returns to BASIC. If the routine returns at all, it succeeded. The `pet_open` wrapper above detects OPEN success by checking if `$AE` (file count) increased. CHKIN and CHKOUT use the carry flag normally: C=0 on success, C=1 on error.
 
 ### Common KERNAL Routine Usage
 
@@ -190,7 +190,7 @@ my_irq:
         pha
         cld
         ; ... your code ...
-        jmp $E62B               ; or chain to original KERNAL handler
+        jmp (old_cinv)          ; chain to original KERNAL handler (save before install)
 ```
 
 ## I/O Device Numbers
@@ -242,7 +242,7 @@ On the PET, there is no SETLFS or SETNAM KERNAL call. Set the zero-page location
         ldy #0                  ; secondary address
         jsr pet_setlfs          ; sets $D2, $D3, $D4
 
-        jsr pet_open            ; calls $F524, checks $AE for success
+        jsr pet_open            ; calls $F560, checks $AE for success
         bcc open_ok
         jmp open_error
 

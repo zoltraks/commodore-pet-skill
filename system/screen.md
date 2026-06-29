@@ -121,7 +121,7 @@ PETSCII (the character codes used in BASIC strings and CHROUT) differ from scree
 | Space | $20     | $20         |
 | 0-9   | $30-$39 | $30-$39     |
 | A-Z   | $41-$5A | $01-$1A     |
-| @     | $00     | $00         |
+| @     | $40     | $00         |
 | [     | $5B     | $1B         |
 | ]     | $5D     | $1D         |
 | _     | $A4     | $64         |

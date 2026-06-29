@@ -3,7 +3,7 @@
 ## Purpose
 
 > **Scope:** Complete, runnable DASM examples for PET 3032 file I/O: load PRG, save PRG, read SEQ, write SEQ, command channel, directory listing, error handling
-> **Key items:** pet_setnam, pet_setlfs, pet_open (calls $F524), pet_close (calls $F2AC), CHKIN=$FFC6, CHKOUT=$FFC9, CLRCHN=$FFCC, CHRIN=$FFCF, CHROUT=$FFD2, LOAD=$FFD5, SAVE=$FFD8, STATUS=$0096
+> **Key items:** pet_setnam, pet_setlfs, pet_open (calls $F560), pet_close (calls $F2DD), CHKIN=$FFC6, CHKOUT=$FFC9, CLRCHN=$FFCC, CHRIN=$FFCF, CHROUT=$FFD2, LOAD=$FFD5, SAVE=$FFD8, STATUS=$0096
 
 This file contains verified, runnable DASM assembly examples for all common PET 3032 file I/O patterns.
 
@@ -52,8 +52,8 @@ PET_SA          = $D3        ; secondary address
 PET_DEV         = $D4        ; device number
 PET_FNADR_LO    = $DA        ; filename address low
 PET_FNADR_HI    = $DB        ; filename address high
-PET_OPEN_LOGIC  = $F524      ; OPEN past BASIC parsing
-PET_CLOSE_LOGIC = $F2AC      ; CLOSE past BASIC parsing
+PET_OPEN_LOGIC  = $F560      ; OPEN past BASIC parsing
+PET_CLOSE_LOGIC = $F2DD      ; CLOSE past BASIC parsing
 
 CHKIN   = $FFC6         ; set input channel
 CHKOUT  = $FFC9         ; set output channel

@@ -17,9 +17,9 @@ The PET 3032 generates a 60 Hz interrupt from the screen vertical retrace.
 
 The CRTC 6545 generates vertical sync, which is inverted and connected to PIA 1 CB1.
 
-PIA 1 CRB (`$E813`) is level-triggered: the interrupt flag stays set until the PIA is acknowledged by reading `$E813`.
+The CB1 interrupt flag stays set until the PIA is acknowledged by reading PIA 1 Port B (`$E812`). On the 6520 PIA, CB1's flag is cleared only by reading the Port B data register — reading Control Register B ($E813) does not clear it.
 
-If your IRQ handler does not read `$E813`, the interrupt re-fires immediately after `RTI`, locking the CPU in an infinite interrupt loop.
+If your IRQ handler does not read `$E812`, the interrupt re-fires immediately after `RTI`, locking the CPU in an infinite interrupt loop.
 
 VIA PORT B bit 5 (`$E840` bit 5) carries the same VBLANK signal and is used for polling without enabling IRQs.
 
@@ -82,7 +82,7 @@ my_irq:
         tya
         pha                     ; save Y
         cld                     ; mandatory: NMOS 6502 does not clear D on IRQ entry
-        bit $E813               ; read PIA1 CRB -- acknowledges VBLANK IRQ
+        bit $E812               ; read PIA1 Port B -- acknowledges VBLANK IRQ
         ; ... your handler code here ...
         pla
         tay
@@ -92,7 +92,7 @@ my_irq:
         rti
 ```
 
-The `bit $E813` read is mandatory.
+The `bit $E812` read is mandatory.
 
 Without it, the VBLANK IRQ remains asserted and the handler re-enters immediately after `rti`.
 
@@ -104,11 +104,15 @@ The NMOS 6502 does not clear the decimal flag on IRQ entry.
 
 ## Chaining to the KERNAL Handler
 
-The KERNAL IRQ handler at `$E62B` updates the jiffy clock, scans the keyboard, and calls UDTIM.
+The KERNAL IRQ entry at `$E442` saves A/X/Y, then dispatches through CINV. The clock/keyboard handler lives at approximately `$E455` in Editor ROM, but this address varies between ROM versions. The safest way to chain is through the saved original CINV value.
 
 To run your code first then pass control to the KERNAL:
 
 ```asm
+old_cinv:
+
+        word 0                  ; save original CINV here before install
+
 my_irq:
 
         pha
@@ -117,25 +121,25 @@ my_irq:
         tya
         pha
         cld
-        bit $E813               ; acknowledge VBLANK
+        bit $E812               ; acknowledge VBLANK: read PIA1 Port B
         ; ... your code here ...
         pla
         tay
         pla
         tax
         pla
-        jmp $E62B               ; chain to KERNAL handler (ends with RTI)
+        jmp (old_cinv)          ; chain to original KERNAL handler (ends with RTI)
 ```
 
 Do not use `jsr` to chain. The KERNAL handler ends with `rti`, which returns from the interrupt correctly.
 
-When chaining to the KERNAL, the KERNAL also reads `$E813` during its own processing, so a double-read is harmless.
+When chaining via old_cinv, the KERNAL also reads `$E812` during its own processing, so a double-read is harmless.
 
 ## Replacing the KERNAL Handler Completely
 
 If you replace CINV entirely and do not chain, you must:
 
-- Read `$E813` yourself to acknowledge the VBLANK IRQ.
+- Read `$E812` (PIA 1 Port B) yourself to acknowledge the VBLANK IRQ.
 - Call UDTIM (`$FFEA`) yourself if you need the jiffy clock to advance.
 - Scan the keyboard yourself if you need GETIN to work.
 
@@ -161,7 +165,7 @@ The polling approach does not require reading `$E813`.
 
 | Mistake                          | Consequence                           | Fix                                     |
 |----------------------------------|---------------------------------------|-----------------------------------------|
-| Skip `$E813` read                | IRQ re-fires, CPU locked              | Always read `$E813` in VBLANK handler   |
+| Skip `$E812` read                | IRQ re-fires, CPU locked              | Always read `$E812` (PIA1 Port B) in VBLANK handler |
 | Skip `CLD`                       | Wrong ADC/SBC results in handler      | Add `CLD` after register saves          |
 | No `SEI`/`CLI` around CINV write | IRQ fires during partial vector write | Always bracket CINV update with SEI/CLI |
 | Don't restore CINV on exit       | KERNAL broken after program exits     | Save `old_cinv`, restore in cleanup     |

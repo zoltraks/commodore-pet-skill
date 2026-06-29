@@ -203,7 +203,7 @@ Do not modify PCR bits 7-4 for sound; use ACR and SR only.
 ```asm
 PCR     = $E84C
 PCR_U   = $0C
-PCR_L   = $08
+PCR_L   = $0E
 ```
 
 Changing PCR bits 3-1 switches the character set.

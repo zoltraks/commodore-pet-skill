@@ -3,7 +3,7 @@
 ## Purpose
 
 > **Scope:** VIA 6522, PIA 6520 (x2), CRTC 6545, I/O decoding, screen RAM, character generator, VBLANK
-> **Key items:** VIA $E840-$E84F, PIA1 $E810-$E813, PIA2 $E820-$E823, CRTC $E880-$E881, SCREEN=$8000, PCR=$E84C, PCR_U=$0C, PCR_L=$08
+> **Key items:** VIA $E840-$E84F, PIA1 $E810-$E813, PIA2 $E820-$E823, CRTC $E880-$E881, SCREEN=$8000, PCR=$E84C, PCR_U=$0C, PCR_L=$0E
 
 This file covers the PET 3032 hardware chips in four progressive layers:
 
@@ -26,7 +26,7 @@ This file covers the PET 3032 hardware chips in four progressive layers:
 | Screen RAM | $8000 - $83E7 | 1000 B | 40 columns by 25 rows        |
 | I/O Area   | $E800 - $EFFF | 2 KB   | Memory-mapped I/O devices    |
 | ROM        | $F000 - $FFFF | 4 KB   | System ROM (BASIC, KERNAL)   |
-| BASIC ROM  | $C000 - $DFFF | 8 KB   | BASIC keywords and operators |
+| BASIC ROM  | $B000 - $DFFF | 12 KB  | BASIC keywords and operators |
 | Editor ROM | $E000 - $E7FF | 2 KB   | Screen editor functions      |
 
 ### Screen Memory Layout
@@ -77,19 +77,19 @@ PIA 1 handles keyboard scanning, cassette I/O, and the VBLANK interrupt source.
 
 The VBLANK IRQ is level-triggered via PIA 1 CB1.
 
-The interrupt flag remains set until the PIA is acknowledged by **reading PIA 1 CRB ($E813)**.
+The interrupt flag remains set until the PIA is acknowledged by **reading PIA 1 Port B ($E812)**. On the 6520 PIA, CB1's interrupt flag is cleared only by reading the Port B data register — reading the Control Register B ($E813) does not clear it.
 
-If a custom IRQ handler does not read $E813, the interrupt re-fires immediately after `RTI`, locking the CPU.
+If a custom IRQ handler does not read $E812, the interrupt re-fires immediately after `RTI`, locking the CPU.
 
 ```asm
 my_vblank_irq:
 
-        bit $E813               ; Inside a custom VBLANK IRQ handler: read PIA1 CRB to acknowledge VBLANK IRQ
+        bit $E812               ; Inside a custom VBLANK IRQ handler: read PIA1 Port B to acknowledge VBLANK IRQ
         ; ... handler body ...
         rti
 ```
 
-When chaining to the KERNAL IRQ handler, the KERNAL reads $E813 itself.
+When chaining to the KERNAL IRQ handler, the KERNAL reads $E812 itself.
 
 If you replace CINV completely, add the read explicitly.
 
@@ -157,17 +157,17 @@ The VIA provides timers, shift register, and the user port.
 
 Power-on value is `$0C` or `$0E`.
 
-Bits 3-1 control CA2 (character set selection):
+Bits 3:1 control CA2 (character set selection). Per the 6522 spec, bits 3:1 = 110 ($0C) drives CA2 low and bits 3:1 = 111 ($0E) drives CA2 high. The PET board connects CA2 to the character ROM bank-select pin:
 
-- CA2 high (`$0C`): uppercase and graphics charset
-- CA2 low (`$08`): lowercase and text charset
+- `$0C` (bits 3:1 = 110, CA2 low): uppercase and graphics charset
+- `$0E` (bits 3:1 = 111, CA2 high): lowercase and text charset
 
 Standard equates:
 
 ```asm
 PCR     = $E84C
-PCR_U   = $0C           ; CA2 high: uppercase / graphics charset
-PCR_L   = $08           ; CA2 low:  lowercase / text charset
+PCR_U   = $0C           ; uppercase / graphics charset (PCR bits 3:1 = 110)
+PCR_L   = $0E           ; lowercase / text charset (PCR bits 3:1 = 111)
 ```
 
 ### ACR ($E84B) - Auxiliary Control Register
@@ -245,20 +245,23 @@ The PET 3032 uses board #3.
 - Two character sets selected via VIA CA2 (PCR register):
 
   - Uppercase + graphics (`$0C`)
-  - Lowercase + uppercase (`$08`)
+  - Lowercase + uppercase (`$0E`)
 
 - Bit 7 of screen RAM inverts the character (reverse video)
 
 ### Character Set Switching
 
+Always use read-modify-write to preserve VIA CB2 bits (CB2 drives the IEEE-488 NDAC line; overwriting it breaks disk I/O):
+
 ```asm
         lda PCR
-        and #$F7                ; clear bit 3 (CA2 low)
-        ora #$08                ; ensure CA2 low -> lowercase/text
+        and #$F1                ; clear bits 3:1 (CA2 mode)
+        ora #$0E                ; bits 3:1 = 111 -> lowercase/text
         sta PCR
 
         lda PCR                 ; or switch back to uppercase/graphics:
-        ora #$0C                ; CA2 high
+        and #$F1                ; clear bits 3:1
+        ora #$0C                ; bits 3:1 = 110 -> uppercase/graphics
         sta PCR
 ```
 
