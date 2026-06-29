@@ -2,7 +2,7 @@
 
 ## Purpose
 
-> **Scope:** Running PET 3032 programs and debugging with the `xpet` command (VICE 3.7)
+> **Scope:** Running PET 3032 programs and debugging with the `xpet` command (VICE 3.7+)
 > **Key items:** `-model 3032`, `-autostart`, `-drive8type 2031`, `-remotemonitor`, `-limitcycles`, `-warp`, headless screen inspection
 
 | Out of scope               | See instead                 |
@@ -16,20 +16,20 @@
 | Section                          | Line | What it covers                                                             |
 |----------------------------------|------|----------------------------------------------------------------------------|
 | Invocation                       | 34   | Minimal command form and model flag                                        |
-| PET ROM Setup                    | 44   | How VICE finds ROMs; symlinking from a known location                      |
-| Drive Types on PET               | 90   | `-drive8type 2031` for D64; never 1541 on PET                              |
-| Running a PRG                    | 106  | Autostart modes, why disk autostart is most reliable                       |
-| Headless Debugging               | 160  | Remote monitor over TCP, cycle limits, screen dumps, warp timing           |
-| Decoding Screen Codes            | 342  | Reading dumped `$8000-$83E7` bytes back into characters; row arithmetic    |
-| Signal-Byte Tracing              | 395  | Writing trace bytes to safe RAM to locate crash points                     |
-| Memory Landmarks                 | 442  | Addresses worth checking during diagnostics                                |
-| Verifying KERNAL Jump Table      | 470  | Disassembling `$FFC0-$FFEA`; PET vs C64 entry differences                 |
-| Diagnosing Crashes               | 508  | SYNTAX ERROR from bad KERNAL calls, KERNAL hang, SP depth, VIA PCR hazard  |
-| Debugging Workflow               | 566  | Step-by-step recipe: check if program ran, breakpoint, step, watch, trace  |
-| Built-in Monitor                 | 665  | Opening the monitor, full command reference, register modification, memory |
-| Breakpoints                      | 816  | initbreak, break, watch, trace, conditional, warp-mode timing              |
-| Monitor Scripts                  | 865  | moncommands file for automated debug sessions                              |
-| Useful Flags                     | 891  | warp, speed, keybuf, logging                                               |
+| PET ROM Setup                    | 44   | How VICE finds ROMs; symlinking on Linux, bindist on Windows              |
+| Drive Types on PET               | 116  | `-drive8type 2031` for D64; never 1541 on PET                              |
+| Running a PRG                    | 132  | Autostart modes, why disk autostart is most reliable                       |
+| Headless Debugging               | 186  | Remote monitor over TCP, cycle limits, screen dumps, warp timing, Windows  |
+| Decoding Screen Codes            | 413  | Reading dumped `$8000-$83E7` bytes back into characters; row arithmetic    |
+| Signal-Byte Tracing              | 466  | Writing trace bytes to safe RAM to locate crash points                     |
+| Memory Landmarks                 | 514  | Addresses worth checking during diagnostics                                |
+| Verifying KERNAL Jump Table      | 542  | Disassembling `$FFC0-$FFEA`; PET vs C64 entry differences                 |
+| Diagnosing Crashes               | 580  | SYNTAX ERROR from bad KERNAL calls, KERNAL hang, SP depth, VIA PCR hazard  |
+| Debugging Workflow               | 638  | Step-by-step recipe: check if program ran, breakpoint, step, watch, trace  |
+| Built-in Monitor                 | 737  | Opening the monitor, full command reference, register modification, memory |
+| Breakpoints                      | 888  | initbreak, break, watch, trace, conditional, warp-mode timing              |
+| Monitor Scripts                  | 937  | moncommands file for automated debug sessions                              |
+| Useful Flags                     | 963  | warp, speed, keybuf, logging                                               |
 
 ## Invocation
 
@@ -43,11 +43,24 @@ Without `-model`, VICE defaults to the 2001 configuration which has a different 
 
 ## PET ROM Setup
 
-VICE looks for ROM image files in three places, in order:
+VICE looks for ROM image files using the `Directory` resource, a colon-separated search path list. The default search order depends on the OS:
+
+### Linux
 
 1. The path given by `-directory <base>` (treated as the whole data root)
-2. The system path: `/usr/share/vice/PET/` on Linux
+2. The system path: `/usr/share/vice/PET/`
 3. The user path: `~/.local/share/vice/PET/`
+4. The boot path: the directory where the `xpet` executable resides, plus its parent (`BOOTPATH/PET/`)
+
+### Windows
+
+1. The path given by `-directory <base>`
+2. The user path: `%APPDATA%\vice\PET\`
+3. The boot path: the directory where `xpet.exe` resides, plus its parent (`BOOTPATH\..\PET\`)
+
+On Windows, a standard bindist (e.g. `GTK3VICE-3.10-win64`) ships with all ROMs under `BOOTPATH\..\PET\` and `BOOTPATH\..\DRIVES\`. No manual ROM setup is needed -- VICE finds them automatically.
+
+### ROM Files
 
 PET 3032 needs four ROM files:
 
@@ -72,7 +85,7 @@ For D64 disk access, the 2031 drive ROM is also needed under a sibling `DRIVES/`
 Error - Could not open vertex shader: viewport.vert
 ```
 
-The fix is to leave the data root alone and instead symlink only the missing ROMs into the user path:
+The fix is to leave the data root alone and instead symlink only the missing ROMs into the user path (Linux only):
 
 ```bash
 mkdir -p ~/.local/share/vice/PET
@@ -85,7 +98,20 @@ mkdir -p ~/.local/share/vice/DRIVES
 ln -sf <source>/DRIVES/dos2031-901484-03+05.bin  ~/.local/share/vice/DRIVES/
 ```
 
-VICE picks the ROMs up automatically and keeps using the system path for shaders and palettes.
+On Windows, symlinks require administrator privileges. If ROMs are missing from the user path, copy them instead:
+
+```powershell
+$viceUser = "$env:APPDATA\vice"
+New-Item -ItemType Directory -Force "$viceUser\PET"
+New-Item -ItemType Directory -Force "$viceUser\DRIVES"
+Copy-Item "<source>\PET\characters-2.901447-10.bin"   "$viceUser\PET\"
+Copy-Item "<source>\PET\basic-2.901465-01-02.bin"    "$viceUser\PET\"
+Copy-Item "<source>\PET\kernal-2.901465-03.bin"      "$viceUser\PET\"
+Copy-Item "<source>\PET\edit-2-n.901447-24.bin"      "$viceUser\PET\"
+Copy-Item "<source>\DRIVES\dos2031-901484-03+05.bin"  "$viceUser\DRIVES\"
+```
+
+In practice, a standard Windows bindist already has all ROMs in the boot path, so neither symlinking nor copying is needed.
 
 ## Drive Types on PET
 
@@ -163,6 +189,8 @@ From BASIC, type `LOAD"*",8` then `RUN` to load and run the first program on the
 
 ### Recipe: Capture Screen RAM After Boot
 
+**Linux (bash + nc):**
+
 ```bash
 # 1. Launch xpet with remote monitor on a TCP port, warp on, hard cycle limit
 xpet -model 3032 -drive8type 2031 \
@@ -184,6 +212,47 @@ sleep 15
 kill $XPETPID 2>/dev/null
 wait 2>/dev/null
 ```
+
+**Windows (PowerShell):**
+
+On Windows, `nc` is not available. Use PowerShell's built-in TCP client instead. Launch xpet from `cmd /c` to avoid PowerShell argument-parsing issues with `-remotemonitor`:
+
+```powershell
+# 1. Launch xpet via cmd to avoid PowerShell argument mangling
+$proc = Start-Process -FilePath cmd -ArgumentList '/c xpet -model 3032 -drive8type 2031 -autostart work.d64 -warp -limitcycles 500000000 -remotemonitor -remotemonitoraddress 127.0.0.1:6502 -logfile xpet.log' -NoNewWindow -PassThru
+
+# 2. Give the autostart sequence wall-clock time to play out
+Start-Sleep -Seconds 15
+
+# 3. Connect to the remote monitor and dump screen RAM
+$client = New-Object System.Net.Sockets.TcpClient('127.0.0.1', 6502)
+$stream = $client.GetStream()
+$stream.ReadTimeout = 5000
+$writer = New-Object System.IO.StreamWriter($stream)
+$writer.AutoFlush = $true
+$buf = New-Object byte[] 8192
+Start-Sleep -Milliseconds 500
+$writer.WriteLine('m $8000 $83E7')
+Start-Sleep -Milliseconds 1000
+$data = ''
+while ($stream.DataAvailable) {
+    $count = $stream.Read($buf, 0, $buf.Length)
+    $data += [System.Text.Encoding]::ASCII.GetString($buf, 0, $count)
+}
+$writer.WriteLine('q')
+Start-Sleep -Milliseconds 200
+while ($stream.DataAvailable) {
+    $count = $stream.Read($buf, 0, $buf.Length)
+    $data += [System.Text.Encoding]::ASCII.GetString($buf, 0, $count)
+}
+$client.Close()
+$data | Out-File -Encoding utf8 screen.txt
+
+# 4. Tear down xpet
+Stop-Process -Id $proc.Id -Force
+```
+
+When using Git Bash (`sh`) on Windows, the Linux recipe works with minor adjustments: replace `/tmp/` with a Windows-compatible temp path, and use `kill %1` instead of `kill $XPETPID`.
 
 `-limitcycles N` caps total CPU cycles, killing xpet if the test script forgets to. At PET's 1 MHz, 500,000,000 cycles is 500 emulated seconds; warp lets the host burn through that as fast as it can.
 
@@ -274,6 +343,8 @@ Key advantages over `nc`:
 | Output capture     | May truncate on early close       | `recv` loop drains all output         |
 | `-q` flag          | Behaviour varies by `nc` variant  | No dependency                         |
 | Multiple commands  | One-shot pipe, reconnect per call | Persistent connection, reuse socket   |
+
+On Windows, `nc` is typically not installed. The PowerShell TCP snippet above and the Python socket script are the recommended alternatives. The Python script works unchanged on both Linux and Windows.
 
 ### Tracking the Autostart Sequence
 
@@ -945,11 +1016,15 @@ xpet -model 3032 -logfile vice.log -autostart program.prg
 xpet -model 3032 -remotemonitor -remotemonitoraddress 127.0.0.1:6502 -autostart program.prg
 ```
 
-Connect with `nc` or `telnet`:
+Connect with `nc` or `telnet` on Linux:
 
 ```bash
 nc 127.0.0.1 6502
 ```
+
+On Windows, `nc` is not available. Use PowerShell's TCP client or the Python socket script (see "Headless Debugging" above for both).
+
+**PowerShell argument-parsing note**: when launching xpet with `-remotemonitor` from PowerShell, use `cmd /c` as a wrapper -- PowerShell may mangle arguments that contain colons or start with `-`. From `cmd`, Git Bash (`sh`), or WSL `bash`, the command works directly.
 
 This lets an external script drive the monitor without focus on the emulator window. See "Headless Debugging" above for the full recipe.
 

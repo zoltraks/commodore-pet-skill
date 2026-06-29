@@ -594,13 +594,13 @@ VICE supports D64, D80, and D82 image formats for the emulated IEEE-488 drive.
 1. Start VICE xpet with the desired PET model.
 2. Open the Drive settings (menu or F12 in some builds).
 3. Attach the image file to Drive 8 (or Drive 9 for a second drive).
-4. Select the correct drive type for the image (8050 for D80, 8250 for D82, 1541 for D64).
+4. Select the correct drive type for the image (8050 for D80, 8250 for D82, 2031 for D64).
 5. The image is now accessible from PET code as device 8.
 
 From the command line:
 
 ```
-xpet -model 3032 -drive8type 1540 -8 myfile.d64
+xpet -model 3032 -drive8type 2031 -8 myfile.d64
 ```
 
 Or for a D80 image on an 8050:

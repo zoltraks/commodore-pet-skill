@@ -23,22 +23,22 @@ This file covers DASM for PET 3032 work in four progressive layers:
 
 ## Contents
 
-| Section              | Line | What it covers                                         |
-|----------------------|------|--------------------------------------------------------|
-| Command Line         | 45   | Invocation flags: `-f1`, `-o`, `-I`, `-D`              |
-| Docker               | 65   | dasm-container image: build, compile, includes, output |
-| Processor Directive  | 142  | `processor 6502` requirement                           |
-| Origin Directive     | 150  | `org $0401` and relocation                             |
-| Addressing Modes     | 166  | Immediate, ZP, absolute, indexed, indirect syntax      |
-| Data Directives      | 183  | `byte`, `word`, `hex`, `ds`, `dc`                      |
-| Labels and Equates   | 232  | Local labels, `equ`/`=`, forward references            |
-| Comments             | 307  | Semicolon style, tab-stop alignment                    |
-| Macros               | 319  | `mac`/`endm`, arguments, nesting                       |
-| Conditional Assembly | 344  | `ifconst`, `ifnconst`, `else`, `endif`                 |
-| Repeat Loops         | 366  | `repeat`/`repend`                                      |
-| Segments             | 376  | `seg`, `seg.u` for BSS, linking multiple segments      |
-| Include Files        | 384  | `include` and `incbin` directives                      |
-| Common Errors        | 396  | Undefined label, wrong format flag, forward-ref issues |
+| Section              | Line | What it covers                                                                    |
+|----------------------|------|-----------------------------------------------------------------------------------|
+| Command Line         | 45   | Invocation flags: `-f1`, `-o`, `-I`, `-D`, direct binary vs Docker                |
+| Docker               | 89   | dasm-container image: build, compile, includes, output                            |
+| Processor Directive  | 168  | `processor 6502` requirement                                                      |
+| Origin Directive     | 176  | `org $0401` and relocation                                                        |
+| Addressing Modes     | 192  | Immediate, ZP, absolute, indexed, indirect syntax                                 |
+| Data Directives      | 209  | `byte`, `word`, `hex`, `ds`, `dc`                                                 |
+| Labels and Equates   | 258  | Local labels, `equ`/`=`, forward references                                       |
+| Comments             | 333  | Semicolon style, tab-stop alignment                                               |
+| Macros               | 345  | `mac`/`endm`, arguments, nesting                                                  |
+| Conditional Assembly | 370  | `ifconst`, `ifnconst`, `else`, `endif`                                            |
+| Repeat Loops         | 392  | `repeat`/`repend`                                                                 |
+| Segments             | 402  | `seg`, `seg.u` for BSS, linking multiple segments                                 |
+| Include Files        | 410  | `include` and `incbin` directives                                                 |
+| Common Errors        | 422  | Undefined label, wrong format flag, forward-ref issues                            |
 
 For file structure, formatting conventions, naming rules, column alignment, comment placement, section headers, and BASIC stub layout, see `code/standard.md`.
 
@@ -62,9 +62,35 @@ Common options:
 
 For PET programs, always use `-f1` to produce a PRG file with a 2-byte load address header. This is the format expected by BASIC `LOAD` and `RUN` -- the first two bytes tell the PET where to place the program in memory (matching the `org` directive).
 
+### Direct Binary (Fallback When Docker Is Unavailable)
+
+If DASM is installed as a local binary (in `PATH` or at a known location), use it directly. This is the fallback when Docker is not available (e.g. Windows without Hyper-V, CI environments without a Docker daemon):
+
+```bash
+dasm source.asm -f1 -osource.prg
+```
+
+On PowerShell, the `-o` flag must be quoted to prevent PowerShell from interpreting it as a parameter:
+
+```powershell
+dasm source.asm -f1 "-obuild/source.prg"
+```
+
+The `-o` flag must be directly attached to the filename with no space (`-obuild/source.prg`, not `-o build/source.prg`). DASM treats `-o` with a space-separated argument as a different switch.
+
+Check the installed version:
+
+```bash
+dasm
+```
+
+This prints the version banner and usage. DASM 2.20.14.1 is the current release.
+
 ## Docker
 
-The `dasm-container` project (https://github.com/zoltraks/dasm-container) wraps DASM in a Debian 12-slim Docker image. Use it when DASM is not installed locally or when a reproducible build environment is needed.
+The `dasm-container` project (https://github.com/zoltraks/dasm-container) wraps DASM in a Debian 12-slim Docker image. This is the preferred way to build when Docker is available, ensuring a reproducible build environment.
+
+Use the direct binary fallback (see above) when Docker is not available, such as on Windows without Hyper-V or in CI without a Docker daemon.
 
 ### Building the Image
 
