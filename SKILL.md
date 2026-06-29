@@ -51,12 +51,12 @@ Read these files for OS routines, memory layout, and I/O protocols.
 | File                 | Read when the task involves                                                                 |
 |----------------------|---------------------------------------------------------------------------------------------|
 | `system/memory.md`   | RAM layout, zero page map, BASIC workspace, screen RAM range, safe zones for machine code   |
-| `system/kernal.md`   | KERNAL jump table ($FFB7-$FFEA), indirect vectors, CHROUT/GETIN/CLALL                       |
+| `system/kernal.md`   | KERNAL jump table ($FFC0-$FFEA), indirect vectors, CHROUT/GETIN/CLALL, PET vs C64 differences |
 | `system/irq.md`      | VBLANK IRQ setup, CINV vector, PIA1 CRB acknowledgement, handler template, VBLANK polling   |
 | `system/screen.md`   | Screen RAM layout, PETSCII vs screen codes, control codes, reverse video, cursor, scrolling |
 | `system/load.md`     | Loading PRG files from tape or disk, LOAD call sequence, tape file format                   |
 | `system/keyboard.md` | PIA 1 keyboard matrix scan, GETIN vs direct scan, special keys, multi-key detection         |
-| `system/file.md`     | Full file I/O: SETNAM/SETLFS/OPEN/CLOSE/CHKIN/CHKOUT/CLRCHN/CHRIN/CHROUT/LOAD/SAVE          |
+| `system/file.md`     | Full file I/O: pet_setnam/pet_setlfs/pet_open/pet_close wrappers, CHKIN/CHKOUT/CLRCHN/CHRIN/CHROUT/LOAD/SAVE, PET vs C64 differences |
 | `system/disk.md`     | DOS commands, command channel (SA=15), directory reading, drive errors, disk images         |
 
 ### Code Patterns
@@ -75,7 +75,7 @@ Read these files for implementation techniques and algorithmic patterns.
 | File                        | Read when the task involves                                                                                                                                                             |
 |-----------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `utility/dasm-assembler.md` | DASM syntax, directives, macros, segments, command-line options                                                                                                                         |
-| `utility/vice-emulator.md`  | Running PRG files in xpet, VICE monitor, breakpoints, watchpoints, tracepoints, conditional breakpoints, register modification, headless debugging, crash diagnosis, debugging workflow |
+| `utility/vice-emulator.md`  | Running PRG files in xpet, VICE monitor, breakpoints, watchpoints, tracepoints, conditional breakpoints, register modification, headless debugging, signal-byte tracing, Python socket scripting, KERNAL table verification, crash diagnosis, debugging workflow |
 
 ### Examples
 
@@ -97,6 +97,8 @@ Use this table to pick the right file without reading every option above.
 | Generate a tone on the PET speaker        | `hardware/sound.md`         |                             |
 | Find a safe memory address for code/data  | `system/memory.md`          |                             |
 | Call a KERNAL routine by address          | `system/kernal.md`          |                             |
+| PET vs C64 KERNAL differences             | `system/kernal.md`          | `system/file.md`            |
+| ?SYNTAX ERROR from KERNAL calls           | `system/kernal.md`          | `utility/vice-emulator.md`  |
 | Set up a VBLANK IRQ or poll VBLANK        | `system/irq.md`             |                             |
 | Write to the screen or use PETSCII        | `system/screen.md`          |                             |
 | Load a PRG or data file from tape or disk | `system/load.md`            |                             |
@@ -133,8 +135,8 @@ Use the table of contents to jump to the relevant section rather than reading th
 
 | File                       | Lines |
 |----------------------------|-------|
-| `system/file.md`           | ~1180 |
-| `example/file.md`          | ~930  |
-| `utility/vice-emulator.md` | ~810  |
-| `system/disk.md`           | ~750  |
-| `example/general.md`       | ~550  |
+| `system/file.md`           | ~1200 |
+| `example/file.md`          | ~1000 |
+| `utility/vice-emulator.md` | ~960  |
+| `system/disk.md`           | ~780  |
+| `example/general.md`       | ~570  |

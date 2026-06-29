@@ -3,7 +3,7 @@
 ## Purpose
 
 > **Scope:** Complete, runnable DASM examples for PET 3032 file I/O: load PRG, save PRG, read SEQ, write SEQ, command channel, directory listing, error handling
-> **Key items:** SETNAM=$FFBD, SETLFS=$FFBA, OPEN=$FFC0, CLOSE=$FFC3, CHKIN=$FFC6, CHKOUT=$FFC9, CLRCHN=$FFCC, CHRIN=$FFCF, CHROUT=$FFD2, LOAD=$FFD5, SAVE=$FFD8, STATUS=$0096
+> **Key items:** pet_setnam, pet_setlfs, pet_open (calls $F524), pet_close (calls $F2AC), CHKIN=$FFC6, CHKOUT=$FFC9, CLRCHN=$FFCC, CHRIN=$FFCF, CHROUT=$FFD2, LOAD=$FFD5, SAVE=$FFD8, STATUS=$0096
 
 This file contains verified, runnable DASM assembly examples for all common PET 3032 file I/O patterns.
 
@@ -41,20 +41,65 @@ Include this block at the top of any program that does file I/O:
 ; KERNAL file I/O addresses
 ; =========================================================
 
-SETNAM  = $FFBD         ; set filename
-SETLFS  = $FFBA         ; set logical file, device, SA
-OPEN    = $FFC0         ; open logical file
-CLOSE   = $FFC3         ; close logical file
+; The PET does NOT have SETNAM ($FFBD), SETLFS ($FFBA), or READST ($FFB7)
+; in its KERNAL jump table -- those are C64-only addresses.
+; Use the wrapper routines below instead.
+
+; ---- PET file I/O zero-page locations ----
+PET_FNLEN       = $D1        ; filename length
+PET_LA          = $D2        ; logical file number
+PET_SA          = $D3        ; secondary address
+PET_DEV         = $D4        ; device number
+PET_FNADR_LO    = $DA        ; filename address low
+PET_FNADR_HI    = $DB        ; filename address high
+PET_OPEN_LOGIC  = $F524      ; OPEN past BASIC parsing
+PET_CLOSE_LOGIC = $F2AC      ; CLOSE past BASIC parsing
+
 CHKIN   = $FFC6         ; set input channel
 CHKOUT  = $FFC9         ; set output channel
 CLRCHN  = $FFCC         ; restore default I/O channels
 CHRIN   = $FFCF         ; read one byte from input channel
 CHROUT  = $FFD2         ; write one byte to output channel
-READST  = $FFB7         ; read STATUS byte into A
 LOAD    = $FFD5         ; load PRG file
 SAVE    = $FFD8         ; save PRG file
 
-STATUS  = $0096         ; I/O status byte (zero page mirror)
+STATUS  = $0096         ; I/O status byte (read directly, no READST)
+
+; ---- PET file I/O wrapper routines ----
+
+; pet_setnam: A=length, X=addr_lo, Y=addr_hi
+pet_setnam:
+        sta PET_FNLEN
+        stx PET_FNADR_LO
+        sty PET_FNADR_HI
+        rts
+
+; pet_setlfs: A=LFN, X=DEV, Y=SA
+pet_setlfs:
+        sta PET_LA
+        stx PET_DEV
+        sty PET_SA
+        rts
+
+; pet_open: returns carry clear on success, set on error
+pet_open:
+        lda $AE
+        pha
+        jsr PET_OPEN_LOGIC
+        pla
+        cmp $AE
+        bcc po_ok
+        sec
+        rts
+po_ok:
+        clc
+        rts
+
+; pet_close: A = logical file number
+pet_close:
+        sta PET_LA
+        jsr PET_CLOSE_LOGIC
+        rts
 ```
 
 ## Load a PRG File
@@ -68,8 +113,8 @@ LOAD with SA=1 ignores the file's load address and loads to the address in X/Y.
 ```asm
         processor 6502
 
-SETNAM  = $FFBD
-SETLFS  = $FFBA
+; PET does not have SETNAM - use pet_setnam wrapper (see system/file.md)
+; PET does not have SETLFS - use pet_setlfs wrapper (see system/file.md)
 LOAD    = $FFD5
 CHROUT  = $FFD2
 
@@ -94,12 +139,12 @@ load_prg:
         lda #progname_end-progname      ; set filename
         ldx #<progname
         ldy #>progname
-        jsr SETNAM
+        jsr pet_setnam
 
         lda #1                  ; LFN=1, device=8, SA=0 (use file's load address)
         ldx #8
         ldy #0
-        jsr SETLFS
+        jsr pet_setlfs
 
         lda #0                  ; LOAD: A=0 means load, A=1 would mean verify
         jsr LOAD
@@ -135,12 +180,12 @@ To load a file at a fixed address regardless of its embedded load address, use S
         lda #scrname_end-scrname        ; load SCREEN.BIN to $8000 regardless of file header
         ldx #<scrname
         ldy #>scrname
-        jsr SETNAM
+        jsr pet_setnam
 
         lda #1
         ldx #8
         ldy #1                  ; SA=1 = override load address
-        jsr SETLFS
+        jsr pet_setlfs
 
         lda #0                  ; load (not verify)
         ldx #<$8000             ; override address low
@@ -163,8 +208,8 @@ SAVE takes the start address from a zero-page pointer and the end+1 address in X
 ```asm
         processor 6502
 
-SETNAM  = $FFBD
-SETLFS  = $FFBA
+; PET does not have SETNAM - use pet_setnam wrapper (see system/file.md)
+; PET does not have SETLFS - use pet_setlfs wrapper (see system/file.md)
 SAVE    = $FFD8
 
 SAVE_PTR = $FB              ; zero-page pointer for SAVE start address
@@ -190,12 +235,12 @@ save_prg:
         lda #savname_end-savname
         ldx #<savname
         ldy #>savname
-        jsr SETNAM
+        jsr pet_setnam
 
         lda #1                  ; LFN=1, device=8, SA=1 (PRG save)
         ldx #8
         ldy #1
-        jsr SETLFS
+        jsr pet_setlfs
 
         lda #<$040F             ; set start address in zero page pointer
         sta SAVE_PTR
@@ -231,10 +276,10 @@ Read until STATUS indicates EOF or error.
 ```asm
         processor 6502
 
-SETNAM  = $FFBD
-SETLFS  = $FFBA
-OPEN    = $FFC0
-CLOSE   = $FFC3
+; PET does not have SETNAM - use pet_setnam wrapper (see system/file.md)
+; PET does not have SETLFS - use pet_setlfs wrapper (see system/file.md)
+; PET OPEN includes BASIC parsing - use pet_open wrapper (see system/file.md)
+; PET CLOSE includes BASIC parsing - use pet_close wrapper (see system/file.md)
 CHKIN   = $FFC6
 CLRCHN  = $FFCC
 CHRIN   = $FFCF
@@ -264,14 +309,14 @@ read_seq:
         lda #rdname_end-rdname  ; set filename
         ldx #<rdname
         ldy #>rdname
-        jsr SETNAM
+        jsr pet_setnam
 
         lda #2                  ; LFN=2, device=8, SA=2 (sequential read)
         ldx #8
         ldy #2
-        jsr SETLFS
+        jsr pet_setlfs
 
-        jsr OPEN
+        jsr pet_open
         bcs read_open_err       ; carry set = KERNAL error
 
         ldx #2                  ; redirect input to LFN 2
@@ -298,7 +343,7 @@ read_done:
         jsr CLRCHN              ; restore default I/O
 
         lda #2
-        jsr CLOSE               ; close file
+        jsr pet_close               ; close file
         rts
 
 read_open_err:
@@ -308,7 +353,7 @@ read_open_err:
 read_chkin_err:
 
         lda #2
-        jsr CLOSE
+        jsr pet_close
         rts
 
 rdname:
@@ -364,10 +409,10 @@ This example creates `LOG.DAT` on device 8 and writes bytes from a buffer.
 ```asm
         processor 6502
 
-SETNAM  = $FFBD
-SETLFS  = $FFBA
-OPEN    = $FFC0
-CLOSE   = $FFC3
+; PET does not have SETNAM - use pet_setnam wrapper (see system/file.md)
+; PET does not have SETLFS - use pet_setlfs wrapper (see system/file.md)
+; PET OPEN includes BASIC parsing - use pet_open wrapper (see system/file.md)
+; PET CLOSE includes BASIC parsing - use pet_close wrapper (see system/file.md)
 CHKOUT  = $FFC9
 CLRCHN  = $FFCC
 CHROUT  = $FFD2
@@ -393,14 +438,14 @@ write_seq:
         lda #wrname_end-wrname
         ldx #<wrname
         ldy #>wrname
-        jsr SETNAM
+        jsr pet_setnam
 
         lda #3                  ; LFN=3, device=8, SA=3 (sequential write)
         ldx #8
         ldy #3
-        jsr SETLFS
+        jsr pet_setlfs
 
-        jsr OPEN
+        jsr pet_open
         bcs write_open_err
 
         ldx #3                  ; redirect output to LFN 3
@@ -428,7 +473,7 @@ write_done:
         jsr CLRCHN
 
         lda #3
-        jsr CLOSE               ; close sends EOF to drive
+        jsr pet_close               ; close sends EOF to drive
         rts
 
 write_open_err:
@@ -438,14 +483,14 @@ write_open_err:
 write_chkout_err:
 
         lda #3
-        jsr CLOSE
+        jsr pet_close
         rts
 
 write_error:
 
         jsr CLRCHN
         lda #3
-        jsr CLOSE
+        jsr pet_close
         rts
 
 wrname:
@@ -478,10 +523,10 @@ For full DOS command reference see `system/disk.md`.
 ```asm
         processor 6502
 
-SETNAM  = $FFBD
-SETLFS  = $FFBA
-OPEN    = $FFC0
-CLOSE   = $FFC3
+; PET does not have SETNAM - use pet_setnam wrapper (see system/file.md)
+; PET does not have SETLFS - use pet_setlfs wrapper (see system/file.md)
+; PET OPEN includes BASIC parsing - use pet_open wrapper (see system/file.md)
+; PET CLOSE includes BASIC parsing - use pet_close wrapper (see system/file.md)
 CHKIN   = $FFC6
 CLRCHN  = $FFCC
 CHRIN   = $FFCF
@@ -508,28 +553,28 @@ scratch_file:
         lda #cmd_end-cmd        ; send S0:OLDFILE as the filename to SA=15
         ldx #<cmd
         ldy #>cmd
-        jsr SETNAM
+        jsr pet_setnam
 
         lda #$0F                 ; LFN 15
         ldx #8                  ; device 8
         ldy #$0F                 ; SA=15 = command channel
-        jsr SETLFS
+        jsr pet_setlfs
 
-        jsr OPEN                ; the command is sent on OPEN
+        jsr pet_open                ; the command is sent on OPEN
         bcs cmd_err
 
         lda #$0F
-        jsr CLOSE               ; close to flush and execute
+        jsr pet_close               ; close to flush and execute
 
         lda #0                  ; reopen command channel with no filename to read status
-        jsr SETNAM              ; no filename = read-only open
+        jsr pet_setnam              ; no filename = read-only open
 
         lda #$0F
         ldx #8
         ldy #$0F
-        jsr SETLFS
+        jsr pet_setlfs
 
-        jsr OPEN
+        jsr pet_open
         bcs stat_err
 
         ldx #$0F
@@ -556,7 +601,7 @@ stat_done:
 
         jsr CLRCHN
         lda #$0F
-        jsr CLOSE
+        jsr pet_close
         rts
 
 cmd_err:
@@ -610,10 +655,10 @@ For a detailed explanation of the directory format see `system/disk.md`.
 ```asm
         processor 6502
 
-SETNAM  = $FFBD
-SETLFS  = $FFBA
-OPEN    = $FFC0
-CLOSE   = $FFC3
+; PET does not have SETNAM - use pet_setnam wrapper (see system/file.md)
+; PET does not have SETLFS - use pet_setlfs wrapper (see system/file.md)
+; PET OPEN includes BASIC parsing - use pet_open wrapper (see system/file.md)
+; PET CLOSE includes BASIC parsing - use pet_close wrapper (see system/file.md)
 CHKIN   = $FFC6
 CLRCHN  = $FFCC
 CHRIN   = $FFCF
@@ -642,14 +687,14 @@ list_directory:
         lda #1                  ; open "$" on device 8, SA=0
         ldx #<dir_dollar
         ldy #>dir_dollar
-        jsr SETNAM
+        jsr pet_setnam
 
         lda #2                  ; LFN 2
         ldx #8
         ldy #0                  ; SA=0 for directory read
-        jsr SETLFS
+        jsr pet_setlfs
 
-        jsr OPEN
+        jsr pet_open
         bcs dir_open_err
 
         ldx #2
@@ -710,7 +755,7 @@ dir_end:
 
         jsr CLRCHN
         lda #2
-        jsr CLOSE
+        jsr pet_close
         rts
 
 dir_open_err:
@@ -740,16 +785,16 @@ It demonstrates the recommended structure for a machine-language program that do
 ; KERNAL addresses
 ; =========================================================
 
-SETNAM  = $FFBD
-SETLFS  = $FFBA
-OPEN    = $FFC0
-CLOSE   = $FFC3
+; PET does not have SETNAM - use pet_setnam wrapper (see system/file.md)
+; PET does not have SETLFS - use pet_setlfs wrapper (see system/file.md)
+; PET OPEN includes BASIC parsing - use pet_open wrapper (see system/file.md)
+; PET CLOSE includes BASIC parsing - use pet_close wrapper (see system/file.md)
 CHKIN   = $FFC6
 CHKOUT  = $FFC9
 CLRCHN  = $FFCC
 CHRIN   = $FFCF
 CHROUT  = $FFD2
-READST  = $FFB7
+; PET does not have READST - read STATUS ($0096) directly
 LOAD    = $FFD5
 SAVE    = $FFD8
 STATUS  = $0096
@@ -796,17 +841,17 @@ init_drive:
         lda #init_cmd_end-init_cmd
         ldx #<init_cmd
         ldy #>init_cmd
-        jsr SETNAM
+        jsr pet_setnam
 
         lda #$0F
         ldx #8
         ldy #$0F
-        jsr SETLFS
+        jsr pet_setlfs
 
-        jsr OPEN
+        jsr pet_open
         bcs init_err
         lda #$0F
-        jsr CLOSE
+        jsr pet_close
         clc                     ; discard power-on status (code 73 is informational)
         rts
 
@@ -830,14 +875,14 @@ read_config:
         lda #cfgname_end-cfgname
         ldx #<cfgname
         ldy #>cfgname
-        jsr SETNAM
+        jsr pet_setnam
 
         lda #4                  ; LFN 4
         ldx #8
         ldy #4                  ; SA=4 (sequential read)
-        jsr SETLFS
+        jsr pet_setlfs
 
-        jsr OPEN
+        jsr pet_open
         bcs cfg_open_err
 
         ldx #4
@@ -863,7 +908,7 @@ cfg_read_done:
         sty config_len
         jsr CLRCHN
         lda #4
-        jsr CLOSE
+        jsr pet_close
         clc
         rts
 
@@ -875,7 +920,7 @@ cfg_open_err:
 cfg_chkin_err:
 
         lda #4
-        jsr CLOSE
+        jsr pet_close
         sec
         rts
 

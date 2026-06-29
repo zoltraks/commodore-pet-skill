@@ -3,7 +3,7 @@
 ## Purpose
 
 > **Scope:** Loading PRG and binary data files from cassette tape and IEEE-488 disk via the LOAD KERNAL call
-> **Key items:** LOAD=$FFD5, SETLFS=$FFBA, SETNAM=$FFBD, SA=0 (header addr), SA=1 (fixed addr), device 1=tape, device 8=disk
+> **Key items:** LOAD=$FFD5, pet_setlfs, pet_setnam, SA=0 (header addr), SA=1 (fixed addr), device 1=tape, device 8=disk
 
 | Out of scope             | See instead        |
 |--------------------------|--------------------|
@@ -22,8 +22,8 @@ With SA=1, `LOAD` ignores the file header and loads to the address in X/Y on ent
 After `LOAD` returns, X = low byte and Y = high byte of the byte after the last loaded byte.
 
 ```asm
-SETLFS  = $FFBA
-SETNAM  = $FFBD
+; PET does not have SETLFS - use pet_setlfs wrapper
+; PET does not have SETNAM - use pet_setnam wrapper
 LOAD    = $FFD5
 STATUS  = $0096
 
@@ -38,12 +38,12 @@ load_frames:
         lda #fname_end-fname    ; filename length
         ldx #<fname
         ldy #>fname
-        jsr SETNAM
+        jsr pet_setnam
 
         lda #1                  ; logical file number
         ldx #1                  ; device: cassette #1
         ldy #0                  ; SA=0: use address from file header
-        jsr SETLFS
+        jsr pet_setlfs
 
         lda #0                  ; 0 = LOAD (not VERIFY)
         jsr LOAD                ; X/Y = end+1 on return
@@ -67,7 +67,7 @@ To force loading to a specific address regardless of the file header, use SA=1 a
         lda #1
         ldx #1                  ; device: cassette
         ldy #1                  ; SA=1: load to address in X/Y
-        jsr SETLFS
+        jsr pet_setlfs
 
         lda #0
         ldx #<$4000             ; destination low byte
@@ -85,12 +85,12 @@ load_from_disk:
         lda #fname_end-fname
         ldx #<fname
         ldy #>fname
-        jsr SETNAM
+        jsr pet_setnam
 
         lda #1
         ldx #8                  ; device: IEEE-488 disk drive
         ldy #0                  ; SA=0: relocating load (header address)
-        jsr SETLFS
+        jsr pet_setlfs
 
         lda #0
         jsr LOAD
@@ -114,7 +114,7 @@ STATUS  = $0096
 
 read_stream:
 
-        jsr OPEN                ; SETNAM + SETLFS already called
+        jsr pet_open                ; SETNAM + SETLFS already called
 
         lda #1                  ; logical file number
         jsr CHKIN               ; set file as current input
@@ -134,7 +134,7 @@ read_done:
 
         jsr CLRCHN
         lda #1
-        jsr CLOSE
+        jsr pet_close
         rts
 ```
 
@@ -161,8 +161,8 @@ A complete program that immediately loads animation frame data on RUN:
 ```asm
         processor 6502
 
-SETLFS  = $FFBA
-SETNAM  = $FFBD
+; PET does not have SETLFS - use pet_setlfs wrapper
+; PET does not have SETNAM - use pet_setnam wrapper
 LOAD    = $FFD5
 CHROUT  = $FFD2
 STATUS  = $0096
@@ -187,12 +187,12 @@ start:
         lda #aname_end-aname
         ldx #<aname
         ldy #>aname
-        jsr SETNAM
+        jsr pet_setnam
 
         lda #1
         ldx #1                  ; cassette
         ldy #1                  ; SA=1: fixed address load
-        jsr SETLFS
+        jsr pet_setlfs
 
         lda #0
         ldx #<$4000             ; animation data destination

@@ -13,21 +13,23 @@
 
 ## Contents
 
-| Section               | Line | What it covers                                                             |
-|-----------------------|------|----------------------------------------------------------------------------|
-| Invocation            | 32   | Minimal command form and model flag                                        |
-| PET ROM Setup         | 42   | How VICE finds ROMs; symlinking from a known location                      |
-| Drive Types on PET    | 88   | `-drive8type 2031` for D64; never 1541 on PET                              |
-| Running a PRG         | 104  | Autostart modes, why disk autostart is most reliable                       |
-| Headless Debugging    | 156  | Remote monitor over TCP, cycle limits, screen dumps, warp timing           |
-| Decoding Screen Codes | 294  | Reading dumped `$8000-$83E7` bytes back into characters; row arithmetic    |
-| Memory Landmarks      | 347  | Addresses worth checking during diagnostics                                |
-| Diagnosing Crashes    | 375  | KERNAL hang, SP depth, breakpoint silence, VIA PCR hazard                  |
-| Debugging Workflow    | 419  | Step-by-step recipe: check if program ran, breakpoint, step, watch, trace  |
-| Built-in Monitor      | 518  | Opening the monitor, full command reference, register modification, memory |
-| Breakpoints           | 669  | initbreak, break, watch, trace, conditional, warp-mode timing              |
-| Monitor Scripts       | 718  | moncommands file for automated debug sessions                              |
-| Useful Flags          | 744  | warp, speed, keybuf, logging                                               |
+| Section                          | Line | What it covers                                                             |
+|----------------------------------|------|----------------------------------------------------------------------------|
+| Invocation                       | 34   | Minimal command form and model flag                                        |
+| PET ROM Setup                    | 44   | How VICE finds ROMs; symlinking from a known location                      |
+| Drive Types on PET               | 90   | `-drive8type 2031` for D64; never 1541 on PET                              |
+| Running a PRG                    | 106  | Autostart modes, why disk autostart is most reliable                       |
+| Headless Debugging               | 160  | Remote monitor over TCP, cycle limits, screen dumps, warp timing           |
+| Decoding Screen Codes            | 342  | Reading dumped `$8000-$83E7` bytes back into characters; row arithmetic    |
+| Signal-Byte Tracing              | 395  | Writing trace bytes to safe RAM to locate crash points                     |
+| Memory Landmarks                 | 442  | Addresses worth checking during diagnostics                                |
+| Verifying KERNAL Jump Table      | 470  | Disassembling `$FFC0-$FFEA`; PET vs C64 entry differences                 |
+| Diagnosing Crashes               | 508  | SYNTAX ERROR from bad KERNAL calls, KERNAL hang, SP depth, VIA PCR hazard  |
+| Debugging Workflow               | 566  | Step-by-step recipe: check if program ran, breakpoint, step, watch, trace  |
+| Built-in Monitor                 | 665  | Opening the monitor, full command reference, register modification, memory |
+| Breakpoints                      | 816  | initbreak, break, watch, trace, conditional, warp-mode timing              |
+| Monitor Scripts                  | 865  | moncommands file for automated debug sessions                              |
+| Useful Flags                     | 891  | warp, speed, keybuf, logging                                               |
 
 ## Invocation
 
@@ -145,6 +147,8 @@ The first program file on the disk is what `LOAD"*",8` loads.
 
 `-autostartprgmode 1` writes the PRG bytes into RAM and stuffs `RUN` into the keyboard buffer. On C64 this is the fastest dev loop. On PET it can leave BASIC's text/variable pointers in an inconsistent state for some PRG layouts, producing `?SYNTAX ERROR IN 10` on the first line BASIC tries to parse. When that happens, switch to disk autostart.
 
+**Required for machine-code programs that call KERNAL I/O routines**: `-autostartprgmode 1` is needed when the program calls KERNAL `OPEN`/`CLOSE`/`CHKIN`/`CHRIN` directly. Without this flag, VICE uses disk autostart which goes through BASIC's `LOAD`/`RUN` cycle. This can interfere with programs that call KERNAL `OPEN`/`CLOSE` directly, because the PET's `OPEN`/`CLOSE` routines include BASIC parameter parsing that expects `TXTPTR` (`$0077-$0078`) to be valid. With `-autostartprgmode 1`, the PRG is injected directly into RAM and `RUN` is stuffed into the keyboard buffer, which works more reliably for pure machine-code programs.
+
 ### Attach Without Autostart
 
 ```bash
@@ -226,6 +230,50 @@ EOF
 ```
 
 `nc -q 1` waits one second after EOF before closing, so the monitor's last reply has time to arrive.
+
+### Python Socket Monitor Scripting
+
+The `nc` approach has reliability issues: timing is fragile, and the `-q` flag behaviour varies between `nc` implementations (some ignore it, some treat the argument as seconds, some as a flag). A Python socket script is more robust and portable:
+
+```python
+import socket, time
+
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.connect(('127.0.0.1', 6512))
+s.settimeout(3)
+
+def send(cmd):
+    s.send((cmd + '\n').encode())
+    time.sleep(0.3)
+    data = b''
+    while True:
+        try:
+            chunk = s.recv(8192)
+            if not chunk:
+                break
+            data += chunk
+        except socket.timeout:
+            break
+    return data.decode()
+
+# Dump screen
+print(send('m $8000 $83e7'))
+# Check registers
+print(send('r'))
+# Disassemble KERNAL jump table
+print(send('d $ffc0 $ffea'))
+
+s.close()
+```
+
+Key advantages over `nc`:
+
+| Issue              | `nc`                              | Python socket                         |
+|--------------------|-----------------------------------|---------------------------------------|
+| Timing             | Fixed `sleep`/`-q` guesswork      | `settimeout` + recv loop              |
+| Output capture     | May truncate on early close       | `recv` loop drains all output         |
+| `-q` flag          | Behaviour varies by `nc` variant  | No dependency                         |
+| Multiple commands  | One-shot pipe, reconnect per call | Persistent connection, reuse socket   |
 
 ### Tracking the Autostart Sequence
 
@@ -344,6 +392,53 @@ A `?SYNTAX ERROR IN 10` message at row 1 (`$8028`) but not row 0 means the progr
 
 A `?SYNTAX ERROR IN 10` at row 0 means the screen was never cleared -- BASIC parsed and rejected the BASIC stub without the program's init ever running.
 
+## Signal-Byte Tracing
+
+When a program crashes and breakpoints are hard to place (warp mode, unknown crash site), **signal-byte tracing** pinpoints how far execution got. Write a unique byte value to a safe RAM address after each significant step in the program. When the program crashes, read the trace byte via the remote monitor to see the last completed step.
+
+**IMPORTANT**: PET 3032 has only 32K RAM (`$0000-$7FFF`). Do NOT use `$9000` or higher for trace bytes -- those addresses are screen RAM or ROM and are not writable. Use `$7F00` or lower, but avoid zero-page (`$0000-$00FF`) and your program's own variables.
+
+Example code pattern:
+
+```asm
+; At start of program
+lda #$01
+sta $7f00       ; trace: reached start
+
+jsr init
+lda #$02
+sta $7f00       ; trace: init done
+
+jsr load_panel
+lda #$03
+sta $7f00       ; trace: load_panel done
+```
+
+Read the trace byte via the remote monitor:
+
+```
+m $7f00 $7f00
+```
+
+If the value is `$01`, the crash was during `init`. If `$02`, during `load_panel`. If `$03`, `load_panel` completed and the crash is later.
+
+For finer granularity, nest trace bytes inside subroutines using a separate range (e.g. `$7F01`):
+
+```asm
+init:
+    lda #$10
+    sta $7f01       ; trace: entered init, before OPEN
+    jsr $ffc0       ; KERNAL OPEN
+    lda #$11
+    sta $7f01       ; trace: OPEN done
+    jsr $ffc6       ; KERNAL CHKIN
+    lda #$12
+    sta $7f01       ; trace: CHKIN done
+    rts
+```
+
+This two-level scheme lets the outer trace (`$7F00`) identify which subroutine crashed and the inner trace (`$7F01`) identify which KERNAL call inside it failed.
+
 ## Memory Landmarks
 
 Useful zero-page and low-RAM addresses to dump during diagnostics:
@@ -372,7 +467,59 @@ Useful checks:
 - A program writing past its declared end will show up as bytes past the load address that differ from the on-disk PRG.
 - `STATUS` non-zero after a KERNAL file call indicates an I/O error -- bit 7 is IEEE-488 EOI, bits 0-1 are timeouts.
 
+## Verifying KERNAL Jump Table Entries
+
+This was critical for diagnosing the root cause of `?SYNTAX ERROR` crashes. Disassemble the KERNAL jump table to verify which entries actually exist:
+
+```
+d $ffc0 $ffea
+```
+
+On PET 3032, the jump table starts at `$FFC0` (NOT `$FFB7` like the C64). The region `$FFB7-$FFBF` contains ROM code text (`C. 0978 CBM `) and filler bytes (`$AA` = `TAX`), NOT jump table entries.
+
+If a `jsr $FFBD` (SETNAM) or `jsr $FFBA` (SETLFS) crashes, check whether those addresses actually contain `JMP` instructions. On PET they do not.
+
+PET jump table entries that DO exist:
+
+| Address | KERNAL routine |
+|---------|----------------|
+| `$FFC0` | OPEN           |
+| `$FFC3` | CLOSE          |
+| `$FFC6` | CHKIN          |
+| `$FFC9` | CHKOUT         |
+| `$FFCC` | CLRCHN         |
+| `$FFCF` | CHRIN          |
+| `$FFD2` | CHROUT         |
+| `$FFD5` | LOAD           |
+| `$FFD8` | SAVE           |
+| `$FFE1` | STOP           |
+| `$FFE4` | GETIN          |
+| `$FFE7` | CLALL          |
+| `$FFEA` | UDTIM          |
+
+The PET does NOT have these C64-only entries:
+
+| Address | C64 routine | PET status                          |
+|---------|-------------|-------------------------------------|
+| `$FFB7` | READST      | Not present; ROM text/filler bytes  |
+| `$FFBA` | SETLFS      | Not present; bytes are `$AA` (TAX)  |
+| `$FFBD` | SETNAM      | Not present; bytes are `$AA` (TAX)  |
+
 ## Diagnosing Crashes
+
+### ?SYNTAX ERROR from Non-Existent KERNAL Entries
+
+If `?SYNTAX ERROR IN 10` appears and the program uses `jsr $FFBD` (SETNAM) or `jsr $FFBA` (SETLFS), those addresses do not exist on the PET KERNAL jump table (see [Verifying KERNAL Jump Table Entries](#verifying-kernal-jump-table-entries)).
+
+The bytes at `$FFBD` are `$AA` (the `TAX` instruction), so `jsr $FFBD` executes `TAX TAX TAX` then falls through into `OPEN` at `$FFC0` with wrong parameters. OPEN fails and jumps to the BASIC error handler at `$CE03`, which prints the syntax error.
+
+| Symptom                                  | Cause                                                            |
+|------------------------------------------|------------------------------------------------------------------|
+| `?SYNTAX ERROR IN 10` after `jsr $FFBD`  | `$FFBD` is not SETNAM on PET; bytes are `$AA` (TAX)              |
+| `?SYNTAX ERROR IN 10` after `jsr $FFBA`  | `$FFBA` is not SETLFS on PET; same fall-through into OPEN        |
+| OPEN hangs or returns garbage            | OPEN received uninitialised filename/length pointers             |
+
+**Fix**: use PET-specific wrappers that set the zero-page locations directly instead of calling non-existent KERNAL entries. On the PET, the filename length goes to `$D1`, the filename address to `$DA/$DB`, the logical file number to `$D2`, the secondary address to `$D3`, and the device number to `$D4`. Set those locations directly in your code before calling the low-level OPEN logic at `$F524` (not the jump table entry at `$FFC0`, which includes BASIC parameter parsing). See `system/kernal.md` for the complete wrapper routines.
 
 ### No Breakpoint Ever Fires
 

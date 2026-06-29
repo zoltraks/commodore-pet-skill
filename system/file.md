@@ -3,13 +3,13 @@
 ## Purpose
 
 > **Scope:** PET file architecture, logical files, device numbers, secondary addresses, all KERNAL file routines, call sequences, STATUS byte, error handling
-> **Key items:** SETNAM=$FFBD, SETLFS=$FFBA, OPEN=$FFC0, CLOSE=$FFC3, CHKIN=$FFC6, CHKOUT=$FFC9, CLRCHN=$FFCC, CHRIN=$FFCF, CHROUT=$FFD2, LOAD=$FFD5, SAVE=$FFD8, READST=$FFB7, STATUS=$0096
+> **Key items:** pet_setnam/pet_setlfs wrappers, OPEN=$FFC0 (use $F524), CLOSE=$FFC3 (use $F2AC), CHKIN=$FFC6, CHKOUT=$FFC9, CLRCHN=$FFCC, CHRIN=$FFCF, CHROUT=$FFD2, LOAD=$FFD5, SAVE=$FFD8, STATUS=$0096
 
 This file covers the complete PET 3032 KERNAL file I/O system.
 
 The PET 3032 runs BASIC 2.0 and uses a KERNAL that was the ancestor of the C64 KERNAL.
 
-All KERNAL routine addresses for the PET 3032 are documented here.
+**Critical PET difference:** The PET KERNAL does NOT have `SETNAM` ($FFBD), `SETLFS` ($FFBA), or `READST` ($FFB7) in its jump table — those are C64-only addresses. On the PET, file I/O parameters are set by writing directly to zero-page locations ($D1, $D2, $D3, $D4, $DA, $DB). The PET's `OPEN` and `CLOSE` jump table entries also include BASIC parameter parsing, so machine code must call the low-level ROM entry points ($F524, $F2AC) instead. See the wrapper routines below.
 
 Do not use C64 addresses - they differ.
 
@@ -25,7 +25,7 @@ Do not use C64 addresses - they differ.
 | Section                    | Line | What it covers                                                                                     |
 |----------------------------|------|----------------------------------------------------------------------------------------------------|
 | File Architecture Overview | 23   | Logical files, device numbers, secondary addresses, file types                                     |
-| KERNAL Routine Reference   | 122  | SETNAM, SETLFS, OPEN, CLOSE, CHKIN, CHKOUT, CLRCHN, CHRIN, CHROUT, READST, LOAD, SAVE, CLALL, STOP |
+| KERNAL Routine Reference   | 122  | pet_setnam, pet_setlfs, OPEN, CLOSE, CHKIN, CHKOUT, CLRCHN, CHRIN, CHROUT, LOAD, SAVE, CLALL, STOP |
 | Call Sequences             | 781  | Open-read, open-write, load PRG, save PRG patterns                                                 |
 | EOF Detection              | 973  | STATUS bit 6 (disk), STATUS bit 4 (cassette)                                                       |
 | Error Handling             | 1025 | OPEN error codes, device not present, file not found                                               |
@@ -123,25 +123,80 @@ Use SA 2-14 for sequential files.
 
 ### BASIC Commands and KERNAL Calls
 
-| BASIC Statement        | KERNAL calls used             |
-|------------------------|-------------------------------|
-| `OPEN n,dev,sa,"name"` | SETNAM, SETLFS, OPEN          |
-| `CLOSE n`              | CLOSE                         |
-| `INPUT# n, var`        | CHKIN, CHRIN (loop), CLRCHN   |
-| `PRINT# n, data`       | CHKOUT, CHROUT (loop), CLRCHN |
-| `GET# n, var`          | CHKIN, CHRIN, CLRCHN          |
-| `LOAD "name", dev`     | SETNAM, SETLFS, LOAD          |
-| `SAVE "name", dev`     | SETNAM, SETLFS, SAVE          |
+| BASIC Statement        | KERNAL calls used (from ML)               |
+|------------------------|--------------------------------------------|
+| `OPEN n,dev,sa,"name"` | pet_setnam, pet_setlfs, pet_open           |
+| `CLOSE n`              | pet_close                                  |
+| `INPUT# n, var`        | CHKIN, CHRIN (loop), CLRCHN                |
+| `PRINT# n, data`       | CHKOUT, CHROUT (loop), CLRCHN              |
+| `GET# n, var`          | CHKIN, CHRIN, CLRCHN                       |
+| `LOAD "name", dev`     | pet_setnam, pet_setlfs, LOAD               |
+| `SAVE "name", dev`     | pet_setnam, pet_setlfs, SAVE               |
 
 ## KERNAL Routine Reference
 
-### SETNAM - Set Filename
+### PET File I/O Wrapper Routines
 
-**Address:** `$FFBD`
+The PET 3032 KERNAL lacks `SETNAM`, `SETLFS`, and `READST` (those are C64-only). Additionally, the PET's `OPEN` ($FFC0) and `CLOSE` ($FFC3) jump table entries include BASIC parameter parsing, making them unsafe to call directly from machine code.
+
+Use these wrapper routines instead. They set the PET's zero-page file I/O locations directly and call the low-level ROM logic:
+
+```asm
+; ---- PET file I/O zero-page locations ----
+PET_FNLEN       = $D1        ; filename length
+PET_LA          = $D2        ; logical file number
+PET_SA          = $D3        ; secondary address
+PET_DEV         = $D4        ; device number
+PET_FNADR_LO    = $DA        ; filename address low
+PET_FNADR_HI    = $DB        ; filename address high
+PET_OPEN_LOGIC  = $F524      ; OPEN past BASIC parsing
+PET_CLOSE_LOGIC = $F2AC      ; CLOSE past BASIC parsing
+STATUS          = $0096      ; I/O status byte (read directly, no READST)
+
+; pet_setnam: A=length, X=addr_lo, Y=addr_hi
+pet_setnam:
+        sta PET_FNLEN
+        stx PET_FNADR_LO
+        sty PET_FNADR_HI
+        rts
+
+; pet_setlfs: A=LFN, X=DEV, Y=SA
+pet_setlfs:
+        sta PET_LA
+        stx PET_DEV
+        sty PET_SA
+        rts
+
+; pet_open: call PET OPEN logic (params already set up)
+; Returns carry clear on success, set on error.
+; The PET OPEN routine jumps to BASIC error handler on failure
+; instead of using carry. We detect success by checking if
+; $AE (file count) increased.
+pet_open:
+        lda $AE
+        pha
+        jsr PET_OPEN_LOGIC
+        pla
+        cmp $AE         ; old vs new: C=0 if old < new (increased)
+        bcc po_ok       ; file count increased -> success
+        sec
+        rts
+po_ok:
+        clc
+        rts
+
+; pet_close: A = logical file number to close
+pet_close:
+        sta PET_LA
+        jsr PET_CLOSE_LOGIC
+        rts
+```
+
+### pet_setnam - Set Filename
 
 **Purpose:** Store a pointer to the filename and its length in KERNAL workspace.
 
-Must be called before OPEN, LOAD, or SAVE.
+Must be called before pet_open, LOAD, or SAVE.
 
 **Inputs:**
 
@@ -153,8 +208,6 @@ Must be called before OPEN, LOAD, or SAVE.
 
 **Outputs:** None.
 
-**Registers used:** None (A, X, Y are inputs, not modified).
-
 **Side effects:** Stores length at `$D1` and address at `$DA-$DB` in KERNAL workspace.
 
 **Notes:**
@@ -163,11 +216,10 @@ Must be called before OPEN, LOAD, or SAVE.
 - For cassette files with no name, call with A=0; X and Y are ignored.
 - For disk files the filename must always be provided.
 - The filename string does not need a null terminator.
+- This is a wrapper routine, not a KERNAL jump table entry. The PET does not have SETNAM.
 
 ```asm
         processor 6502
-
-SETNAM  = $FFBD
 
 fname:
 
@@ -178,18 +230,16 @@ fend:
         lda #fend-fname         ; length = 6
         ldx #<fname             ; low byte of filename address
         ldy #>fname             ; high byte of filename address
-        jsr SETNAM
+        jsr pet_setnam
 ```
 
 ---
 
-### SETLFS - Set Logical File Parameters
-
-**Address:** `$FFBA`
+### pet_setlfs - Set Logical File Parameters
 
 **Purpose:** Store the logical file number, device number, and secondary address.
 
-Must be called after SETNAM and before OPEN, LOAD, or SAVE.
+Must be called after pet_setnam and before pet_open, LOAD, or SAVE.
 
 **Inputs:**
 
@@ -201,41 +251,35 @@ Must be called after SETNAM and before OPEN, LOAD, or SAVE.
 
 **Outputs:** None.
 
-**Registers used:** None (A, X, Y are inputs).
-
-**Side effects:** Stores parameters at `$D2` (LFN), `$D3` (device), `$D4` (SA) in KERNAL workspace.
+**Side effects:** Stores parameters at `$D2` (LFN), `$D3` (SA), `$D4` (device) in KERNAL workspace.
 
 **Notes:**
 
 - The logical file number must be unique among all currently open files.
 - For LOAD and SAVE the LFN is ignored by some KERNAL versions; still provide a valid value.
 - SA 255 ($FF) is sometimes used as "no secondary address" for certain devices.
+- This is a wrapper routine, not a KERNAL jump table entry. The PET does not have SETLFS.
 
 ```asm
-SETLFS  = $FFBA
-
         lda #2                  ; logical file number 2
         ldx #8                  ; device 8 (disk drive)
         ldy #2                  ; secondary address 2 (sequential data channel)
-        jsr SETLFS
+        jsr pet_setlfs
 ```
 
 ---
 
-### OPEN - Open Logical File
+### pet_open - Open Logical File
 
-**Address:** `$FFC0` (calls through vector at `$031A`)
+**Purpose:** Open a logical file using parameters set by pet_setlfs and pet_setnam.
 
-**Purpose:** Open a logical file using parameters set by SETLFS and SETNAM.
-
-**Inputs:** None (uses KERNAL workspace set by SETNAM and SETLFS).
+**Inputs:** None (uses KERNAL workspace set by pet_setnam and pet_setlfs).
 
 **Outputs:**
 
 | Register | Value                         |
 |----------|-------------------------------|
 | C        | 0 = success, 1 = error        |
-| A        | Error code if C=1 (see below) |
 
 **Registers used:** A, X, Y.
 
@@ -245,42 +289,29 @@ SETLFS  = $FFBA
 - For disk: sends OPEN message over IEEE-488 to the drive.
 - For cassette: prepares tape I/O buffers.
 
-**Error codes (when C=1):**
+**Error handling:**
 
-| Code | Meaning               |
-|------|-----------------------|
-| 1    | Too many files open   |
-| 2    | File already open     |
-| 3    | File not open         |
-| 4    | File not found        |
-| 5    | Device not present    |
-| 6    | Not an input file     |
-| 7    | Not an output file    |
-| 8    | Missing filename      |
-| 9    | Illegal device number |
+The PET's OPEN routine does NOT use carry for error reporting. On failure, it jumps directly to the BASIC error handler (`$CE03`), which prints `?SYNTAX ERROR` or similar and returns to BASIC. The `pet_open` wrapper detects success by checking if `$AE` (open file count) increased. If OPEN fails by jumping to the error handler, the wrapper never returns — the program crashes to BASIC.
 
 **Notes:**
 
-- Always call SETNAM and SETLFS before OPEN.
-- OPEN does not set the input or output channel - call CHKIN or CHKOUT next.
+- Always call pet_setnam and pet_setlfs before pet_open.
+- pet_open does not set the input or output channel - call CHKIN or CHKOUT next.
 - For SA=15 (command channel), OPEN sends the filename string as a DOS command.
 - After OPEN with SA=15 and no filename, the channel is open for reading drive status.
+- This wrapper calls $F524 (low-level OPEN logic), NOT $FFC0 (which includes BASIC parsing).
 
 ```asm
-OPEN    = $FFC0
-
-        jsr OPEN                ; open the file
-        bcc open_ok             ; carry clear = no error
-        jmp open_error          ; A = error code
+        jsr pet_open            ; open the file
+        bcc open_ok             ; carry clear = success
+        jmp open_error          ; carry set = error (file count did not increase)
 
 open_ok:
 ```
 
 ---
 
-### CLOSE - Close Logical File
-
-**Address:** `$FFC3` (calls through vector at `$031C`)
+### pet_close - Close Logical File
 
 **Purpose:** Close a logical file and release its resources.
 
@@ -308,10 +339,10 @@ open_ok:
 - CLALL closes all files; use CLOSE for targeted cleanup.
 
 ```asm
-CLOSE   = $FFC3
+; PET CLOSE includes BASIC parsing - use pet_close wrapper (see above)
 
         lda #2                  ; close logical file 2
-        jsr CLOSE
+        jsr pet_close
 ```
 
 ---
@@ -517,11 +548,13 @@ STATUS  = $0096
 
 ---
 
-### READST - Read I/O Status
+### STATUS - Read I/O Status
 
-**Address:** `$FFB7`
+**Address:** `$0096` (zero page, read directly)
 
 **Purpose:** Return the current value of the STATUS byte.
+
+The PET does NOT have a `READST` KERNAL call (that is C64-only at `$FFB7`). Read the STATUS byte directly from zero page.
 
 **Inputs:** None.
 
@@ -537,15 +570,15 @@ STATUS  = $0096
 
 **Notes:**
 
-- STATUS is also directly readable at zero page address `$0096`.
+- STATUS is directly readable at zero page address `$0096`.
 - STATUS is set by CHRIN, CHROUT, LOAD, and SAVE.
 - STATUS is cleared at the start of CHKIN and CHKOUT.
-- Reading via READST does not clear STATUS.
+- Reading STATUS does not clear it.
 
 ```asm
-READST  = $FFB7
+STATUS  = $0096
 
-        jsr READST              ; A = STATUS byte
+        lda STATUS              ; A = STATUS byte
         and #$BF                ; mask out bit 6 (tape EOF, not meaningful on disk)
         bne error_or_eof
 ```
@@ -577,15 +610,15 @@ For any error: check bits 0-5.
 
 **Purpose:** Load or verify a file into memory.
 
-Must call SETNAM and SETLFS first.
+Must call pet_setnam and pet_setlfs first.
 
 **Inputs:**
 
 | Register | Value                                      |
 |----------|--------------------------------------------|
 | A        | 0 = load, 1 = verify (compare to memory)   |
-| X        | Load address low byte (if SA=1 on SETLFS)  |
-| Y        | Load address high byte (if SA=1 on SETLFS) |
+| X        | Load address low byte (if SA=1 on pet_setlfs)  |
+| Y        | Load address high byte (if SA=1 on pet_setlfs) |
 
 **Outputs:**
 
@@ -614,20 +647,20 @@ Must call SETNAM and SETLFS first.
 - After LOAD returns, X/Y point to the first byte after the loaded data.
 
 ```asm
-SETLFS  = $FFBA
-SETNAM  = $FFBD
+; PET does not have SETLFS - use pet_setlfs wrapper (see above)
+; PET does not have SETNAM - use pet_setnam wrapper (see above)
 LOAD    = $FFD5
 STATUS  = $0096
 
         lda #6                  ; Step 1: set filename (length 6)
         ldx #<fname
         ldy #>fname
-        jsr SETNAM
+        jsr pet_setnam
 
         lda #1                  ; Step 2: set file parameters (LFN, ignored by LOAD)
         ldx #8                  ; device: disk drive
         ldy #0                  ; SA=0: relocating load (use address from file)
-        jsr SETLFS
+        jsr pet_setlfs
 
         lda #0                  ; Step 3: load (0 = LOAD, not VERIFY)
         jsr LOAD
@@ -651,7 +684,7 @@ fname:
 
 **Purpose:** Save a range of memory to a file.
 
-Must call SETNAM and SETLFS first.
+Must call pet_setnam and pet_setlfs first.
 
 **Inputs:**
 
@@ -682,8 +715,8 @@ Must call SETNAM and SETLFS first.
 - SA=1 is used automatically for PRG save.
 
 ```asm
-SETLFS  = $FFBA
-SETNAM  = $FFBD
+; PET does not have SETLFS - use pet_setlfs wrapper (see above)
+; PET does not have SETNAM - use pet_setnam wrapper (see above)
 SAVE    = $FFD8
 STATUS  = $0096
 
@@ -697,12 +730,12 @@ save_start = $FB             ; zero page: two bytes for start address
         lda #6                  ; Set filename
         ldx #<sname
         ldy #>sname
-        jsr SETNAM
+        jsr pet_setnam
 
         lda #1                  ; Set file parameters: logical file number
         ldx #8                  ; device: disk
         ldy #1                  ; SA=1 for save
-        jsr SETLFS
+        jsr pet_setlfs
 
         lda #save_start         ; Save: A = ZP ptr, X/Y = end+1
         ldx #<$5000             ; end address + 1 (low)
@@ -788,8 +821,8 @@ write_loop:             ; Poll STOP during a long file write loop
 
 The correct sequence for reading a sequential file:
 
-1. Call SETNAM with filename.
-2. Call SETLFS with LFN, device, SA.
+1. Call pet_setnam with filename.
+2. Call pet_setlfs with LFN, device, SA.
 3. Call OPEN.
 4. Call CHKIN with LFN to set as input channel.
 5. Loop: call CHRIN, check STATUS after each byte.
@@ -797,13 +830,13 @@ The correct sequence for reading a sequential file:
 7. Call CLOSE with LFN.
 
 ```asm
-SETNAM  = $FFBD
-SETLFS  = $FFBA
-OPEN    = $FFC0
+; PET does not have SETNAM - use pet_setnam wrapper (see above)
+; PET does not have SETLFS - use pet_setlfs wrapper (see above)
+; PET OPEN includes BASIC parsing - use pet_open wrapper (see above)
 CHKIN   = $FFC6
 CHRIN   = $FFCF
 CLRCHN  = $FFCC
-CLOSE   = $FFC3
+; PET CLOSE includes BASIC parsing - use pet_close wrapper (see above)
 STATUS  = $0096
 
 ; --- read_file: reads sequential file into dest_buf ---
@@ -812,14 +845,14 @@ read_file:              ; Expects: fname/fend defined, dest_buf defined
         lda #fend-fname
         ldx #<fname
         ldy #>fname
-        jsr SETNAM
+        jsr pet_setnam
 
         lda #2                  ; logical file number
         ldx #8                  ; device: disk
         ldy #2                  ; SA=2: sequential data channel
-        jsr SETLFS
+        jsr pet_setlfs
 
-        jsr OPEN
+        jsr pet_open
         bcs read_open_err
 
         ldx #2
@@ -842,7 +875,7 @@ read_done:
 
         jsr CLRCHN              ; restore keyboard input
         lda #2
-        jsr CLOSE
+        jsr pet_close
         rts
 
 read_open_err:
@@ -856,8 +889,8 @@ read_chkin_err:
 
 The correct sequence for writing a sequential file:
 
-1. Call SETNAM with filename. For disk, include `,S,W` in the filename string (e.g. `"OUTPUT,S,W"`). Without `,W`, CBM DOS defaults to read mode and the write will fail.
-2. Call SETLFS with LFN, device, SA (use SA 2-14 for sequential).
+1. Call pet_setnam with filename. For disk, include `,S,W` in the filename string (e.g. `"OUTPUT,S,W"`). Without `,W`, CBM DOS defaults to read mode and the write will fail.
+2. Call pet_setlfs with LFN, device, SA (use SA 2-14 for sequential).
 3. Call OPEN.
 4. Call CHKOUT with LFN to set as output channel.
 5. Loop: call CHROUT, check STATUS after each byte.
@@ -865,13 +898,13 @@ The correct sequence for writing a sequential file:
 7. Call CLOSE with LFN.
 
 ```asm
-SETNAM  = $FFBD
-SETLFS  = $FFBA
-OPEN    = $FFC0
+; PET does not have SETNAM - use pet_setnam wrapper (see above)
+; PET does not have SETLFS - use pet_setlfs wrapper (see above)
+; PET OPEN includes BASIC parsing - use pet_open wrapper (see above)
 CHKOUT  = $FFC9
 CHROUT  = $FFD2
 CLRCHN  = $FFCC
-CLOSE   = $FFC3
+; PET CLOSE includes BASIC parsing - use pet_close wrapper (see above)
 STATUS  = $0096
 
 write_file:
@@ -879,14 +912,14 @@ write_file:
         lda #wfend-wfname
         ldx #<wfname
         ldy #>wfname
-        jsr SETNAM
+        jsr pet_setnam
 
         lda #3                  ; logical file number
         ldx #8                  ; device: disk
         ldy #2                  ; SA=2: sequential channel (write creates new file)
-        jsr SETLFS
+        jsr pet_setlfs
 
-        jsr OPEN
+        jsr pet_open
         bcs write_open_err
 
         ldx #3
@@ -909,7 +942,7 @@ write_done:
 
         jsr CLRCHN
         lda #3
-        jsr CLOSE
+        jsr pet_close
         rts
 
 write_open_err:
@@ -929,12 +962,12 @@ LOAD handles the file open/close internally.
         lda #fname_len          ; Set filename
         ldx #<fname
         ldy #>fname
-        jsr SETNAM
+        jsr pet_setnam
 
         lda #1                  ; SA=0: relocating load (use address from file header)
         ldx #8
         ldy #0
-        jsr SETLFS
+        jsr pet_setlfs
 
         lda #0                  ; 0=load, 1=verify
         jsr LOAD
@@ -956,12 +989,12 @@ save_ptr = $FB                  ; ZP: store start address here
         lda #fname_len
         ldx #<fname
         ldy #>fname
-        jsr SETNAM
+        jsr pet_setnam
 
         lda #1
         ldx #8
         ldy #1                  ; SA=1 for save
-        jsr SETLFS
+        jsr pet_setlfs
 
         lda #save_ptr           ; ZP address (not the value)
         ldx #<end_addr
@@ -1045,7 +1078,7 @@ Errors returned in A when OPEN sets C=1:
 For IEEE-488 devices, if the device does not respond, STATUS bit 1 will be set after a write timeout, or bit 0 after a read timeout.
 
 ```asm
-        jsr OPEN
+        jsr pet_open
         bcs open_failed
         lda STATUS              ; check STATUS for timeout
         and #$03                ; bits 0 and 1: read/write timeout
@@ -1063,12 +1096,12 @@ After OPEN, open the command channel and read it to check:
         bne open_hardware_error ; KERNAL-level hardware error
 
         lda #0                  ; Open command channel; no filename for status read
-        jsr SETNAM
+        jsr pet_setnam
         lda #$0F                ; logical file 15
         ldx #8                  ; same drive
         ldy #$0F                ; SA=15 = command channel
-        jsr SETLFS
-        jsr OPEN                ; then read error string via CHKIN/CHRIN; see system/disk.md
+        jsr pet_setlfs
+        jsr pet_open                ; then read error string via CHKIN/CHRIN; see system/disk.md
 ```
 
 ### Resource Leak Prevention
@@ -1080,7 +1113,7 @@ safe_close:             ; Safe cleanup pattern
 
         jsr CLRCHN              ; always restore I/O first
         lda #2                  ; close logical file 2
-        jsr CLOSE               ; even if it wasn't fully opened
+        jsr pet_close               ; even if it wasn't fully opened
         rts                     ; CLOSE is a no-op if file is not open
 ```
 
@@ -1116,7 +1149,7 @@ Cassette files do not use filenames for addressing.
 
 The KERNAL searches for a file by reading tape until it finds a header matching the given name.
 
-If no name is given (A=0 in SETNAM), the KERNAL loads the next file regardless of its header name.
+If no name is given (A=0 in pet_setnam), the KERNAL loads the next file regardless of its header name.
 
 Cassette write (SA=1) always appends at the current tape position.
 
@@ -1135,33 +1168,35 @@ A common pattern is to have a data channel and a command channel open at the sam
         lda #5                  ; File 1: data
         ldx #<dfname
         ldy #>dfname
-        jsr SETNAM
+        jsr pet_setnam
         lda #2
         ldx #8
         ldy #2
-        jsr SETLFS
-        jsr OPEN
+        jsr pet_setlfs
+        jsr pet_open
 
         lda #0                  ; File 2: command channel (no filename for status)
-        jsr SETNAM
+        jsr pet_setnam
         lda #$0F
         ldx #8
         ldy #$0F
-        jsr SETLFS
-        jsr OPEN                ; LFN 2=data, LFN 15=cmd; CHKIN/CHRIN per channel; CLRCHN after each switch
+        jsr pet_setlfs
+        jsr pet_open                ; LFN 2=data, LFN 15=cmd; CHKIN/CHRIN per channel; CLRCHN after each switch
 ```
 
 ## Troubleshooting
 
-| Symptom                            | Likely cause                                                          |
-|------------------------------------|-----------------------------------------------------------------------|
-| OPEN returns C=1, A=5              | Device not present; check IEEE-488 cable and drive power              |
-| OPEN returns C=1, A=1              | Too many files open; close unused files first                         |
-| CHRIN returns garbage after CHKIN  | File not opened for read; wrong SA or file opened for write           |
-| STATUS bit 0 set after CHRIN       | IEEE-488 read timeout; drive not responding                           |
-| STATUS bit 1 set after CHROUT      | IEEE-488 write timeout; drive not responding                          |
-| STATUS bit 4 set                   | Unrecoverable read error or file not found on cassette                |
-| File writes but drive LED flashes  | DOS error; read command channel (SA=15) for error code                |
-| CHROUT goes to screen not file     | CLRCHN was called; call CHKOUT again before writing                   |
-| LOAD returns incorrect end address | SA=0 used with non-PRG file; use SA=1 with explicit load address      |
-| Program hangs after file operation | CLRCHN not called; KERNAL still reading from file instead of keyboard |
+| Symptom                                | Likely cause                                                          |
+|----------------------------------------|-----------------------------------------------------------------------|
+| `?SYNTAX ERROR` after calling OPEN     | Used `jsr $FFBD` (SETNAM) or `jsr $FFBA` (SETLFS) — these don't exist on PET. Use pet_setnam/pet_setlfs wrappers instead. |
+| `?SYNTAX ERROR` after calling OPEN     | Used `jsr $FFC0` (OPEN jump table) from machine code — it includes BASIC parsing. Use pet_open (calls $F524) instead. |
+| OPEN jumps to BASIC error handler      | PET OPEN/CLOSE/CHKIN don't use carry for errors — they jump to $CE03 on failure. If they return, they succeeded. |
+| pet_open returns carry set             | File count ($AE) did not increase — OPEN failed internally. Check device, SA, filename. |
+| CHRIN returns garbage after CHKIN      | File not opened for read; wrong SA or file opened for write           |
+| STATUS bit 0 set after CHRIN           | IEEE-488 read timeout; drive not responding                           |
+| STATUS bit 1 set after CHROUT          | IEEE-488 write timeout; drive not responding                          |
+| STATUS bit 4 set                       | Unrecoverable read error or file not found on cassette                |
+| File writes but drive LED flashes      | DOS error; read command channel (SA=15) for error code                |
+| CHROUT goes to screen not file         | CLRCHN was called; call CHKOUT again before writing                   |
+| LOAD returns incorrect end address     | SA=0 used with non-PRG file; use SA=1 with explicit load address      |
+| Program hangs after file operation     | CLRCHN not called; KERNAL still reading from file instead of keyboard |

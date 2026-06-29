@@ -70,20 +70,20 @@ Opening SA=15 with no filename opens the channel for reading drive status.
 ### Opening the Command Channel for Status
 
 ```asm
-SETNAM  = $FFBD
-SETLFS  = $FFBA
-OPEN    = $FFC0
+; PET does not have SETNAM - use pet_setnam wrapper
+; PET does not have SETLFS - use pet_setlfs wrapper
+; PET OPEN includes BASIC parsing - use pet_open wrapper
 
 ; Open command channel with no command (read-only)
 open_cmd_ch:
 
         lda #0                  ; no filename
-        jsr SETNAM
+        jsr pet_setnam
         lda #$0F                 ; logical file 15
         ldx #8                  ; device 8
         ldy #$0F                 ; SA=15 = command channel
-        jsr SETLFS
-        jsr OPEN                ; open
+        jsr pet_setlfs
+        jsr pet_open                ; open
         rts
 ```
 
@@ -155,18 +155,18 @@ send_cmd:
         lda #cmd_end-cmd        ; command length
         ldx #<cmd
         ldy #>cmd
-        jsr SETNAM
+        jsr pet_setnam
 
         lda #$0F                 ; logical file 15
         ldx #8                  ; device 8
         ldy #$0F                 ; SA=15 = command channel
-        jsr SETLFS
+        jsr pet_setlfs
 
-        jsr OPEN                ; sending the command happens on OPEN
+        jsr pet_open                ; sending the command happens on OPEN
         bcs cmd_error
 
         lda #$0F
-        jsr CLOSE               ; close sends the command and waits
+        jsr pet_close               ; close sends the command and waits
 
         jsr open_cmd_ch         ; Reopen command channel to read status
         jsr read_status
@@ -351,13 +351,13 @@ Each subsequent line contains one directory entry: block count, filename, and fi
 ### Opening the Directory
 
 ```asm
-SETNAM  = $FFBD
-SETLFS  = $FFBA
-OPEN    = $FFC0
+; PET does not have SETNAM - use pet_setnam wrapper
+; PET does not have SETLFS - use pet_setlfs wrapper
+; PET OPEN includes BASIC parsing - use pet_open wrapper
 CHKIN   = $FFC6
 CHRIN   = $FFCF
 CLRCHN  = $FFCC
-CLOSE   = $FFC3
+; PET CLOSE includes BASIC parsing - use pet_close wrapper
 STATUS  = $0096
 
 open_directory:
@@ -365,14 +365,14 @@ open_directory:
         lda #1                  ; filename length = 1
         ldx #<dir_name
         ldy #>dir_name
-        jsr SETNAM
+        jsr pet_setnam
 
         lda #2                  ; LFN 2 (any unused number)
         ldx #8                  ; device 8
         ldy #0                  ; SA=0 for directory read
-        jsr SETLFS
+        jsr pet_setlfs
 
-        jsr OPEN
+        jsr pet_open
         bcs dir_open_err
 
         ldx #2
@@ -469,7 +469,7 @@ line_buf:
 ```asm
         jsr CLRCHN
         lda #2
-        jsr CLOSE
+        jsr pet_close
 ```
 
 ### LOAD "$" vs Programmatic Directory Read
@@ -647,12 +647,12 @@ The emulator transparently handles the IEEE-488 protocol simulation.
         lda #6                  ; Load a file from the mounted image
         ldx #<fname
         ldy #>fname
-        jsr SETNAM
+        jsr pet_setnam
 
         lda #1
         ldx #8                  ; emulated drive 8
         ldy #0
-        jsr SETLFS
+        jsr pet_setlfs
 
         lda #0
         jsr LOAD
@@ -692,15 +692,15 @@ They are the standard approach for ML programs.
 All KERNAL calls are documented in `system/file.md`.
 
 ```asm
-        jsr SETNAM
-        jsr SETLFS
-        jsr OPEN
+        jsr pet_setnam
+        jsr pet_setlfs
+        jsr pet_open
         ldx #2
         jsr CHKIN
         jsr CHRIN               ; read bytes
         jsr CLRCHN
         lda #2
-        jsr CLOSE
+        jsr pet_close
 ```
 
 ### Direct IEEE-488 Bus Access
