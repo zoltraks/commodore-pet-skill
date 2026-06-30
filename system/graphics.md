@@ -29,7 +29,8 @@ This file covers PET 3032 semigraphics and UI drawing techniques in four progres
 | Drawing Routines        | 237  | draw_box_xy, horizontal/vertical dividers, fill_rect, progress bar  |
 | Double-Density Plotting | 740  | 80x50 pixel grid via 2x2 quadrant chars; quadrant map; plot_point   |
 | Title Bar               | 856  | Reverse-video full-width title/status bar                           |
-| Screen Scrolling        | 867  | Software scroll-up by copying screen RAM                            |
+| Option Markers          | 867  | Checkbox markers for both character sets, toggle routine            |
+| Screen Scrolling        | 948  | Software scroll-up by copying screen RAM                            |
 
 ## Semigraphics Characters
 
@@ -864,6 +865,87 @@ A full-width title bar or status bar is a row with reverse video (bit 7) set on 
 ```
 
 To write text into the title bar, OR each character's screen code with `$80` before storing it to screen RAM. See `system/screen.md` "Reverse Video" section for per-character and global reverse mode techniques.
+
+## Option Markers (Checkboxes)
+
+The PET character sets provide markers for checkable options -- checkboxes, radio buttons, and toggle states. The available marker characters depend on which character set is active, because the `$41`-`$5A` range contains graphics glyphs in the uppercase set but letters in the lowercase set.
+
+### Marker Characters
+
+| Charset   | Unchecked | Checked | Unchecked Glyph | Checked Glyph   |
+|-----------|-----------|---------|-----------------|-----------------|
+| Uppercase | `$57`     | `$51`   | ○ (empty ball)  | ● (filled ball) |
+| Lowercase | `$2D`     | `$A0`   | - (hyphen)      | ■ (solid block) |
+
+The uppercase/graphics set provides ball characters at `$51` and `$57` -- a filled disk and an empty ring. These codes are in the `$41`-`$5A` range, which contains graphics characters in the uppercase set but becomes uppercase letters (A-Z) in the lowercase set. When the lowercase set is active, `$51` displays as Q and `$57` as W, so they cannot serve as markers.
+
+For the lowercase set, use `$2D` (hyphen) for unchecked and `$A0` (reverse space) for checked. Both work in either set: `$2D` is in the shared `$20`-`$3F` range, and `$A0` is `$20` with bit 7 set, which the hardware inverts to a solid block in both sets.
+
+### Ball Character Pixel Patterns
+
+Verified against the 901447-10 character ROM (uppercase/graphics set):
+
+`$57` -- empty ball (unchecked):
+
+```
+........
+..####..
+.#....#.
+.#....#.
+.#....#.
+.#....#.
+..####..
+........
+```
+
+`$51` -- filled ball (checked):
+
+```
+........
+..####..
+.######.
+.######.
+.######.
+.######.
+..####..
+........
+```
+
+### Charset-Safe Markers
+
+If a program must work in both character sets without detecting which is active, use `$2D` (hyphen) and `$A0` (solid block). These produce the same glyphs in both sets. The ball characters give a more distinctive checkbox appearance but require the uppercase/graphics set.
+
+### Toggling a Checkbox
+
+Replace the marker screen code at the marker position to toggle state. The caller sets `$FB`/`$FC` to the marker's screen address; the routine saves and restores A.
+
+```asm
+MARK_OFF  = $57           ; empty ball (unchecked, uppercase set)
+MARK_ON   = $51           ; filled ball (checked, uppercase set)
+
+toggle_checkbox:
+
+        pha
+        ldy #$00
+        lda ($FB),y             ; read current marker
+        cmp #MARK_ON
+        beq tc_uncheck          ; checked -> uncheck
+        lda #MARK_ON            ; unchecked -> check
+        sta ($FB),y
+        jmp tc_done
+
+tc_uncheck:
+
+        lda #MARK_OFF
+        sta ($FB),y
+
+tc_done:
+
+        pla
+        rts
+```
+
+For the lowercase set, set `MARK_OFF = $2D` and `MARK_ON = $A0`.
 
 ## Screen Scrolling
 

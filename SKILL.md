@@ -109,6 +109,7 @@ Use this table to pick the right file without reading every option above.
 | Set up a VBLANK IRQ or poll VBLANK             | `system/irq.md`             |                             |
 | Write to the screen or use PETSCII             | `system/screen.md`          |                             |
 | Draw UI with semigraphics (boxes, lines)       | `system/graphics.md`        | `hardware/chip.md`          |
+| Draw checkboxes or option markers              | `system/graphics.md`        | `system/screen.md`          |
 | Plot pixels or draw a graph (80x50 grid)       | `system/graphics.md`        | `system/screen.md`          |
 | Switch between uppercase and lowercase         | `system/screen.md`          | `hardware/chip.md`          |
 | Load a PRG or data file from tape or disk      | `system/load.md`            |                             |
