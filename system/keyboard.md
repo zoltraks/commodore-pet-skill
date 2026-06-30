@@ -20,14 +20,59 @@ This file covers PET 3032 keyboard input in four progressive layers:
 
 ## Quick-Lookup
 
-| Need                            | Section                  |
-|---------------------------------|--------------------------|
-| Read a key via KERNAL           | KERNAL GETIN             |
-| Check STOP key                  | STOP Key                 |
-| Scan a specific key directly    | Direct Matrix Scan       |
-| Detect simultaneous key presses | Multi-Key Detection      |
-| Full matrix layout              | Keyboard Matrix Map      |
-| PETSCII code for a key          | Common PETSCII Key Codes |
+| Need                                 | Section                  |
+|--------------------------------------|--------------------------|
+| Read a key via KERNAL                | KERNAL GETIN             |
+| Check STOP key                       | STOP Key                 |
+| Physical layout of keys and segments | Physical Key Layout      |
+| Scan a specific key directly         | Direct Matrix Scan       |
+| Detect simultaneous key presses      | Multi-Key Detection      |
+| Full matrix layout                   | Keyboard Matrix Map      |
+| PETSCII code for a key               | Common PETSCII Key Codes |
+
+## Physical Key Layout
+
+This is the physical keycap layout of the PET 3008, 3016, and 3032 -- the original full-travel keyboard, as opposed to the PET 2001's chiclet keyboard or the later business keyboards. It is a different view from the Keyboard Matrix Map below: physical key position does not correspond row-for-row with the electrical scan matrix, so do not use the two interchangeably.
+
+The keyboard has two physical segments, a main typewriter segment and a numeric segment to its right. Both have five rows.
+
+### Main Segment
+
+| Row | Keys (left to right)                                                                       |
+|-----|--------------------------------------------------------------------------------------------|
+| 1   | `@` , `!` , `"` , `#` , `$` , `%` , `'` , `&` , `\` , `(` , `)` , `←` , `[` , `]`          |
+| 2   | OFF RVS , `Q` , `W` , `E` , `R` , `T` , `Y` , `U` , `I` , `O` , `P` , `↑` , `<` , `>`      |
+| 3   | SHIFT LOCK , `A` , `S` , `D` , `F` , `G` , `H` , `J` , `K` , `L` , `:` , RUN STOP , RETURN |
+| 4   | SHIFT , `Z` , `X` , `C` , `V` , `B` , `N` , `M` , `,` , `;` , `?` , SHIFT                  |
+| 5   | SPACE -- single wide key spanning the row                                                  |
+
+### Numeric Segment
+
+| Row | Keys (left to right)                                             |
+|-----|------------------------------------------------------------------|
+| 1   | CLR HOME , CRSR UP DOWN (`⮁`) , CRSR LEFT RIGHT (`⮀`) , INST DEL |
+| 2   | `7` , `8` , `9` , `/`                                            |
+| 3   | `4` , `5` , `6` , `*`                                            |
+| 4   | `1` , `2` , `3` , `+`                                            |
+| 5   | `0` , `.` , `-` , `=`                                            |
+
+### Dual-Function Keys
+
+Several keys send different PETSCII codes depending on SHIFT state, following the same pattern as the cursor keys documented in Common PETSCII Key Codes below:
+
+| Key             | Unshifted            | Shifted             |
+|-----------------|----------------------|---------------------|
+| OFF RVS         | RVS OFF (`$92`)      | RVS ON (`$12`)      |
+| CLR HOME        | HOME (`$13`)         | CLR/HOME (`$93`)    |
+| CRSR UP DOWN    | CURSOR DOWN (`$11`)  | CURSOR UP (`$91`)   |
+| CRSR LEFT RIGHT | CURSOR RIGHT (`$1D`) | CURSOR LEFT (`$9D`) |
+| INST DEL        | DELETE (`$14`)       | INSERT (`$94`)      |
+
+RVS ON/OFF codes are documented in `system/screen.md`. The remaining codes appear in Common PETSCII Key Codes below.
+
+SHIFT LOCK mechanically latches the keyboard in the shifted state; it is a separate physical key from the two SHIFT keys in row 4 of the main segment.
+
+RUN STOP (main segment, row 3) is the same key documented in STOP Key above.
 
 ## KERNAL GETIN
 

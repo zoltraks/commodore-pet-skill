@@ -48,17 +48,17 @@ Read these files for chip register behavior, timing, and hardware-level facts.
 
 Read these files for OS routines, memory layout, and I/O protocols.
 
-| File                 | Read when the task involves                                                                 |
-|----------------------|---------------------------------------------------------------------------------------------|
-| `system/memory.md`   | RAM layout, zero page map, BASIC workspace, screen RAM range, safe zones for machine code   |
-| `system/kernal.md`   | KERNAL jump table ($FFC0-$FFEA), indirect vectors, CHROUT/GETIN/CLALL, PET vs C64 differences |
-| `system/irq.md`      | VBLANK IRQ setup, CINV vector, PIA1 CRB acknowledgement, handler template, VBLANK polling   |
-| `system/screen.md`   | Screen RAM, PETSCII, character sets, reverse video, cursor, scrolling     |
-| `system/graphics.md`    | Semigraphics characters, box drawing styles, window/line/rect routines, screen scrolling |
-| `system/load.md`     | Loading PRG files from tape or disk, LOAD call sequence, tape file format                   |
-| `system/keyboard.md` | PIA 1 keyboard matrix scan, GETIN vs direct scan, special keys, multi-key detection         |
+| File                 | Read when the task involves                                                                                                          |
+|----------------------|--------------------------------------------------------------------------------------------------------------------------------------|
+| `system/memory.md`   | RAM layout, zero page map, BASIC workspace, screen RAM range, safe zones for machine code                                            |
+| `system/kernal.md`   | KERNAL jump table ($FFC0-$FFEA), indirect vectors, CHROUT/GETIN/CLALL, PET vs C64 differences                                        |
+| `system/irq.md`      | VBLANK IRQ setup, CINV vector, PIA1 CRB acknowledgement, handler template, VBLANK polling                                            |
+| `system/screen.md`   | Screen RAM, PETSCII, character sets, reverse video, cursor, scrolling                                                                |
+| `system/graphics.md` | Semigraphics characters, box drawing styles, window/line/rect routines, screen scrolling                                             |
+| `system/load.md`     | Loading PRG files from tape or disk, LOAD call sequence, tape file format                                                            |
+| `system/keyboard.md` | PIA 1 keyboard matrix scan, physical key layout, GETIN vs direct scan, special keys, multi-key detection                             |
 | `system/file.md`     | Full file I/O: pet_setnam/pet_setlfs/pet_open/pet_close wrappers, CHKIN/CHKOUT/CLRCHN/CHRIN/CHROUT/LOAD/SAVE, PET vs C64 differences |
-| `system/disk.md`     | DOS commands, command channel (SA=15), directory reading, drive errors, disk images         |
+| `system/disk.md`     | DOS commands, command channel (SA=15), directory reading, drive errors, disk images                                                  |
 
 ### Code Patterns
 
@@ -91,38 +91,39 @@ Read these files when you need a complete, runnable starting point.
 
 Use this table to pick the right file without reading every option above.
 
-| Task                                      | Open first                  | Open second if needed       |
-|-------------------------------------------|-----------------------------|-----------------------------|
-| Write or explain a 6502 instruction       | `hardware/cpu.md`           |                             |
-| Use VIA, PIA, or CRTC registers           | `hardware/chip.md`          |                             |
-| Generate a tone on the PET speaker        | `hardware/sound.md`         |                             |
-| Find a safe memory address for code/data  | `system/memory.md`          |                             |
-| Call a KERNAL routine by address          | `system/kernal.md`          |                             |
-| PET vs C64 KERNAL differences             | `system/kernal.md`          | `system/file.md`            |
-| ?SYNTAX ERROR from KERNAL calls           | `system/kernal.md`          | `utility/vice-emulator.md`  |
-| Set up a VBLANK IRQ or poll VBLANK        | `system/irq.md`             |                             |
-| Write to the screen or use PETSCII        | `system/screen.md`          |                             |
-| Draw UI with semigraphics (boxes, lines)  | `system/graphics.md`        | `hardware/chip.md`          |
-| Switch between uppercase and lowercase    | `system/screen.md`          | `hardware/chip.md`          |
-| Load a PRG or data file from tape or disk | `system/load.md`            |                             |
-| Scan the keyboard or detect keypresses    | `system/keyboard.md`        |                             |
-| Open, read, or write a sequential file    | `system/file.md`            | `example/file.md`           |
-| Send a DOS command or read the directory  | `system/disk.md`            | `example/file.md`           |
-| Structure or format a DASM source file    | `code/standard.md`          | `utility/dasm-assembler.md` |
-| Label, comment, or section header rules   | `code/standard.md`          |                             |
-| Check which instructions affect flags     | `hardware/cpu.md`           | `code/standard.md`          |
-| Clear, fill, or copy screen RAM           | `system/screen.md`          | `code/standard.md`          |
-| Compress screen data or do frame-delta    | `code/compression.md`       |                             |
-| Decompress LZ4 block data                 | `code/compression.md`       | `code/standard.md`          |
-| Optimize a loop or reduce code size       | `code/optimization.md`      |                             |
-| Write DASM source with macros or segments | `utility/dasm-assembler.md` |                             |
-| Run or debug a PRG in the VICE emulator   | `utility/vice-emulator.md`  |                             |
-| Diagnose a crash or hang in xpet          | `utility/vice-emulator.md`  | `hardware/chip.md`          |
-| Headless screen capture or scripted test  | `utility/vice-emulator.md`  |                             |
-| Set breakpoints or watchpoints in xpet    | `utility/vice-emulator.md`  |                             |
-| Build a complete animation player         | `example/general.md`        | `hardware/chip.md`          |
-| Build a complete file I/O program         | `example/file.md`           | `system/file.md`            |
-| BASIC stub + SYS1038                      | `example/general.md`        | `code/standard.md`          |
+| Task                                        | Open first                  | Open second if needed       |
+|---------------------------------------------|-----------------------------|-----------------------------|
+| Write or explain a 6502 instruction         | `hardware/cpu.md`           |                             |
+| Use VIA, PIA, or CRTC registers             | `hardware/chip.md`          |                             |
+| Generate a tone on the PET speaker          | `hardware/sound.md`         |                             |
+| Find a safe memory address for code/data    | `system/memory.md`          |                             |
+| Call a KERNAL routine by address            | `system/kernal.md`          |                             |
+| PET vs C64 KERNAL differences               | `system/kernal.md`          | `system/file.md`            |
+| ?SYNTAX ERROR from KERNAL calls             | `system/kernal.md`          | `utility/vice-emulator.md`  |
+| Set up a VBLANK IRQ or poll VBLANK          | `system/irq.md`             |                             |
+| Write to the screen or use PETSCII          | `system/screen.md`          |                             |
+| Draw UI with semigraphics (boxes, lines)    | `system/graphics.md`        | `hardware/chip.md`          |
+| Switch between uppercase and lowercase      | `system/screen.md`          | `hardware/chip.md`          |
+| Load a PRG or data file from tape or disk   | `system/load.md`            |                             |
+| Scan the keyboard or detect keypresses      | `system/keyboard.md`        |                             |
+| Identify a physical key or its keycap label | `system/keyboard.md`        |                             |
+| Open, read, or write a sequential file      | `system/file.md`            | `example/file.md`           |
+| Send a DOS command or read the directory    | `system/disk.md`            | `example/file.md`           |
+| Structure or format a DASM source file      | `code/standard.md`          | `utility/dasm-assembler.md` |
+| Label, comment, or section header rules     | `code/standard.md`          |                             |
+| Check which instructions affect flags       | `hardware/cpu.md`           | `code/standard.md`          |
+| Clear, fill, or copy screen RAM             | `system/screen.md`          | `code/standard.md`          |
+| Compress screen data or do frame-delta      | `code/compression.md`       |                             |
+| Decompress LZ4 block data                   | `code/compression.md`       | `code/standard.md`          |
+| Optimize a loop or reduce code size         | `code/optimization.md`      |                             |
+| Write DASM source with macros or segments   | `utility/dasm-assembler.md` |                             |
+| Run or debug a PRG in the VICE emulator     | `utility/vice-emulator.md`  |                             |
+| Diagnose a crash or hang in xpet            | `utility/vice-emulator.md`  | `hardware/chip.md`          |
+| Headless screen capture or scripted test    | `utility/vice-emulator.md`  |                             |
+| Set breakpoints or watchpoints in xpet      | `utility/vice-emulator.md`  |                             |
+| Build a complete animation player           | `example/general.md`        | `hardware/chip.md`          |
+| Build a complete file I/O program           | `example/file.md`           | `system/file.md`            |
+| BASIC stub + SYS1038                        | `example/general.md`        | `code/standard.md`          |
 
 ## Extending This Skill
 
