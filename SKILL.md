@@ -53,7 +53,7 @@ Read these files for OS routines, memory layout, and I/O protocols.
 | `system/memory.md`   | RAM layout, zero page map, BASIC workspace, screen RAM range, safe zones for machine code   |
 | `system/kernal.md`   | KERNAL jump table ($FFC0-$FFEA), indirect vectors, CHROUT/GETIN/CLALL, PET vs C64 differences |
 | `system/irq.md`      | VBLANK IRQ setup, CINV vector, PIA1 CRB acknowledgement, handler template, VBLANK polling   |
-| `system/screen.md`   | Screen RAM layout, PETSCII vs screen codes, control codes, reverse video, cursor, scrolling |
+| `system/screen.md`   | Screen RAM, PETSCII, character sets, semigraphics UI, reverse video, cursor, scrolling     |
 | `system/load.md`     | Loading PRG files from tape or disk, LOAD call sequence, tape file format                   |
 | `system/keyboard.md` | PIA 1 keyboard matrix scan, GETIN vs direct scan, special keys, multi-key detection         |
 | `system/file.md`     | Full file I/O: pet_setnam/pet_setlfs/pet_open/pet_close wrappers, CHKIN/CHKOUT/CLRCHN/CHRIN/CHROUT/LOAD/SAVE, PET vs C64 differences |
@@ -101,6 +101,8 @@ Use this table to pick the right file without reading every option above.
 | ?SYNTAX ERROR from KERNAL calls           | `system/kernal.md`          | `utility/vice-emulator.md`  |
 | Set up a VBLANK IRQ or poll VBLANK        | `system/irq.md`             |                             |
 | Write to the screen or use PETSCII        | `system/screen.md`          |                             |
+| Draw UI with semigraphics (boxes, lines)  | `system/screen.md`          | `hardware/chip.md`          |
+| Switch between uppercase and lowercase    | `system/screen.md`          | `hardware/chip.md`          |
 | Load a PRG or data file from tape or disk | `system/load.md`            |                             |
 | Scan the keyboard or detect keypresses    | `system/keyboard.md`        |                             |
 | Open, read, or write a sequential file    | `system/file.md`            | `example/file.md`           |

@@ -348,28 +348,257 @@ They are not stored in screen RAM.
 
 **Note:** On the PET 3032, color control codes (used on C64) have no effect - the PET has a monochrome display.
 
-## Graphics Characters (Uppercase + Graphics Charset)
+## Character Sets
 
-In the uppercase and graphics character set (PCR CA2 high, `PCR_U = $0C`), the PET provides block graphics and line-drawing characters.
+The PET 3032 has two built-in character sets, selected via the VIA PCR register (`$E84C`) bits 3:1. See `hardware/chip.md` for the PCR switching mechanism and read-modify-write rules.
 
-Screen codes in the $60-$7F range are the "graphics" portion of the charset.
+| Set       | PCR   | CA2  | Also Called | Letters              | Default |
+|-----------|-------|------|-------------|----------------------|---------|
+| Uppercase | `$0C` | low  | "graphics"  | A-Z only (uppercase) | Yes     |
+| Lowercase | `$0E` | high | "text"      | A-Z and a-z          | No      |
 
-Key screen codes for demoscene and animation:
+### Uppercase / Graphics Set (default)
 
-| Screen Code | Description                   | Common Use      |
-|-------------|-------------------------------|-----------------|
-| $20         | Space - empty cell            | Background      |
-| $A0         | Solid block (`$20` reversed)  | Foreground fill |
-| $60         | Diagonal lines / checkerboard | Texture         |
-| $62         | Horizontal line (top)         | Box top         |
-| $63         | Vertical line (right)         | Box right       |
-| $64         | Horizontal line (bottom)      | Box bottom      |
-| $65         | Vertical line (left)          | Box left        |
-| $66         | Corner top-left               | Box drawing     |
-| $67         | Corner top-right              | Box drawing     |
-| $68         | Corner bottom-right           | Box drawing     |
-| $69         | Corner bottom-left            | Box drawing     |
-| $7F         | Full square solid             | Pixel art       |
+The uppercase set is the power-on default. It contains uppercase letters A-Z, digits 0-9, punctuation, and a rich selection of semigraphics characters: box-drawing lines, corners, solid blocks, checkerboard patterns, and diagonal lines.
+
+This set is called "graphics" because the absence of lowercase letters frees character ROM space for semigraphics glyphs. Use this set for UI drawing, borders, frames, and any screen layout that relies on box-drawing or block characters.
+
+### Lowercase / Text Set (alternative)
+
+The lowercase set replaces many semigraphics glyphs with lowercase letters a-z. It is called "text" because it is better suited for prose and text editing where both upper and lower case are needed.
+
+### Codes Shared Between Both Sets
+
+The box-drawing and block characters in the `$40`-`$7F` range that are **not letters** are identical in both character sets. The ROM stores the same pixel patterns for these codes in both halves. Specifically, these codes produce the same glyph regardless of which set is active:
+
+| Shared (identical in both sets)     | Differ (letters in one set)    |
+|-------------------------------------|--------------------------------|
+| `$40`, `$5B`-`$5D`                  | `$41`-`$5A` (A-Z vs a-z)       |
+| `$60`-`$68`, `$6A`-`$6C`            | `$5E`, `$5F`                   |
+| `$6D`-`$6F`, `$70`-`$79`            | `$69` (triangle vs other)      |
+| `$7B`-`$7F`                         | `$7A`                          |
+
+This means UI elements drawn with the box-drawing codes below work in **both** character sets without switching. You only need to switch to `PCR_U` if you need uppercase-only symbols that the lowercase set replaces with letters.
+
+### Switching Character Sets
+
+Always use read-modify-write on PCR to preserve CB2 bits (CB2 drives the IEEE-488 NDAC line; overwriting it breaks disk I/O):
+
+```asm
+PCR     = $E84C
+PCR_U   = $0C           ; uppercase / graphics charset
+PCR_L   = $0E           ; lowercase / text charset
+
+        lda PCR                 ; switch to uppercase/graphics for UI drawing
+        and #$F1                ; clear bits 3:1 (CA2 mode)
+        ora #PCR_U              ; bits 3:1 = 110 -> uppercase/graphics
+        sta PCR
+
+        lda PCR                 ; switch back to lowercase/text
+        and #$F1                ; clear bits 3:1
+        ora #PCR_L              ; bits 3:1 = 111 -> lowercase/text
+        sta PCR
+```
+
+See `hardware/chip.md` for the full PCR register reference and the CB2 hazard warning.
+
+## Semigraphics Characters
+
+The semigraphics characters below are verified against the 901447-10 character ROM. Unless noted, these codes produce the same glyph in **both** character sets — they can be used for UI drawing without switching sets.
+
+### Block and Fill Characters
+
+| Screen Code | Pixel Pattern              | Description              | Both sets? |
+|-------------|----------------------------|--------------------------|------------|
+| `$20`       | (empty)                    | Space                    | Yes        |
+| `$A0`       | (full 8x8)                 | Solid block (rev space)  | Yes        |
+| `$60`       | (empty)                    | Blank (same as space)    | Yes        |
+| `$61`       | `####....` (all rows)      | Left half block          | Yes        |
+| `$62`       | rows 4-7 solid             | Lower half block         | Yes        |
+| `$66`       | checkerboard all rows      | Full checkerboard        | Yes        |
+| `$68`       | checkerboard rows 4-7      | Lower checkerboard       | Yes        |
+| `$69`       | filled triangle (diagonal) | Diagonal fill            | **No**     |
+| `$7F`       | `####....` / `....####`    | 2x2 quadrant checker     | Yes        |
+
+### Quarter Blocks
+
+| Screen Code | Pixel Pattern              | Description              |
+|-------------|----------------------------|--------------------------|
+| `$7E`       | top-left quarter           | TL quarter block         |
+| `$7C`       | top-right quarter          | TR quarter block         |
+| `$6C`       | bottom-right quarter       | BR quarter block         |
+| `$7B`       | bottom-left quarter        | BL quarter block         |
+
+### Center-Line Drawing Characters (1px through cell center)
+
+These draw 1-pixel lines through the **center** of each character cell (row 4 or column 4). Corner characters join a center-horizontal to a center-vertical at the cell center point.
+
+| Screen Code | Pixel Pattern             | Description              |
+|-------------|---------------------------|--------------------------|
+| `$40`       | row 4: `########`         | Horizontal center line   |
+| `$5D`       | col 4: `....#...`         | Vertical center line     |
+| `$5B`       | row 4 + col 4             | Cross / plus (┼)         |
+| `$70`       | h-right + v-down          | Corner TL (center style) |
+| `$6E`       | h-left + v-down           | Corner TR (center style) |
+| `$6D`       | h-right + v-up            | Corner BL (center style) |
+| `$7D`       | h-left + v-up             | Corner BR (center style) |
+| `$71`       | h-both + v-up             | T-junction up (┴)        |
+| `$72`       | h-both + v-down           | T-junction down (┬)      |
+| `$73`       | v-both + h-left           | T-junction left (┤)      |
+| `$6B`       | v-both + h-right          | T-junction right (├)     |
+
+### Edge-Line Drawing Characters (1px/2px/3px at cell edges)
+
+These draw lines at the **edges** of character cells. Adjacent cells form continuous lines. No dedicated corner characters — walls meet naturally at cell boundaries.
+
+| Screen Code | Pixel Pattern             | Description              |
+|-------------|---------------------------|--------------------------|
+| `$63`       | row 0 only                | Top edge 1px             |
+| `$64`       | row 7 only                | Bottom edge 1px          |
+| `$65`       | col 0 only                | Left edge 1px            |
+| `$67`       | col 7 only                | Right edge 1px           |
+| `$77`       | rows 0-1                  | Top edge 2px             |
+| `$6F`       | rows 6-7                  | Bottom edge 2px          |
+| `$74`       | cols 0-1                  | Left edge 2px            |
+| `$6A`       | cols 6-7                  | Right edge 2px           |
+| `$78`       | rows 0-2                  | Top edge 3px             |
+| `$79`       | rows 5-7                  | Bottom edge 3px          |
+| `$75`       | cols 0-2                  | Left edge 3px            |
+| `$76`       | cols 5-7                  | Right edge 3px           |
+
+## Box Drawing Styles
+
+The PET character ROM provides four distinct box-drawing styles. All use screen codes that are **identical in both character sets** — no charset switching is needed. Each style produces a visually different border weight.
+
+### Style 1: Center-Line (1px through cell center, with corners)
+
+Lines pass through the center of each cell. Dedicated corner characters join the horizontal and vertical at the center point.
+
+```
+#################################
+#                               #
+#                               #
+#################################
+```
+
+| Role  | Code | Description              |
+|-------|------|--------------------------|
+| TL    | `$70` | h-right + v-down        |
+| TR    | `$6E` | h-left + v-down         |
+| BL    | `$6D` | h-right + v-up          |
+| BR    | `$7D` | h-left + v-up           |
+| H     | `$40` | horizontal center line  |
+| V     | `$5D` | vertical center line    |
+
+### Style 2: Thick (3px walls at cell edges)
+
+Walls are 3 pixels wide at the edges of each cell. No dedicated corners — walls meet at cell boundaries.
+
+```
+##############################
+###                        ###
+##############################
+```
+
+| Role  | Code | Description              |
+|-------|------|--------------------------|
+| Left  | `$76` | right 3px vertical      |
+| Right | `$75` | left 3px vertical       |
+| Top   | `$78` | top 3px horizontal      |
+| Bottom| `$62` | lower half (4px)        |
+
+### Style 3: Medium (2px walls at cell edges)
+
+Walls are 2 pixels wide at the edges of each cell.
+
+```
+############################
+##                      ##
+############################
+```
+
+| Role  | Code | Description              |
+|-------|------|--------------------------|
+| Left  | `$6A` | right 2px vertical      |
+| Right | `$74` | left 2px vertical       |
+| Top   | `$77` | top 2px horizontal      |
+| Bottom| `$79` | bottom 3px horizontal   |
+
+### Style 4: Thin (1px walls at cell edges)
+
+Walls are 1 pixel wide at the edges of each cell.
+
+```
+##########################
+#                      #
+##########################
+```
+
+| Role  | Code | Description              |
+|-------|------|--------------------------|
+| Left  | `$67` | right 1px vertical      |
+| Right | `$65` | left 1px vertical       |
+| Top   | `$63` | top 1px horizontal      |
+| Bottom| `$64` | bottom 1px horizontal   |
+
+### Choosing a Style
+
+| Style       | Line width | Corners?  | Best for                    |
+|-------------|------------|-----------|-----------------------------|
+| Center-line | 1px center | Yes       | UI frames, dialog boxes     |
+| Thick       | 3px edge   | No        | Bold borders, titles        |
+| Medium      | 2px edge   | No        | Panels, grouped sections    |
+| Thin        | 1px edge   | No        | Subtle separators, grids    |
+
+The center-line style is the only one with dedicated corner characters. The edge-line styles (thick, medium, thin) form corners naturally where the wall cells meet — the left wall cell and top wall cell share a corner pixel at the cell boundary.
+
+### Center-Line Connectors
+
+The center-line style provides a full set of connector characters for drawing grids and divided frames. All codes are identical in both character sets.
+
+| Screen Code | Pixel Pattern             | Connector              |
+|-------------|---------------------------|------------------------|
+| `$70`       | h-right + v-down          | Corner TL (┌)         |
+| `$6E`       | h-left + v-down           | Corner TR (┐)         |
+| `$6D`       | h-right + v-up            | Corner BL (└)         |
+| `$7D`       | h-left + v-up             | Corner BR (┘)         |
+| `$72`       | h-both + v-down           | T-junction down (┬)   |
+| `$71`       | h-both + v-up             | T-junction up (┴)     |
+| `$6B`       | v-both + h-right          | T-junction right (├)  |
+| `$73`       | v-both + h-left           | T-junction left (┤)   |
+| `$5B`       | h-both + v-both           | Cross (┼)             |
+| `$40`       | row 4: `########`         | Horizontal line (─)   |
+| `$5D`       | col 4: `....#...`         | Vertical line (│)     |
+
+### Grid Frame Example
+
+A 2×2 cell grid using all nine center-line connectors — 4 corners, 4 T-junctions, and 1 cross. This is the default frame pattern for divided panels.
+
+Screen layout (5 rows × 9 columns):
+
+```
+70 40 40 40 72 40 40 40 6E      ┌───────┬───────┐
+5D 20 20 20 5D 20 20 20 5D      │       │       │
+6B 40 40 40 5B 40 40 40 73      ├───────┼───────┤
+5D 20 20 20 5D 20 20 20 5D      │       │       │
+6D 40 40 40 71 40 40 40 7D      └───────┴───────┘
+```
+
+Rendered at pixel level:
+
+```
+#################################################################
+#                               #                               #
+#                               #                               #
+#                               #                               #
+#################################################################
+#                               #                               #
+#                               #                               #
+#                               #                               #
+#################################################################
+```
+
+To draw a grid with N columns and M rows of cells, place T-junctions (`$72`/`$71`) at internal horizontal dividers, T-junctions (`$6B`/`$73`) at internal vertical dividers, crosses (`$5B`) at internal intersections, and corners (`$70`/`$6E`/`$6D`/`$7D`) at the four outer corners.
 
 **Reverse video rule:** Any screen code OR'd with `$80` inverts the character.
 
@@ -412,21 +641,19 @@ fill_checker:
 
 ### Drawing a Window Frame
 
-Use the box-drawing characters to draw a bordered window at any screen position. The uppercase + graphics character set must be active (`PCR = PCR_U`).
+Use the center-line box-drawing characters to draw a bordered window at any screen position. These codes work in both character sets — no charset switching needed.
 
 Pass the window parameters as a 4-byte block in free RAM; put the block's address in X (low byte) and Y (high byte). The routine borrows $FB-$FD internally, saves and restores all three.
 
 ```asm
 SCREEN      = $8000
 
-BOX_TL      = $66       ; corner top-left
-BOX_TR      = $67       ; corner top-right
-BOX_BR      = $68       ; corner bottom-right
-BOX_BL      = $69       ; corner bottom-left
-BOX_HTOP    = $62       ; horizontal top edge
-BOX_HBOT    = $64       ; horizontal bottom edge
-BOX_VLEFT   = $65       ; vertical left edge
-BOX_VRIGHT  = $63       ; vertical right edge
+BOX_TL      = $70       ; corner top-left (center-line style)
+BOX_TR      = $6E       ; corner top-right
+BOX_BR      = $7D       ; corner bottom-right
+BOX_BL      = $6D       ; corner bottom-left
+BOX_H       = $40       ; horizontal center line (top and bottom)
+BOX_V       = $5D       ; vertical center line (left and right)
 ```
 
 Define window parameters as data anywhere in free RAM:
@@ -509,7 +736,7 @@ draw_xy_top:
         ldy #0
         lda #BOX_TL
         sta ($FB),y
-        lda #BOX_HTOP
+        lda #BOX_H
         ldx $FD
         dex
 
@@ -541,11 +768,11 @@ draw_xy_sides:
 draw_xy_side:
 
         ldy #0
-        lda #BOX_VLEFT
+        lda #BOX_V
         sta ($FB),y
         ldy $FD
         dey                     ; right border at column width-1
-        lda #BOX_VRIGHT
+        lda #BOX_V
         sta ($FB),y
         dex
         bne draw_xy_sides
@@ -564,7 +791,7 @@ draw_xy_bot:
         ldy #0
         lda #BOX_BL
         sta ($FB),y
-        lda #BOX_HBOT
+        lda #BOX_H
         ldx $FD
         dex
 
@@ -588,6 +815,308 @@ draw_xy_botloop:
 ```
 
 The parameter block can sit anywhere in free RAM -- after BASIC program end, in a data section, or in tape buffers when tape is not in use.
+
+### Horizontal Divider Line
+
+Draw a horizontal line across an entire row. Use `$40` for a center-line style divider (1px through cell center), `$63` for a thin top-edge divider, or `$64` for a thin bottom-edge divider.
+
+```asm
+SCREEN  = $8000
+
+draw_hline:             ; draw horizontal line across row X (0-24); A = line char; borrows $FB-$FC; saves and restores both. Uses $FF (unused by BASIC).
+
+        sta $FF                 ; stash line char ($FF unused by PET BASIC 2)
+        lda $FC
+        pha
+        lda $FB
+        pha
+
+        jsr get_row_ptr         ; X = row, sets $FB/$FC to row start (clobbers A)
+        lda $FF                 ; restore line char into A
+        ldy #$27
+
+draw_hline_loop:
+
+        sta ($FB),y             ; write line char across all 40 columns
+        dey
+        bpl draw_hline_loop
+        pla
+        sta $FB
+        pla
+        sta $FC
+        rts
+```
+
+Usage:
+
+```asm
+        ldx #5                  ; row 5
+        lda #$40                ; center-line horizontal divider
+        jsr draw_hline
+
+        ldx #15                 ; row 15
+        lda #$64                ; thin bottom-edge divider
+        jsr draw_hline
+```
+
+### Vertical Divider Line
+
+Draw a vertical line down a column. Use `$5D` for a center-line style divider (1px through cell center), `$65` for a thin left-edge divider, or `$67` for a thin right-edge divider.
+
+```asm
+SCREEN  = $8000
+
+draw_vline:             ; draw vertical line at column X (0-39), all 25 rows; A = line char; borrows $FB-$FC; saves and restores both. Uses $FF (unused by BASIC).
+
+        sta $FF                 ; stash line char ($FF unused by PET BASIC 2)
+        lda $FC
+        pha
+        lda $FB
+        pha
+
+        lda #<SCREEN
+        sta $FB
+        lda #>SCREEN
+        sta $FC
+        txa                     ; add column offset to screen base
+        clc
+        adc $FB
+        sta $FB
+        bcc draw_vl_start
+        inc $FC
+
+draw_vl_start:
+
+        ldx #$19                ; 25 rows
+
+draw_vl_loop:
+
+        lda $FF                 ; load line char
+        ldy #$00
+        sta ($FB),y             ; write line character at current row
+        lda $FB                 ; advance to next row (add 40)
+        clc
+        adc #$28
+        sta $FB
+        bcc draw_vl_next
+        inc $FC
+
+draw_vl_next:
+
+        dex
+        bne draw_vl_loop
+        pla
+        sta $FB
+        pla
+        sta $FC
+        rts
+```
+
+Usage:
+
+```asm
+        ldx #10                 ; column 10
+        lda #$5D                ; center-line vertical divider
+        jsr draw_vline
+
+        ldx #30                 ; column 30
+        lda #$67                ; thin right-edge divider
+        jsr draw_vline
+```
+
+### Filled Rectangle
+
+Fill a rectangular area with solid blocks (`$A0`). Pass parameters as a 4-byte block (row, col, width, height), the same layout used by `draw_box_xy` above.
+
+```asm
+SCREEN  = $8000
+
+fill_rect:              ; X = low, Y = high of 4-byte block: row, col, width, height; fills with $A0; borrows $FB-$FD; saves and restores all three.
+
+        lda $FD
+        pha
+        lda $FC
+        pha
+        lda $FB
+        pha
+
+        stx $FB                 ; $FB/$FC = param block address
+        sty $FC
+        ldy #3
+        lda ($FB),y             ; height
+        pha
+        dey
+        lda ($FB),y             ; width
+        sta $FD
+        dey
+        lda ($FB),y             ; col
+        pha
+        dey
+        lda ($FB),y             ; row
+        pha
+
+        lda #<SCREEN
+        sta $FB
+        lda #>SCREEN
+        sta $FC
+
+        pla                     ; row
+        tax
+        beq fill_rect_col
+
+fill_rect_rowloop:
+
+        lda $FB
+        clc
+        adc #$28
+        sta $FB
+        bcc fill_rect_rskip
+        inc $FC
+
+fill_rect_rskip:
+
+        dex
+        bne fill_rect_rowloop
+
+fill_rect_col:
+
+        pla                     ; col
+        clc
+        adc $FB
+        sta $FB
+        bcc fill_rect_fill
+        inc $FC
+
+fill_rect_fill:
+
+        pla                     ; height
+        tax
+
+fill_rect_row:
+
+        ldy $FD                 ; Y = width
+        dey
+
+fill_rect_col_loop:
+
+        lda #$A0                ; solid block
+        sta ($FB),y
+        dey
+        bpl fill_rect_col_loop
+
+        lda $FB                 ; advance to next row
+        clc
+        adc #$28
+        sta $FB
+        bcc fill_rect_next
+        inc $FC
+
+fill_rect_next:
+
+        dex
+        bne fill_rect_row
+
+        pla
+        sta $FB
+        pla
+        sta $FC
+        pla
+        sta $FD
+        rts
+```
+
+Usage:
+
+```asm
+rect1:
+
+        byte 5                  ; row (0-24)
+        byte $0A                ; col (0-39)
+        byte $14                ; width (20 cells)
+        byte 8                  ; height (8 rows)
+
+        ldx #<rect1
+        ldy #>rect1
+        jsr fill_rect
+```
+
+### Progress Bar
+
+Draw a horizontal progress bar at a given row and column. The bar uses solid blocks (`$A0`) for the filled portion and spaces (`$20`) for the empty portion.
+
+```asm
+SCREEN    = $8000
+BAR_WIDTH = 20
+
+draw_progress:          ; draw 20-cell progress bar at row X, col Y; A = fill (0-20); borrows $FB-$FC; saves and restores both. Uses $FF (unused by BASIC).
+
+        sta $FF                 ; stash fill count ($FF unused by PET BASIC 2)
+        lda $FC
+        pha
+        lda $FB
+        pha
+
+        jsr get_row_ptr         ; X = row, sets $FB/$FC to row start (clobbers A)
+        tya                     ; A = col (Y preserved through get_row_ptr)
+        clc
+        adc $FB
+        sta $FB
+        bcc dp_start
+        inc $FC
+
+dp_start:
+
+        ldy #$00                ; Y = column index within bar
+        ldx $FF                 ; X = fill count
+
+dp_fill:
+
+        cpx #$00
+        beq dp_empty
+        lda #$A0                ; solid block (filled)
+        sta ($FB),y
+        dex
+        iny
+        cpy #BAR_WIDTH
+        bne dp_fill
+        jmp dp_done
+
+dp_empty:
+
+        lda #$20                ; space (empty)
+        sta ($FB),y
+        iny
+        cpy #BAR_WIDTH
+        bne dp_empty
+
+dp_done:
+
+        pla
+        sta $FB
+        pla
+        sta $FC
+        rts
+```
+
+Usage:
+
+```asm
+        ldx #10                 ; row 10
+        ldy #10                 ; column 10
+        lda #15                 ; 15 of 20 cells filled (75%)
+        jsr draw_progress
+```
+
+### Title Bar (Reverse Video)
+
+A full-width title bar or status bar is a row with reverse video (bit 7) set on every character. Use `highlight_row` (defined above) for this purpose -- it sets bit 7 on all 40 characters in a row.
+
+```asm
+        ldx #0                  ; row 0 (top of screen)
+        jsr highlight_row       ; title bar: reverse video on entire row
+```
+
+To write text into the title bar, OR each character's screen code with `$80` before storing it to screen RAM. See the "Reverse Video" section above for per-character and global reverse mode techniques.
 
 ## Screen Scrolling
 
