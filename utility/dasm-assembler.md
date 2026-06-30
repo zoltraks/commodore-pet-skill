@@ -30,15 +30,17 @@ This file covers DASM for PET 3032 work in four progressive layers:
 | Processor Directive  | 168  | `processor 6502` requirement                                                      |
 | Origin Directive     | 176  | `org $0401` and relocation                                                        |
 | Addressing Modes     | 192  | Immediate, ZP, absolute, indexed, indirect syntax                                 |
-| Data Directives      | 209  | `byte`, `word`, `hex`, `ds`, `dc`                                                 |
-| Labels and Equates   | 258  | Local labels, `equ`/`=`, forward references                                       |
-| Comments             | 333  | Semicolon style, tab-stop alignment                                               |
-| Macros               | 345  | `mac`/`endm`, arguments, nesting                                                  |
-| Conditional Assembly | 370  | `ifconst`, `ifnconst`, `else`, `endif`                                            |
-| Repeat Loops         | 392  | `repeat`/`repend`                                                                 |
-| Segments             | 402  | `seg`, `seg.u` for BSS, linking multiple segments                                 |
-| Include Files        | 410  | `include` and `incbin` directives                                                 |
-| Common Errors        | 422  | Undefined label, wrong format flag, forward-ref issues                            |
+| Accumulator-Mode     | 209  | `lsr` vs `lsr a` -- bare form required, `a` suffix causes unresolved symbol       |
+| Character Literals   | 234  | `byte "x"` works, `#'x'` immediate fails -- use hex values for brackets           |
+| Data Directives      | 271  | `byte`, `word`, `hex`, `ds`, `dc`                                                 |
+| Labels and Equates   | 320  | Local labels, `equ`/`=`, forward references                                       |
+| Comments             | 395  | Semicolon style, tab-stop alignment                                               |
+| Macros               | 407  | `mac`/`endm`, arguments, nesting                                                  |
+| Conditional Assembly | 432  | `ifconst`, `ifnconst`, `else`, `endif`                                            |
+| Repeat Loops         | 454  | `repeat`/`repend`                                                                 |
+| Segments             | 464  | `seg`, `seg.u` for BSS, linking multiple segments                                 |
+| Include Files        | 472  | `include` and `incbin` directives                                                 |
+| Common Errors        | 484  | Real error messages, unresolved symbols, syntax errors, branch out of range      |
 
 For file structure, formatting conventions, naming rules, column alignment, comment placement, section headers, and BASIC stub layout, see `code/standard.md`.
 
@@ -205,6 +207,67 @@ Sets fill byte for skipped regions. Default is $00.
 | Indirect indexed | `($zp),y` | `lda ($F7),y` |
 | Implied          | none      | `inx`, `rts`  |
 | Relative         | label     | `bne loop`    |
+
+### Accumulator-Mode Syntax
+
+The 6502 shift and rotate instructions (`asl`, `lsr`, `rol`, `ror`) have an accumulator mode that operates on A. In DASM, use the bare mnemonic with no operand:
+
+```asm
+        lda my_byte
+        lsr                     ; shift A right one bit
+        lsr                     ; again
+        lsr
+        lsr                     ; A now holds the high nibble in low position
+```
+
+**Do not write `lsr a`** -- DASM treats the trailing `a` as an unresolved symbol, producing:
+
+```
+--- Unresolved Symbol List
+a                        0000 ????         (R )
+--- 1 Unresolved Symbol
+Fatal assembly error: Source is not resolvable.
+```
+
+The same applies to `asl a`, `rol a`, and `ror a`. Always use the bare form: `asl`, `lsr`, `rol`, `ror`.
+
+### Character Literals
+
+DASM supports single-character string literals in `byte` directives using double quotes:
+
+```asm
+        byte "H", "E", "L", "L", "O", 0
+        byte "1", "0", "3", "8"
+```
+
+Each quoted character emits its PETSCII value. This works for letters, digits, and common symbols.
+
+**Pitfall: `#'x'` immediate character literals are not reliable.** DASM does not consistently support the `#'x'` syntax for immediate-mode character constants. Attempting `lda #'['` or `lda #']'` can produce:
+
+```
+error: Syntax Error '#'[' '.
+error: Syntax Error '#']' '.
+```
+
+Use the hex PETSCII value instead:
+
+```asm
+        lda #$5B               ; PETSCII '['
+        lda #$5D               ; PETSCII ']'
+        lda #$28               ; PETSCII '('
+        lda #$29               ; PETSCII ')'
+```
+
+For reference, common bracket and punctuation PETSCII values:
+
+| Character | PETSCII | Character | PETSCII |
+|-----------|---------|-----------|---------|
+| `(`       | `$28`   | `)`       | `$29`   |
+| `[`       | `$5B`   | `]`       | `$5D`   |
+| `{`       | `$7B`   | `}`       | `$7D`   |
+| `<`       | `$3C`   | `>`       | `$3E`   |
+| `:`       | `$3A`   | `;`       | `$3B`   |
+| `=`       | `$3D`   | `?`       | `$3F`   |
 
 ## Data Directives
 
@@ -426,3 +489,78 @@ Generates 10 space bytes. Labels inside REPEAT should be temporary labels inside
 | Phase error      | Forward reference unresolved | Add more passes with `-p#`           |
 | Origin redefined | ORG set after code generated | Use SEG for multiple regions         |
 | Label not found  | Typo or wrong scope          | Check spelling and SUBROUTINE blocks |
+
+### Real Error Messages and Their Causes
+
+**Unresolved Symbol (single letter)**
+
+```
+--- Unresolved Symbol List
+a                        0000 ????         (R )
+--- 1 Unresolved Symbol
+Fatal assembly error: Source is not resolvable.
+```
+
+Cause: using `lsr a`, `asl a`, `rol a`, or `ror a` instead of the bare accumulator-mode form. DASM interprets the trailing `a` as a label reference. See **Accumulator-Mode Syntax** above.
+
+**Syntax Error on immediate values**
+
+```
+error: Syntax Error '#'[' '.
+error: Syntax Error '#']' '.
+```
+
+Cause: using `#'x'` character literal syntax for immediate mode. DASM does not reliably parse `#'['` or `#']'`. Use the hex value: `lda #$5B`. See **Character Literals** above.
+
+**Branch out of range**
+
+```
+src/commander.asm (1234): error: Branch out of range (129 bytes).
+src/commander.asm (5678): error: Branch out of range (-177 bytes).
+```
+
+Cause: a `bne`, `beq`, `bcc`, `bcs`, `bmi`, `bpl`, `bvc`, or `bvs` target is more than 127 bytes forward or 128 bytes backward. The 6502 relative branch encoding is signed 8-bit, limiting range to -128..+127 bytes from the next instruction. See **Branch Out of Range** below.
+
+**Unresolved Symbol List with count**
+
+```
+--- Unresolved Symbol List
+vrh_ascii_pad            0000 ????         (R )
+--- 2 Unresolved Symbols
+```
+
+Cause: a label is referenced but never defined -- usually a typo or a missing label after a code edit. The number after "Unresolved Symbol" is the count of missing labels.
+
+### Branch Out of Range
+
+The 6502 branch instructions use a signed 8-bit offset, limiting the branch target to -128..+127 bytes from the instruction after the branch. When code grows past this range, DASM reports:
+
+```
+error: Branch out of range (129 bytes).
+error: Branch out of range (-177 bytes).
+```
+
+The fix is to invert the branch condition and jump with an absolute `jmp`:
+
+**Before (out of range):**
+
+```asm
+        cpx #(1+VIEW_ROWS)
+        bne vrh_row              ; too far away
+        rts
+```
+
+**After (within range):**
+
+```asm
+        cpx #(1+VIEW_ROWS)
+        beq vrh_done             ; short branch to skip
+        jmp vrh_row              ; absolute jump to the far target
+vrh_done:
+
+        rts
+```
+
+The pattern: invert the condition (`bne` becomes `beq`, `bcc` becomes `bcs`, etc.), branch a short distance to a `jmp` that reaches the far target. The `jmp` is a 3-byte absolute instruction with no range limit.
+
+This is common in long routines with end-of-loop branches that grow as the loop body grows. Check branch range after adding code inside a loop body.

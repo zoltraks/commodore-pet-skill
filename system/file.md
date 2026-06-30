@@ -32,7 +32,10 @@ Do not use C64 addresses - they differ.
 | PETSCII Filename Rules     | 1093 | Uppercase, wildcards, drive prefix                                                                 |
 | Tape File Notes            | 1119 | Cassette SA values, sequential vs PRG                                                              |
 | Multiple Open Files        | 1131 | Table limits, safe LFN allocation                                                                  |
-| Troubleshooting            | 1167 | Common bugs and their causes                                                                       |
+| Chunk-Based Partial Reading| 1186 | Re-open and skip to offset, read fixed-size chunks, STATUS-based EOF                               |
+| No Backward Seek           | 1284 | CBM-DOS cannot seek backward; re-open and skip forward for scroll-up                               |
+| Zero-Page Save and Restore | 1300 | restore_zp pattern: save $FB-$FE on entry, restore before each KERNAL call                         |
+| Troubleshooting            | 1356 | Common bugs and their causes                                                                       |
 
 ## File Architecture Overview
 
@@ -1183,6 +1186,198 @@ A common pattern is to have a data channel and a command channel open at the sam
         jsr pet_setlfs
         jsr pet_open                ; LFN 2=data, LFN 15=cmd; CHKIN/CHRIN per channel; CLRCHN after each switch
 ```
+
+## Chunk-Based Partial Reading
+
+Files larger than available RAM cannot be read in a single pass. CBM-DOS sequential files have no seek command -- the drive delivers bytes in order from the start of the file. To view or process a file in chunks, re-open the file for each chunk and skip forward to the desired offset.
+
+**Pattern: load a chunk at an arbitrary offset**
+
+```asm
+; view_chunk_base = byte offset to start reading from
+; view_chunk = buffer (e.g. 2048 bytes)
+; view_chunk_len = bytes actually read (set by this routine)
+
+load_chunk:
+
+        jsr restore_zp
+        jsr CLALL
+        lda fname_len
+        ldx #<fname
+        ldy #>fname
+        jsr pet_setnam
+        lda #LFN
+        ldx #8                  ; device 8
+        ldy #0                  ; SA=0 (read)
+        jsr pet_setlfs
+        jsr restore_zp
+        jsr pet_open
+        bcc lc_opened
+        jmp lc_err
+lc_opened:
+
+        jsr restore_zp
+        ldx #LFN
+        jsr CHKIN
+
+        ; Skip view_chunk_base bytes
+        lda view_chunk_base
+        sta skip_lo
+        lda view_chunk_base+1
+        sta skip_hi
+
+lc_skip:
+
+        lda skip_lo
+        ora skip_hi
+        beq lc_read_init
+        jsr CHRIN
+        lda STATUS
+        bne lc_read_init       ; EOF during skip
+        lda skip_lo
+        bne lc_skip_dec
+        dec skip_hi
+lc_skip_dec:
+
+        dec skip_lo
+        jmp lc_skip
+
+lc_read_init:
+
+        lda #0
+        sta view_chunk_len
+        sta view_chunk_len+1
+        lda #<view_chunk
+        sta sp_lo
+        lda #>view_chunk
+        sta sp_hi
+        ldy #0
+
+lc_read:
+
+        ; Check if buffer is full
+        lda view_chunk_len+1
+        cmp #>CHUNK_SIZE
+        bcc lc_read_byte
+        bne lc_done
+        lda view_chunk_len
+        cmp #<CHUNK_SIZE
+        bcs lc_done
+lc_read_byte:
+
+        jsr CHRIN
+        sta (sp_lo),y
+        inc view_chunk_len
+        bne lc_chk
+        inc view_chunk_len+1
+lc_chk:
+
+        lda STATUS
+        bne lc_eof             ; EOF or error
+        iny
+        bne lc_read
+        inc sp_hi
+        jmp lc_read
+
+lc_eof:
+
+        ; STATUS non-zero: EOF reached
+        ; view_chunk_len holds bytes actually read
+lc_done:
+
+        jsr restore_zp
+        jsr CLRCHN
+        lda #LFN
+        jsr pet_close
+        clc
+        rts
+lc_err:
+
+        ; set error status, return carry set
+        sec
+        rts
+```
+
+Key points:
+
+- The file is opened and closed for each chunk. No channel stays open between chunks.
+- `STATUS` is checked after every `CHRIN`. A non-zero `STATUS` means EOF or error; stop reading.
+- `view_chunk_len` records how many bytes were actually read, which may be less than `CHUNK_SIZE` at EOF.
+- The skip loop reads and discards bytes one at a time. This is slow for large offsets but is the only way to reach an arbitrary position in a CBM-DOS sequential file.
+
+## No Backward Seek
+
+CBM-DOS sequential files can only be read forward. There is no command to move the read position backward. To scroll backward through a file that was read in chunks, re-open the file and skip forward to the earlier offset.
+
+**Scroll-up pattern:**
+
+```asm
+; User scrolled up past the current chunk's start.
+; view_top < view_chunk_base, so reload from view_top.
+
+scroll_up_reload:
+
+        lda view_top
+        sta view_chunk_base
+        lda view_top+1
+        sta view_chunk_base+1
+        jsr load_chunk         ; re-open, skip to view_chunk_base, read
+        rts
+```
+
+This is the documented trade-off of chunk-based loading on CBM-DOS:
+
+- Scrolling forward within the current chunk: no disk I/O.
+- Scrolling forward past the chunk end: load the next chunk (skip is zero or small if chunks are contiguous).
+- Scrolling backward past the chunk start: re-open the file and skip from byte 0 to the new offset. This is expensive for large files.
+
+To minimize backward skips, make the chunk larger than one screenful. A 2048-byte chunk covers many screen rows, so most scrolling stays within the chunk and requires no disk I/O.
+
+## Zero-Page Save and Restore
+
+KERNAL I/O routines (`OPEN`, `CLOSE`, `CHKIN`, `CHKOUT`, `CHRIN`, `CHROUT`, `CLRCHN`, `CLALL`) clobber the tape buffer pointers at `$FB`-`$FE`. If your program uses these zero-page locations for indirect addressing, you must restore them before each KERNAL call and before using them yourself.
+
+**Pattern: save on entry, restore before each KERNAL call**
+
+```asm
+; At program start (init):
+        lda $FB
+        sta saved_fb
+        lda $FC
+        sta saved_fc
+        lda $FD
+        sta saved_fd
+        lda $FE
+        sta saved_fe
+
+; Before every KERNAL I/O call:
+        jsr restore_zp          ; restore $FB-$FE from saved values
+        jsr CLALL               ; or OPEN, CHKIN, CHRIN, etc.
+
+; restore_zp routine:
+restore_zp:
+
+        lda saved_fb
+        sta $FB
+        lda saved_fc
+        sta $FC
+        lda saved_fd
+        sta $FD
+        lda saved_fe
+        sta $FE
+        rts
+
+; At program exit:
+        jsr restore_zp          ; final restore so BASIC keeps working
+```
+
+The `$FB`-`$FE` bytes are KERNAL tape pointers, safe to borrow while the tape drive is idle. The save/restore discipline ensures BASIC remains usable after the program exits.
+
+**When to call restore_zp:**
+
+- Before every `pet_open`, `pet_close`, `CHKIN`, `CHKOUT`, `CLRCHN`, `CLALL`, `CHRIN`, `CHROUT` call.
+- Before using `$FB`-`$FE` as indirect pointers in your own code (KERNAL may have clobbered them since your last restore).
+- At program exit, to leave BASIC in a clean state.
 
 ## Troubleshooting
 

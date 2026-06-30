@@ -67,7 +67,7 @@ Read these files for implementation techniques and algorithmic patterns.
 | File                   | Read when the task involves                                                                                                        |
 |------------------------|------------------------------------------------------------------------------------------------------------------------------------|
 | `code/standard.md`     | File structure, formatting, labels, comments, section headers, naming, column alignment, flag semantics, screen RAM 1000-byte rule |
-| `code/bit.md`          | Bit shifts, rotates, masking, flag testing, 16-bit pointer increment/decrement                                                     |
+| `code/bit.md`          | Bit shifts, rotates, masking, flag testing, 16-bit pointer increment/decrement, byte-to-hex conversion |
 | `code/optimization.md` | Loop unrolling, branch tuning, size/speed trade-offs, compare-free countdown                                                       |
 | `code/compression.md`  | $00-escape RLE, byte-run encoding, frame-delta, LZ4 block format for animation                                                     |
 
@@ -75,7 +75,7 @@ Read these files for implementation techniques and algorithmic patterns.
 
 | File                        | Read when the task involves                                                                                                                                                             |
 |-----------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `utility/dasm-assembler.md` | DASM syntax, directives, macros, segments, command-line options                                                                                                                         |
+| `utility/dasm-assembler.md` | DASM syntax, directives, macros, segments, command-line options, accumulator-mode syntax, character literal pitfalls, branch out of range |
 | `utility/vice-emulator.md`  | Running PRG files in xpet, VICE monitor, breakpoints, watchpoints, tracepoints, conditional breakpoints, register modification, headless debugging, signal-byte tracing, Python socket scripting, KERNAL table verification, crash diagnosis, debugging workflow |
 
 ### Examples
@@ -108,15 +108,20 @@ Use this table to pick the right file without reading every option above.
 | Scan the keyboard or detect keypresses      | `system/keyboard.md`        |                             |
 | Identify a physical key or its keycap label | `system/keyboard.md`        |                             |
 | Open, read, or write a sequential file      | `system/file.md`            | `example/file.md`           |
+| Read a file in chunks (partial load)        | `system/file.md`            |                             |
+| Save and restore zero-page around KERNAL    | `system/file.md`            |                             |
 | Send a DOS command or read the directory    | `system/disk.md`            | `example/file.md`           |
 | Structure or format a DASM source file      | `code/standard.md`          | `utility/dasm-assembler.md` |
 | Label, comment, or section header rules     | `code/standard.md`          |                             |
 | Check which instructions affect flags       | `hardware/cpu.md`           | `code/standard.md`          |
 | Clear, fill, or copy screen RAM             | `system/screen.md`          | `code/standard.md`          |
+| Convert a byte to hex digits for display    | `code/bit.md`               |                             |
 | Compress screen data or do frame-delta      | `code/compression.md`       |                             |
 | Decompress LZ4 block data                   | `code/compression.md`       | `code/standard.md`          |
 | Optimize a loop or reduce code size         | `code/optimization.md`      |                             |
 | Write DASM source with macros or segments   | `utility/dasm-assembler.md` |                             |
+| Fix a DASM assembly error                   | `utility/dasm-assembler.md` |                             |
+| Fix a branch out of range error             | `utility/dasm-assembler.md` |                             |
 | Run or debug a PRG in the VICE emulator     | `utility/vice-emulator.md`  |                             |
 | Diagnose a crash or hang in xpet            | `utility/vice-emulator.md`  | `hardware/chip.md`          |
 | Headless screen capture or scripted test    | `utility/vice-emulator.md`  |                             |

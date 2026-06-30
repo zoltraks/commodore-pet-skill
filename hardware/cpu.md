@@ -21,6 +21,8 @@ All values hex ($NN) unless noted decimal.
 
 The PET 3032 uses a 1 MHz NMOS 6502.
 
+The 6502 is little-endian: 16-bit values are stored low byte first, then high byte. This applies to address operands, the `word` directive, and any 16-bit value you lay out by hand (write the `lo` byte before the `hi` byte).
+
 ## Quick-Lookup
 
 | Need                                | Section                            |

@@ -13,29 +13,30 @@ Follow these rules when writing new `.asm` files or editing existing ones to kee
 |----------------------------------|-----------------------------|
 | DASM syntax and directives       | `utility/dasm-assembler.md` |
 | 6502 instruction set reference   | `hardware/cpu.md`           |
-| Zero-page usage policy           | `STYLE.md`                  |
 | Optimization patterns            | `code/optimization.md`      |
 | Compression formats and routines | `code/compression.md`       |
 
 ## Contents
 
-| Section                  | Line | What it covers                                                     |
-|--------------------------|------|--------------------------------------------------------------------|
-| Toolchain                | 40   | DASM invocation, target CPU, hardware, load address                |
-| File Structure           | 49   | Top-to-bottom layout for every `.asm` file                         |
-| Directives               | 65   | `processor 6502` and `org $0401` placement                         |
-| Equates                  | 83   | Global hardware equates, zero page borrowing rules, grouping rules |
-| BASIC Stub               | 137  | Standard SYS1038 stub with `nextline:` and `old_pcr:`              |
-| Labels                   | 165  | Spacing, naming, colon rules, subroutine boundaries                |
-| Instruction Formatting   | 222  | Indentation, tab-stop comments, operand rules                      |
-| Comment Placement        | 250  | Block intent comments, label description comments                  |
-| Section Headers          | 302  | Major and minor banner format                                      |
-| Data Directives          | 328  | `byte`, `word`, string bytes, screen row layout                    |
-| Screen RAM Operations    | 373  | 1000-byte screen invariant, 768+232 clear/fill/copy pattern        |
-| End-of-File Format       | 403  | Trailing blank line rule                                           |
-| Naming Conventions       | 407  | Convention table for all identifier kinds                          |
-| Column Alignment Summary | 420  | Column position table for every source element                     |
-| 6502 Flag Semantics      | 435  | Flag-affecting instructions, branch-after-load bug pattern         |
+| Section                  | Line | What it covers                                                      |
+|--------------------------|------|---------------------------------------------------------------------|
+| Toolchain                | 40   | DASM invocation, target CPU, hardware, load address                 |
+| File Structure           | 49   | Top-to-bottom layout for every `.asm` file                          |
+| Directives               | 65   | `processor 6502` and `org $0401` placement                          |
+| Equates                  | 83   | Global hardware equates, grouping and alignment rules               |
+| Zero Page Usage          | 107  | Parameter blocks, borrowing `$FB`-`$FE`, save/restore discipline    |
+| BASIC Stub               | 169  | Standard SYS1038 stub with `nextline:` and `old_pcr:`               |
+| Labels                   | 199  | Spacing, naming, colon rules, subroutine boundaries                 |
+| Instruction Formatting   | 256  | Indentation, tab-stop comments, operand rules                       |
+| Comment Placement        | 284  | Block intent comments, label description comments                   |
+| Routine Conventions      | 336  | Contracts, scratch registers, error signalling, self-modifying code |
+| Section Headers          | 371  | Major and minor banner format                                       |
+| Data Directives          | 397  | `byte`, `word`, string bytes, screen row layout                     |
+| Screen RAM Operations    | 442  | 1000-byte screen invariant, 768+232 clear/fill/copy pattern         |
+| End-of-File Format       | 472  | Trailing blank line rule                                            |
+| Naming Conventions       | 476  | Convention table for all identifier kinds, abbreviations            |
+| Column Alignment Summary | 491  | Column position table for every source element                      |
+| 6502 Flag Semantics      | 506  | Flag-affecting instructions, branch-after-load bug pattern          |
 
 ## Toolchain
 
@@ -104,35 +105,67 @@ Rules:
 - Do not describe what a hardware address physically is if the name already encodes it.
 - Always use "KERNAL" (uppercase) when referring to Commodore KERNAL routines.
 
-### Zero Page Usage
+## Zero Page Usage
 
-PET BASIC 2 leaves almost no zero page free. Do not declare equates that name a specific zero-page address as if your routine owns it -- the only addresses safe for a named equate are `$FF` and `$A2`.
+PET BASIC 2 leaves almost no zero page free. Only `$FF` and `$A2` are documented unused; everything else belongs to the KERNAL or BASIC. The rule is not to avoid naming a zero-page address but to never use one without saving and restoring it.
 
-If a routine needs zero page for `($zp),y` indirect addressing, borrow `$FB`-`$FE` (the KERNAL tape pointers, idle when tape I/O is not running), save the previous contents on entry, and restore them on exit. Reference borrowed bytes with raw hex in instructions, not an equate -- the raw hex makes the borrow visible at the call site instead of implying ownership.
+### Parameter Block Convention
+
+Prefer passing multi-byte inputs to a routine as a data block in free RAM. The caller loads X with the block's low byte and Y with the high byte, then JSRs. This avoids committing to a zero-page address at all.
 
 ```asm
-        lda $FC
-        pha
-        lda $FB
-        pha
-        stx $FB
-        sty $FC
+win_params:
 
-        lda ($FB),y             ; Check compression flag
+        byte 5                  ; row
+        byte $0A                ; col
+
+        ldx #<win_params
+        ldy #>win_params
+        jsr draw_window
+```
+
+### Borrowing Zero Page
+
+When a routine needs zero page for `($zp),y` indirect addressing, borrow `$FB`-`$FE` (the KERNAL tape pointers, idle when tape I/O is not running), save the previous contents on entry, and restore them on exit. Aliasing the borrowed bytes with `snake_case` equates is allowed and reads better than repeating raw addresses.
+
+```asm
+src_lo  = $FB           ; borrowed KERNAL tape pointer
+src_hi  = $FC           ; saved and restored below
+
+        lda src_hi
+        pha
+        lda src_lo
+        pha
+        stx src_lo
+        sty src_hi
+
+        lda (src_lo),y          ; Check compression flag
 
         pla
-        sta $FB
+        sta src_lo
         pla
-        sta $FC
+        sta src_hi
 ```
 
 Rules:
 
-- Comment the first use of a borrowed byte to state what it holds and that it is saved/restored.
+- Comment the borrowed byte where it is declared to state what it holds and that it is saved/restored.
 - Save and restore in mirrored pairs (push order reversed on the pull side).
-- Prefer the parameter-block convention (pass a pointer in X/Y to a block in free RAM) over zero-page borrowing when the routine does not need `($zp),y` addressing.
+- Reference borrowed bytes by alias or by raw hex; either is fine as long as the save/restore is present.
 
-For the full zero-page borrowing and save/restore policy, see `STYLE.md`.
+### What to Avoid
+
+The mistake is not naming a ZP address -- it is using one without the save/restore obligation:
+
+```asm
+; Wrong: borrows $F7/$F8 but never saves or restores them
+src_lo  = $F7
+src_hi  = $F8
+        stx src_lo              ; clobbers whatever KERNAL/BASIC kept there
+        sty src_hi
+```
+
+Only `$FF` and `$A2` are documented unused by PET BASIC 2 and may be used without saving.
 
 ## BASIC Stub
 
@@ -161,6 +194,8 @@ old_pcr:
 - `old_pcr:` holds one byte for saving and restoring the PCR register on exit.
 - Both labels follow label formatting rules (see below).
 - The major section header `; BASIC stub: SYS1038` is emitted once. Do not duplicate it.
+
+Do not insert any code or data ahead of the stub. Anything placed before it shifts the `$0401` load address and the `SYS1038` entry target, so the BASIC line no longer jumps to the start of the machine code.
 
 ## Labels
 
@@ -299,6 +334,41 @@ Do not comment what the mnemonic already says. Do not leave commented-out code.
 
 Major section banners serve as the file-level structural comments. No file header block or author line is used.
 
+## Routine Conventions
+
+The 6502 has no call frames, no exceptions, and no enforced calling convention. The discipline below keeps routines callable without surprises.
+
+### Document the Contract
+
+Every non-trivial routine begins with a comment stating its inputs, its outputs, and which registers it clobbers. State register preservation explicitly -- a caller cannot otherwise know what survives a `jsr`.
+
+```asm
+; draw_entry: render one directory entry.
+;   In:  X = entry index, A = screen row
+;   Out: carry set on error (row off screen)
+;   Clobbers: A, Y. Preserves X.
+draw_entry:
+
+        ; ...
+```
+
+### Registers Are Scratch
+
+Treat A, X, and Y as scratch across a `jsr` unless the called routine's contract documents that it preserves one. A routine that promises to preserve a register must save and restore it (stack push/pull or a saved byte).
+
+### Signal Errors Through a Flag
+
+Because there are no exceptions, signal success or failure through the carry flag or a documented register, and have the caller branch on it. Keep error paths reachable: a routine that can fail must set a flag the caller checks or a visible status, never fail silently.
+
+```asm
+        jsr open_file
+        bcs open_failed         ; carry set = error
+```
+
+### Self-Modifying Code
+
+Self-modifying code (writing to an operand of an instruction at runtime) is allowed but must carry a comment explaining what is patched and why. Do not use it on a hot path without a measured reason.
+
 ## Section Headers
 
 ### Major Sections
@@ -406,16 +476,18 @@ Every `.asm` file must end with exactly one trailing blank line. No more, no les
 
 ## Naming Conventions
 
-| Kind                                  | Convention                      | Example                                 |
-|---------------------------------------|---------------------------------|-----------------------------------------|
-| Hardware / KERNAL equates             | `UPPER_SNAKE_CASE`              | `PCR`, `CHROUT`, `PCR_U`                |
-| Reserved ZP equate (`$FF`/`$A2` only) | `snake_case`                    | `scratch`                               |
-| Code labels                           | `snake_case`                    | `decompress_lz4`                        |
-| Loop labels                           | `snake_case`                    | `copy_loop_1`, `lz4_token`              |
-| Data labels                           | `snake_case`                    | `screen_data`, `old_pcr`                |
-| Internal continuation labels          | `snake_case` with shared prefix | `lz4_inc_source`, `lz4_inc_source_done` |
+| Kind                         | Convention                      | Example                                 |
+|------------------------------|---------------------------------|-----------------------------------------|
+| Hardware / KERNAL equates    | `UPPER_SNAKE_CASE`              | `PCR`, `CHROUT`, `PCR_U`                |
+| Zero-page aliases            | `snake_case`                    | `src_lo`, `dest_hi`, `scratch`          |
+| Code labels                  | `snake_case`                    | `decompress_lz4`                        |
+| Loop labels                  | `snake_case`                    | `copy_loop_1`, `lz4_token`              |
+| Data labels                  | `snake_case`                    | `screen_data`, `old_pcr`                |
+| Internal continuation labels | `snake_case` with shared prefix | `lz4_inc_source`, `lz4_inc_source_done` |
 
 Prefixes group related labels. A subroutine and all its internal branch targets share the same prefix (`lz4_`). This makes the structure readable when scanning label names alone.
+
+Abbreviations are allowed when they are conventional for the platform: `lo`, `hi`, `ptr`, `sp`, `dp`, `zp`, `dos`, `sa` (secondary address). Do not invent new cryptic abbreviations; spell out anything a reader would not recognise at a glance.
 
 ## Column Alignment Summary
 

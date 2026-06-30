@@ -9,7 +9,7 @@ This document defines the formatting conventions for all files in the commodore-
 
 Follow these rules when adding new files or editing existing ones to keep style uniform across the skill.
 
-For the assembly coding standard (file structure, labels, comments, section headers, naming, column alignment), see `code/standard.md`.
+This guide covers documentation style only. For assembly coding conventions -- file structure, labels, comments, section headers, naming, column alignment, and zero-page usage -- see `code/standard.md`.
 
 ## File Header Structure
 
@@ -144,16 +144,6 @@ Do not leave a blank line as the first or last line inside a code block.
 
 Assembly source uses the column positions defined in `code/standard.md`.
 
-| Element                         | Position                                           |
-|---------------------------------|----------------------------------------------------|
-| Labels                          | Column 1 (no indent)                               |
-| Instructions and directives     | 8-space indent                                     |
-| Global equate `=`               | 8-space indent                                     |
-| Zero-page equate `=`            | 16-space indent                                    |
-| Inline comments on equates      | Column 25                                          |
-| Inline comments on labels       | Column 25                                          |
-| Inline comments on instructions | Column 33, 41, 49, 57, 65, ... (tab stops every 8) |
-
 ### Equate Style
 
 Define equates using `=` with enough padding to align the `=` at the correct column.
@@ -174,65 +164,6 @@ Complete standalone programs include `processor 6502` and `org $0401` at the top
 Subroutine snippets omit these and show only the relevant code.
 
 Always define all equates used in a snippet at the top of the same code block.
-
-## Zero-Page Policy
-
-PET BASIC 2 uses nearly all zero-page for the KERNAL and BASIC. Only `$FF` and `$A2` are documented unused. Do not write equates that commit to a specific ZP address as if it is owned by the programmer.
-
-### Parameter Block Convention
-
-Pass multi-byte inputs to subroutines as a data block in free RAM. The caller loads X with the block's low byte and Y with the high byte, then JSRs.
-
-```asm
-win_params:
-        byte 5      ; row
-        byte $0A     ; col
-
-        ldx #<win_params
-        ldy #>win_params
-        jsr my_routine
-```
-
-### Borrowing ZP Internally
-
-If a routine needs ZP for `($ptr),y` indirect addressing, it may borrow bytes it does not own provided it saves and restores them on entry and exit.
-
-Prefer `$FB`-`$FE` (KERNAL tape pointers, idle when tape I/O is not running). Document the borrow in the routine comment.
-
-```asm
-; my_routine: X = lo, Y = hi of param block
-; Borrows $FB-$FC; saves and restores both.
-my_routine:
-
-        lda $FC
-        pha
-        lda $FB
-        pha
-        stx $FB
-        sty $FC
-
-        ; ... use ($FB),y ...
-
-        pla
-        sta $FB
-        pla
-        sta $FC
-        rts
-```
-
-### What to Avoid
-
-Do not write equates that name specific ZP addresses without documenting the save/restore obligation:
-
-```asm
-; Wrong: implies these addresses are free to use
-src_lo  = $F7
-src_hi  = $F8
-```
-
-Use raw hex in code (`$FB`, `$FC`) rather than equate names for borrowed bytes; raw hex makes it obvious the bytes are temporarily borrowed, not owned.
-
-The only ZP addresses appropriate for named equates are `$FF` and `$A2`, the two bytes documented unused by PET BASIC 2.
 
 ## Inline Formatting
 
