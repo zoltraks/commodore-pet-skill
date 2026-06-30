@@ -19,23 +19,23 @@ Follow these rules when writing new `.asm` files or editing existing ones to kee
 
 ## Contents
 
-| Section                  | Line | What it covers                                              |
-|--------------------------|------|-------------------------------------------------------------|
-| Toolchain                | 39   | DASM invocation, target CPU, hardware, load address         |
-| File Structure           | 48   | Top-to-bottom layout for every `.asm` file                  |
-| Directives               | 64   | `processor 6502` and `org $0401` placement                  |
-| Equates                  | 82   | Global hardware equates, zero page equates, grouping rules  |
-| BASIC Stub               | 127  | Standard SYS1038 stub with `nextline:` and `old_pcr:`       |
-| Labels                   | 155  | Spacing, naming, colon rules, subroutine boundaries         |
-| Instruction Formatting   | 212  | Indentation, tab-stop comments, operand rules               |
-| Comment Placement        | 238  | Block intent comments, label description comments           |
-| Section Headers          | 290  | Major and minor banner format                               |
-| Data Directives          | 316  | `byte`, `word`, string bytes, screen row layout             |
-| Screen RAM Operations    | 361  | 1000-byte screen invariant, 768+232 clear/fill/copy pattern |
-| End-of-File Format       | 391  | Trailing blank line rule                                    |
-| Naming Conventions       | 395  | Convention table for all identifier kinds                   |
-| Column Alignment Summary | 408  | Column position table for every source element              |
-| 6502 Flag Semantics      | 423  | Flag-affecting instructions, branch-after-load bug pattern  |
+| Section                  | Line | What it covers                                                     |
+|--------------------------|------|--------------------------------------------------------------------|
+| Toolchain                | 40   | DASM invocation, target CPU, hardware, load address                |
+| File Structure           | 49   | Top-to-bottom layout for every `.asm` file                         |
+| Directives               | 65   | `processor 6502` and `org $0401` placement                         |
+| Equates                  | 83   | Global hardware equates, zero page borrowing rules, grouping rules |
+| BASIC Stub               | 137  | Standard SYS1038 stub with `nextline:` and `old_pcr:`              |
+| Labels                   | 165  | Spacing, naming, colon rules, subroutine boundaries                |
+| Instruction Formatting   | 222  | Indentation, tab-stop comments, operand rules                      |
+| Comment Placement        | 250  | Block intent comments, label description comments                  |
+| Section Headers          | 302  | Major and minor banner format                                      |
+| Data Directives          | 328  | `byte`, `word`, string bytes, screen row layout                    |
+| Screen RAM Operations    | 373  | 1000-byte screen invariant, 768+232 clear/fill/copy pattern        |
+| End-of-File Format       | 403  | Trailing blank line rule                                           |
+| Naming Conventions       | 407  | Convention table for all identifier kinds                          |
+| Column Alignment Summary | 420  | Column position table for every source element                     |
+| 6502 Flag Semantics      | 435  | Flag-affecting instructions, branch-after-load bug pattern         |
 
 ## Toolchain
 
@@ -104,26 +104,35 @@ Rules:
 - Do not describe what a hardware address physically is if the name already encodes it.
 - Always use "KERNAL" (uppercase) when referring to Commodore KERNAL routines.
 
-### Zero Page Equates
+### Zero Page Usage
 
-Declared inside the section that uses them, immediately after the section header banner, before the first label in that section. Names are `snake_case`. The `=` sign is aligned to column 16 within the group. Inline comments at column 25 describe the purpose.
+PET BASIC 2 leaves almost no zero page free. Do not declare equates that name a specific zero-page address as if your routine owns it -- the only addresses safe for a named equate are `$FF` and `$A2`.
+
+If a routine needs zero page for `($zp),y` indirect addressing, borrow `$FB`-`$FE` (the KERNAL tape pointers, idle when tape I/O is not running), save the previous contents on entry, and restore them on exit. Reference borrowed bytes with raw hex in instructions, not an equate -- the raw hex makes the borrow visible at the call site instead of implying ownership.
 
 ```asm
-source_lo = $F7         ; RLE source pointer low byte
-source_hi = $F8         ; RLE source pointer high byte
-dest_lo   = $F9         ; RLE destination pointer low byte
-dest_hi   = $FA         ; RLE destination pointer high byte
-rle_value = $FB         ; RLE temporary value
+        lda $FC
+        pha
+        lda $FB
+        pha
+        stx $FB
+        sty $FC
+
+        lda ($FB),y             ; Check compression flag
+
+        pla
+        sta $FB
+        pla
+        sta $FC
 ```
 
 Rules:
 
-- One blank line separates the last equate from the first label.
-- Comment every zero page equate -- the address alone is not self-documenting.
-- Align `=` signs to column 16 within the group.
-- Never use absolute addresses in instructions -- always reference named equates.
+- Comment the first use of a borrowed byte to state what it holds and that it is saved/restored.
+- Save and restore in mirrored pairs (push order reversed on the pull side).
+- Prefer the parameter-block convention (pass a pointer in X/Y to a block in free RAM) over zero-page borrowing when the routine does not need `($zp),y` addressing.
 
-For the zero-page borrowing and save/restore policy, see `STYLE.md`.
+For the full zero-page borrowing and save/restore policy, see `STYLE.md`.
 
 ## BASIC Stub
 
@@ -223,7 +232,7 @@ Inline comments on instructions use tab-stop alignment. The first tab stop is co
 
 ```asm
         lda #$93                ; PETSCII CLR/HOME
-        lda (source_lo),y       ; Check compression flag
+        lda ($FB),y             ; Check compression flag
         sta $FD                 ; Stash token
         lda #<animation_sequence        ; Restart from beginning
 ```
@@ -397,14 +406,14 @@ Every `.asm` file must end with exactly one trailing blank line. No more, no les
 
 ## Naming Conventions
 
-| Kind                         | Convention                      | Example                                 |
-|------------------------------|---------------------------------|-----------------------------------------|
-| Hardware / KERNAL equates    | `UPPER_SNAKE_CASE`              | `PCR`, `CHROUT`, `PCR_U`                |
-| Zero page equates            | `snake_case`                    | `source_lo`, `dest_hi`                  |
-| Code labels                  | `snake_case`                    | `decompress_lz4`                        |
-| Loop labels                  | `snake_case`                    | `copy_loop_1`, `lz4_token`              |
-| Data labels                  | `snake_case`                    | `screen_data`, `old_pcr`                |
-| Internal continuation labels | `snake_case` with shared prefix | `lz4_inc_source`, `lz4_inc_source_done` |
+| Kind                                  | Convention                      | Example                                 |
+|---------------------------------------|---------------------------------|-----------------------------------------|
+| Hardware / KERNAL equates             | `UPPER_SNAKE_CASE`              | `PCR`, `CHROUT`, `PCR_U`                |
+| Reserved ZP equate (`$FF`/`$A2` only) | `snake_case`                    | `scratch`                               |
+| Code labels                           | `snake_case`                    | `decompress_lz4`                        |
+| Loop labels                           | `snake_case`                    | `copy_loop_1`, `lz4_token`              |
+| Data labels                           | `snake_case`                    | `screen_data`, `old_pcr`                |
+| Internal continuation labels          | `snake_case` with shared prefix | `lz4_inc_source`, `lz4_inc_source_done` |
 
 Prefixes group related labels. A subroutine and all its internal branch targets share the same prefix (`lz4_`). This makes the structure readable when scanning label names alone.
 

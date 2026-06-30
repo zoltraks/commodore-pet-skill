@@ -106,10 +106,10 @@ The most common bug from misunderstanding flag updates is the branch-after-load 
 |-------------|---------------------|-----------------|
 | ADC         | Add with carry      | `adc #$01`      |
 | SBC         | Subtract with carry | `sbc #$01`      |
-| INC         | Increment memory    | `inc source_lo` |
+| INC         | Increment memory    | `inc $F7`       |
 | INX         | Increment X         | `inx`           |
 | INY         | Increment Y         | `iny`           |
-| DEC         | Decrement memory    | `dec dest_lo`   |
+| DEC         | Decrement memory    | `dec $F8`       |
 | DEX         | Decrement X         | `dex`           |
 | DEY         | Decrement Y         | `dey`           |
 | AND         | Logical AND         | `and #$0F`      |
