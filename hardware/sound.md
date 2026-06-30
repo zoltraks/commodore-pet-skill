@@ -20,6 +20,8 @@ The PET 3032 has no dedicated sound chip.
 
 The internal speaker is wired to the CB2 output of the VIA 6522.
 
+For the PetAY expansion card (dual AY-8910 stereo sound at `$A000`-`$A003`), see `expansion/petay.md`.
+
 CB2 is also the shift register serial output.
 
 When the shift register is configured to run free from Timer 2, it clocks a bit pattern onto CB2 continuously without CPU involvement.

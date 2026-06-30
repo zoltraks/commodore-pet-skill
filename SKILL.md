@@ -44,6 +44,14 @@ Read these files for chip register behavior, timing, and hardware-level facts.
 | `hardware/chip.md`  | VIA 6522, PIA 6520, CRTC 6545, I/O addresses, VBLANK signal, IRQ acknowledgement        |
 | `hardware/sound.md` | VIA CB2 speaker, shift register tone generation, frequency table, T2 timer setup        |
 
+### Expansion Hardware
+
+Read these files for add-on cards and peripherals not part of the stock PET 3032.
+
+| File                 | Read when the task involves                                                           |
+|----------------------|---------------------------------------------------------------------------------------|
+| `expansion/petay.md` | PetAY dual AY-8910 sound board, stereo I/O at $A000, register map, frequency dividers |
+
 ### System Software
 
 Read these files for OS routines, memory layout, and I/O protocols.
@@ -115,6 +123,8 @@ Use this table to pick the right file without reading every option above.
 | Draw a vertical bar graph (4-bit value)        | `system/graphics.md`        |                             |
 | Plot pixels or draw a graph (80x50 grid)       | `system/graphics.md`        | `system/screen.md`          |
 | Switch between uppercase and lowercase         | `system/screen.md`          | `hardware/chip.md`          |
+| Play sound via PetAY AY-8910 board             | `expansion/petay.md`        |                             |
+| Calculate AY frequency divider for a note      | `expansion/petay.md`        |                             |
 | Load a PRG or data file from tape or disk      | `system/load.md`            |                             |
 | Scan the keyboard or detect keypresses         | `system/keyboard.md`        |                             |
 | Identify a physical key or its keycap label    | `system/keyboard.md`        |                             |

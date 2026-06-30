@@ -21,23 +21,23 @@ This file covers the PET 3032 memory map in four progressive layers:
 
 ### By Region
 
-| Region             | Range       | Size   | Description                              |
-|--------------------|-------------|--------|------------------------------------------|
-| Zero page          | $0000-$00FF | 256 B  | System variables, pointers, vectors      |
-| Stack              | $0100-$01FF | 256 B  | 6502 hardware stack                      |
-| BASIC input buffer | $0200-$0250 | 81 B   | System INPUT buffer                      |
-| File tables        | $0251-$0270 | 32 B   | KERNAL logical file tables               |
-| Keyboard buffer    | $0270-$027A | 11 B   | Keyboard buffer queue                    |
-| Tape buffers       | $027A-$03F9 | 576 B  | Tape I/O buffers                         |
-| BASIC program      | $0400-$7FFF | ~31 KB | Tokenized BASIC + free RAM               |
-| Screen RAM         | $8000-$83E7 | 1000 B | 40x25 character screen                   |
-| Unused video       | $83E8-$83FF | 24 B   | Unused video RAM                         |
-| Expansion ROM      | $A000-$AFFF | 4 KB   | Free space for 4K EPROM                  |
-| BASIC ROM          | $B000-$DFFF | 12 KB  | BASIC keywords and operators             |
-| Editor ROM         | $E000-$E7FF | 2 KB   | Screen editor functions                  |
-| I/O area           | $E800-$E8FF | 256 B  | VIA, PIA, CRTC registers                 |
-| National ROM       | $E900-$EFFF | 1792 B | Nationalized keyboard mapping (board #4) |
-| KERNAL ROM         | $F000-$FFFF | 4 KB   | Tape, IEEE-488, jump table               |
+| Region             | Range       | Size   | Description                                                                |
+|--------------------|-------------|--------|----------------------------------------------------------------------------|
+| Zero page          | $0000-$00FF | 256 B  | System variables, pointers, vectors                                        |
+| Stack              | $0100-$01FF | 256 B  | 6502 hardware stack                                                        |
+| BASIC input buffer | $0200-$0250 | 81 B   | System INPUT buffer                                                        |
+| File tables        | $0251-$0270 | 32 B   | KERNAL logical file tables                                                 |
+| Keyboard buffer    | $0270-$027A | 11 B   | Keyboard buffer queue                                                      |
+| Tape buffers       | $027A-$03F9 | 576 B  | Tape I/O buffers                                                           |
+| BASIC program      | $0400-$7FFF | ~31 KB | Tokenized BASIC + free RAM                                                 |
+| Screen RAM         | $8000-$83E7 | 1000 B | 40x25 character screen                                                     |
+| Unused video       | $83E8-$83FF | 24 B   | Unused video RAM                                                           |
+| Expansion ROM      | $A000-$AFFF | 4 KB   | Free space for 4K EPROM (PetAY uses $A000-$A003, see `expansion/petay.md`) |
+| BASIC ROM          | $B000-$DFFF | 12 KB  | BASIC keywords and operators                                               |
+| Editor ROM         | $E000-$E7FF | 2 KB   | Screen editor functions                                                    |
+| I/O area           | $E800-$E8FF | 256 B  | VIA, PIA, CRTC registers                                                   |
+| National ROM       | $E900-$EFFF | 1792 B | Nationalized keyboard mapping (board #4)                                   |
+| KERNAL ROM         | $F000-$FFFF | 4 KB   | Tape, IEEE-488, jump table                                                 |
 
 ### PET 3032 RAM Layout
 
