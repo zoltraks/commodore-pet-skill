@@ -30,8 +30,8 @@ This file covers PET 3032 semigraphics and UI drawing techniques in four progres
 | Double-Density Plotting | 740  | 80x50 pixel grid via 2x2 quadrant chars; quadrant map; plot_point   |
 | Title Bar               | 856  | Reverse-video full-width title/status bar                           |
 | Option Markers          | 867  | Checkbox markers for both character sets, toggle routine            |
-| Vertical Bar Graphs     | 950  | 4-bit value bars, 3-cell fill characters, lookup table, draw_bar    |
-| Screen Scrolling        | 1077 | Software scroll-up by copying screen RAM                            |
+| Vertical Bar Graphs     | 950  | 4-bit value bars, 2-cell fill characters, lookup table, draw_bar    |
+| Screen Scrolling        | 1061 | Software scroll-up by copying screen RAM                            |
 
 ## Semigraphics Characters
 
@@ -950,110 +950,94 @@ For the lowercase set, set `MARK_OFF = $2D` and `MARK_ON = $A0`.
 
 ## Vertical Bar Graphs
 
-A vertical bar graph displays a 4-bit value (0-15) as a bar 3 cells tall, filled from the bottom up. The bar uses 9 fill characters that represent 0-8 pixels filled within a single cell, all working in both character sets.
+A vertical bar graph displays a 4-bit value (0-15) as a bar 2 cells tall, filled from the bottom up. Each cell uses 9 fill characters representing 0-8 pixels, giving a perfectly linear 1-16 pixel range across 2 cells. All fill characters work in both character sets.
 
 ### Fill Characters
 
-Each character fills a cell from the bottom upward. The 5-pixel, 6-pixel, and 7-pixel fills use reverse video of top-edge characters: `$F8` is reverse `$78` (top 3px), which the hardware inverts to bottom 5px on screen.
+Each character fills a cell from the bottom upward. The 5-pixel through 8-pixel fills use reverse video of top-edge and blank characters: `$F8` is reverse `$78` (top 3px), which the hardware inverts to bottom 5px on screen. `$E0` is reverse `$60` (blank), producing a full 8-pixel block.
 
-| Pixels | Screen Code | Base Char | Description            |
-|--------|-------------|-----------|------------------------|
-| 0      | `$20`       | `$20`     | Space (empty)          |
-| 1      | `$64`       | `$64`     | Bottom 1px             |
-| 2      | `$6F`       | `$6F`     | Bottom 2px             |
-| 3      | `$79`       | `$79`     | Bottom 3px             |
-| 4      | `$62`       | `$62`     | Lower half (4px)       |
-| 5      | `$F8`       | `$78`     | Reverse of top 3px     |
-| 6      | `$F7`       | `$77`     | Reverse of top 2px     |
-| 7      | `$E3`       | `$63`     | Reverse of top 1px     |
-| 8      | `$A0`       | `$20`     | Full block (rev space) |
+| Pixels | Screen Code | Base Char | Description             |
+|--------|-------------|-----------|-------------------------|
+| 0      | `$20`       | `$20`     | Space (empty)           |
+| 1      | `$64`       | `$64`     | Bottom 1px              |
+| 2      | `$6F`       | `$6F`     | Bottom 2px              |
+| 3      | `$79`       | `$79`     | Bottom 3px              |
+| 4      | `$62`       | `$62`     | Lower half (4px)        |
+| 5      | `$F8`       | `$78`     | Reverse of top 3px      |
+| 6      | `$F7`       | `$77`     | Reverse of top 2px      |
+| 7      | `$E3`       | `$63`     | Reverse of top 1px      |
+| 8      | `$E0`       | `$60`     | Reverse of blank (full) |
+
+`$E0` and `$A0` both produce a full 8-pixel block. `$E0` is reverse of `$60` (blank), `$A0` is reverse of `$20` (space). Either works; `$E0` follows the reverse-edge pattern of the 5-7px fills.
 
 All fill characters are in shared code ranges (`$20`, `$60`-`$68`, `$6D`-`$6F`, `$70`-`$79`) or use hardware reverse video, so they produce the same glyphs in both character sets.
 
 ### 16-Value Bar Layout
 
-Each bar is 3 cells tall. The bottom and middle cells each cycle through 7 partial fills (1, 3, 4, 5, 6, 7, 8 pixels -- skipping 2px), and the top cell uses 2 fills (1, 2 pixels). This gives 7 + 7 + 2 = 16 distinct values.
+Each bar is 2 cells tall. Values 0-7 fill the bottom cell with 1-8 pixels (top cell empty). Values 8-15 fill the bottom cell completely and the top cell with 1-8 pixels. This gives 8 + 8 = 16 linear steps, 1 pixel each.
 
-The 2-pixel fill (`$6F`) is skipped in the bottom and middle cells to fit exactly 16 values in 3 cells. The bar is not perfectly linear: pixel heights are 1, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15, 16, 17, 18 -- the 2px and 10px steps are absent.
-
-| Value | Top   | Middle | Bottom | Pixels |
-|-------|-------|--------|--------|--------|
-| 0     | `$20` | `$20`  | `$64`  | 1      |
-| 1     | `$20` | `$20`  | `$79`  | 3      |
-| 2     | `$20` | `$20`  | `$62`  | 4      |
-| 3     | `$20` | `$20`  | `$F8`  | 5      |
-| 4     | `$20` | `$20`  | `$F7`  | 6      |
-| 5     | `$20` | `$20`  | `$E3`  | 7      |
-| 6     | `$20` | `$20`  | `$A0`  | 8      |
-| 7     | `$20` | `$64`  | `$A0`  | 9      |
-| 8     | `$20` | `$79`  | `$A0`  | 11     |
-| 9     | `$20` | `$62`  | `$A0`  | 12     |
-| 10    | `$20` | `$F8`  | `$A0`  | 13     |
-| 11    | `$20` | `$F7`  | `$A0`  | 14     |
-| 12    | `$20` | `$E3`  | `$A0`  | 15     |
-| 13    | `$20` | `$A0`  | `$A0`  | 16     |
-| 14    | `$64` | `$A0`  | `$A0`  | 17     |
-| 15    | `$6F` | `$A0`  | `$A0`  | 18     |
+| Value | Top   | Bottom | Pixels |
+|-------|-------|--------|--------|
+| 0     | `$20` | `$64`  | 1      |
+| 1     | `$20` | `$6F`  | 2      |
+| 2     | `$20` | `$79`  | 3      |
+| 3     | `$20` | `$62`  | 4      |
+| 4     | `$20` | `$F8`  | 5      |
+| 5     | `$20` | `$F7`  | 6      |
+| 6     | `$20` | `$E3`  | 7      |
+| 7     | `$20` | `$E0`  | 8      |
+| 8     | `$64` | `$E0`  | 9      |
+| 9     | `$6F` | `$E0`  | 10     |
+| 10    | `$79` | `$E0`  | 11     |
+| 11    | `$62` | `$E0`  | 12     |
+| 12    | `$F8` | `$E0`  | 13     |
+| 13    | `$F7` | `$E0`  | 14     |
+| 14    | `$E3` | `$E0`  | 15     |
+| 15    | `$E0` | `$E0`  | 16     |
 
 ### Drawing a Bar
 
-Use a 48-byte lookup table with 3 screen codes per value (top, middle, bottom). The caller sets `$FB`/`$FC` to the screen address of the bar's top cell; the routine saves and restores A, X, Y and clobbers `$FB`/`$FC` (advancing them to the bottom cell).
+Use a 32-byte lookup table with 2 screen codes per value (top, bottom). The caller sets `$FB`/`$FC` to the screen address of the bar's top cell; the routine saves and restores A, X, Y and clobbers `$FB`/`$FC` (advancing them to the bottom cell).
 
 ```asm
 SCREEN  = $8000
 
 bar_chars:
 
-        byte $20,$20,$64        ; value 0
-        byte $20,$20,$79        ; value 1
-        byte $20,$20,$62        ; value 2
-        byte $20,$20,$F8        ; value 3
-        byte $20,$20,$F7        ; value 4
-        byte $20,$20,$E3        ; value 5
-        byte $20,$20,$A0        ; value 6
-        byte $20,$64,$A0        ; value 7
-        byte $20,$79,$A0        ; value 8
-        byte $20,$62,$A0        ; value 9
-        byte $20,$F8,$A0        ; value 10
-        byte $20,$F7,$A0        ; value 11
-        byte $20,$E3,$A0        ; value 12
-        byte $20,$A0,$A0        ; value 13
-        byte $64,$A0,$A0        ; value 14
-        byte $6F,$A0,$A0        ; value 15
+        byte $20,$64            ; value 0
+        byte $20,$6F            ; value 1
+        byte $20,$79            ; value 2
+        byte $20,$62            ; value 3
+        byte $20,$F8            ; value 4
+        byte $20,$F7            ; value 5
+        byte $20,$E3            ; value 6
+        byte $20,$E0            ; value 7
+        byte $64,$E0            ; value 8
+        byte $6F,$E0            ; value 9
+        byte $79,$E0            ; value 10
+        byte $62,$E0            ; value 11
+        byte $F8,$E0            ; value 12
+        byte $F7,$E0            ; value 13
+        byte $E3,$E0            ; value 14
+        byte $E0,$E0            ; value 15
 ```
 
 ```asm
 draw_bar:               ; A = value (0-15); $FB/$FC = screen addr of top cell; saves/restores A, X, Y; clobbers $FB/$FC.
 
-        sta $FF                 ; save value ($FF unused by BASIC)
         pha                     ; save A
         txa
         pha                     ; save X
         tya
         pha                     ; save Y
 
-        lda $FF                 ; compute table index = value * 3
-        asl                     ; A = value * 2
-        clc
-        adc $FF                 ; A = value * 2 + value = value * 3
+        asl                     ; A = value * 2 (table index)
         tax                     ; X = table index
         ldy #$00
         lda bar_chars,x         ; top cell
         sta ($FB),y
 
-        lda $FB                 ; advance to middle cell (row below = +40)
-        clc
-        adc #$28
-        sta $FB
-        bcc db_mid
-        inc $FC
-
-db_mid:
-
-        inx
-        lda bar_chars,x         ; middle cell
-        sta ($FB),y
-        lda $FB                 ; advance to bottom cell (+40)
+        lda $FB                 ; advance to bottom cell (row below = +40)
         clc
         adc #$28
         sta $FB
@@ -1073,7 +1057,7 @@ db_bot:
         rts
 ```
 
-The caller must point `$FB`/`$FC` at the top cell of the bar (the highest screen row of the 3-cell bar). The routine writes downward: top, middle, bottom.
+The caller must point `$FB`/`$FC` at the top cell of the bar (the higher screen row of the 2-cell bar). The routine writes downward: top, then bottom.
 
 ## Screen Scrolling
 
