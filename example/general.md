@@ -14,13 +14,13 @@ This file provides verified, runnable code examples for the PET 3032. Each examp
 | Minimal BASIC Stub             | 10   | Shortest valid BASIC stub at $0401, SYS1038          |
 | Clear Screen                   | 43   | Fill 1000 bytes of screen RAM with space character   |
 | Wait for Key Press             | 78   | Poll GETIN until non-zero                            |
-| VBLANK Polling                 | 104  | Poll VIA PORT B bit 5 without interrupts             |
-| Copy Screen to Screen          | 133  | Copy 1000 bytes between two page-aligned buffers     |
-| Switch Character Set           | 176  | PCR register values for uppercase and lowercase sets |
-| Minimal Animation Frame Player | 210  | Frame table, copy loop, VBLANK wait, keypress exit   |
-| Demo Skeleton Template         | 307  | init/main_loop/update/render pattern with IRQ guard  |
-| IRQ-Driven Animation Skeleton  | 389  | Replace CINV, acknowledge PIA1 CRB, chain to KERNAL  |
-| Screen Data Row Format         | 534  | 40-column row layout, PETSCII screen code reference  |
+| VBLANK Polling                 | 121  | Two-phase VBLANK poll via VIA PORT B bit 5           |
+| Copy Screen to Screen          | 155  | Copy 1000 bytes between two page-aligned buffers     |
+| Switch Character Set           | 202  | PCR register values for uppercase and lowercase sets |
+| Minimal Animation Frame Player | 239  | Frame table, copy loop, VBLANK wait, keypress exit   |
+| Demo Skeleton Template         | 335  | init/main_loop/update/render pattern with IRQ guard  |
+| IRQ-Driven Animation Skeleton  | 421  | Replace CINV, acknowledge PIA1 CRB, chain to KERNAL  |
+| Screen Data Row Format         | 599  | 40-column row layout, PETSCII screen code reference  |
 
 ## Minimal BASIC Stub
 
@@ -121,7 +121,7 @@ wait_key:
 
 ## VBLANK Polling
 
-Poll VBLANK without enabling interrupts. Uses VIA PORT B bit 5:
+Poll VBLANK without enabling interrupts. Uses VIA PORT B bit 5. The two-phase wait syncs to the start of VBLANK (bit 5 LOW), not just anywhere during active display:
 
 ```asm
         processor 6502
@@ -141,10 +141,16 @@ nextline:
 
 wait_vblank:
 
-        lda VIA_PORTB
+        lda VIA_PORTB           ; phase 1: skip remaining VBLANK (bit 5 LOW)
         and #$20                ; mask bit 5 (screen retrace)
-        beq wait_vblank         ; wait until high
-        rts
+        beq wait_vblank         ; branch while LOW
+
+vbl_wait:
+
+        lda VIA_PORTB           ; phase 2: wait for active display to end (bit 5 HIGH)
+        and #$20
+        bne vbl_wait            ; branch while HIGH
+        rts                     ; return at start of VBLANK
 ```
 
 ## Copy Screen to Screen
@@ -301,10 +307,16 @@ cf_src:
 
 wait_vblank:
 
-        lda VIA_PORTB
+        lda VIA_PORTB           ; phase 1: skip remaining VBLANK (bit 5 LOW)
         and #$20
         beq wait_vblank
-        rts
+
+vbl_wait:
+
+        lda VIA_PORTB           ; phase 2: wait for active display to end (bit 5 HIGH)
+        and #$20
+        bne vbl_wait
+        rts                     ; return at start of VBLANK
 
 frame1:                 ; Example frame data (first row only)
 
@@ -387,10 +399,16 @@ exit:
 
 wait_vblank:
 
-        lda VIA_PORTB
+        lda VIA_PORTB           ; phase 1: skip remaining VBLANK (bit 5 LOW)
         and #$20
         beq wait_vblank
-        rts
+
+vbl_wait:
+
+        lda VIA_PORTB           ; phase 2: wait for active display to end (bit 5 HIGH)
+        and #$20
+        bne vbl_wait
+        rts                     ; return at start of VBLANK
 
 update:
 

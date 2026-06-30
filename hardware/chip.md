@@ -93,15 +93,24 @@ When chaining to the KERNAL IRQ handler, the KERNAL reads $E812 itself.
 
 If you replace CINV completely, add the read explicitly.
 
-To wait for VBLANK without enabling interrupts:
+To wait for VBLANK without enabling interrupts, poll VIA PORT B bit 5. The signal is LOW during VBLANK and HIGH during active display. A two-phase wait syncs to the start of VBLANK:
 
 ```asm
 wait_vblank:
 
-        lda $E840               ; VIA PORT B
-        and #$20                ; mask bit 5 (screen retrace)
-        beq wait_vblank         ; wait until high
+        lda $E840               ; phase 1: skip remaining VBLANK (bit 5 LOW)
+        and #$20
+        beq wait_vblank
+
+vbl_wait:
+
+        lda $E840               ; phase 2: wait for active display to end (bit 5 HIGH)
+        and #$20
+        bne vbl_wait
+        rts                     ; return at start of VBLANK
 ```
+
+See `system/irq.md` for the full VBLANK polling reference.
 
 ### Cassette Motor Control
 

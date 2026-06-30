@@ -22,15 +22,16 @@ This file covers PET 3032 screen I/O in four progressive layers:
 
 ## Contents
 
-| Section                      | Line | What it covers                                                |
-|------------------------------|------|---------------------------------------------------------------|
-| Screen RAM Layout            | 35   | Base address, 40x25 layout, row address table, 1000-byte rule |
-| PETSCII vs Screen Codes      | 115  | Conversion table, CHROUT vs direct write                      |
-| Cursor Control               | 144  | KERNAL cursor routines, PLOT, TAB                             |
-| Clear and Home               | 170  | CLR/HOME PETSCII, clear screen routine                        |
-| Reverse Video                | 207  | Bit 7, RVS on/off, highlight_row routine                      |
-| PETSCII Control Codes        | 340  | CHROUT control code table                                     |
-| Character Sets               | 364  | Uppercase/graphics vs lowercase/text, PCR switching           |
+| Section                 | Line | What it covers                                                |
+|-------------------------|------|---------------------------------------------------------------|
+| Screen RAM Layout       | 35   | Base address, 40x25 layout, row address table, 1000-byte rule |
+| PETSCII vs Screen Codes | 115  | Conversion table, CHROUT vs direct write                      |
+| Cursor Control          | 144  | KERNAL cursor routines, PLOT, TAB                             |
+| Clear and Home          | 170  | CLR/HOME PETSCII, clear screen routine                        |
+| Reverse Video           | 207  | Bit 7, RVS on/off, highlight_row routine                      |
+| PETSCII Control Codes   | 340  | CHROUT control code table                                     |
+| Character Sets          | 364  | Uppercase/graphics vs lowercase/text, PCR switching           |
+| Double Buffering        | 420  | Back buffer, VBLANK sync, copy routine, flicker-free updates  |
 
 ## Screen RAM Layout
 
@@ -416,4 +417,113 @@ PCR_L   = $0E           ; lowercase / text charset
 See `hardware/chip.md` for the full PCR register reference and the CB2 hazard warning.
 
 For semigraphics characters, box drawing styles, window/line/rect drawing routines, and screen scrolling, see `system/graphics.md`.
+
+## Double Buffering
+
+Writing directly to screen RAM while the display is being drawn causes visible flicker -- partial updates appear as torn frames. Double buffering eliminates this by rendering each frame into a back buffer in RAM, then copying the complete frame to screen RAM during VBLANK.
+
+### How It Works
+
+1. Render the next frame into a back buffer in RAM (not screen RAM).
+2. Wait for VBLANK (see `system/irq.md` for the two-phase VBLANK poll).
+3. Copy the back buffer to screen RAM during VBLANK -- the display is not drawing, so no flicker.
+4. Repeat.
+
+The copy must complete within the VBLANK period. At 1 MHz, the 1000-byte copy takes roughly 6000 cycles (6 bytes per iteration: LDA/STA pair × 3 pages + tail). The PET VBLANK period is long enough for this.
+
+### Back Buffer Placement
+
+The back buffer is 1000 bytes, matching screen RAM. Place it in free RAM below `$8000`. A common choice is `$7C00`, leaving a 1024-byte gap below screen RAM:
+
+```asm
+SCREEN  = $8000
+BUFFER  = $7C00          ; 1000-byte back buffer
+```
+
+The buffer does not need to be page-aligned, but page alignment makes the copy loop simpler (see the page-strided copy below).
+
+### Ready Flag
+
+Use a flag byte to track whether the back buffer holds a new frame. Set it after rendering, clear it after copying:
+
+```asm
+READY   = $0351          ; 0 = no frame ready, 1 = frame ready to copy
+```
+
+The main loop checks the flag each VBLANK. If set, it copies the buffer and clears the flag. If not set, it skips the copy -- the screen keeps showing the previous frame.
+
+### Buffer Copy Routine
+
+Copy 1000 bytes from `BUFFER` to `SCREEN` using the same page-strided pattern as the screen clear (3 full pages + 232-byte tail):
+
+```asm
+SCREEN  = $8000
+BUFFER  = $7C00
+
+copy_buffer:
+
+        ldx #$00
+
+copy_loop:
+
+        lda BUFFER,x            ; $7C00-$7CFF -> $8000-$80FF
+        sta SCREEN,x
+        lda BUFFER+$100,x       ; $7D00-$7DFF -> $8100-$81FF
+        sta SCREEN+$100,x
+        lda BUFFER+$200,x       ; $7E00-$7EFF -> $8200-$82FF
+        sta SCREEN+$200,x
+        inx
+        bne copy_loop           ; 768 bytes done (3 pages)
+
+        ldx #$E8                ; remaining 232 bytes: $7F00-$7FE7 -> $8300-$83E7
+
+copy_tail:
+
+        dex
+        lda BUFFER+$300-1,x     ; x = 231..0, reads $7FE7..$7F00
+        sta SCREEN+$300-1,x     ; writes $83E7..$8300
+        bne copy_tail           ; 232 bytes done, total = 1000
+        rts
+```
+
+### Main Loop with VBLANK Sync
+
+The main loop synchronizes screen updates to VBLANK and only copies when a new frame is ready:
+
+```asm
+VIA_PORTB   = $E840
+RETRACE_BIT = $20
+
+main_loop:
+
+        jsr wait_vblank         ; sync to start of VBLANK
+
+        lda READY               ; if a frame is prepared, copy it now
+        beq no_copy
+        jsr copy_buffer
+        lda #$00
+        sta READY
+
+no_copy:
+
+        ; ... check keys, advance animation, render next frame to BUFFER ...
+        ; ... set READY = 1 after rendering ...
+
+        jmp main_loop
+
+wait_vblank:
+
+        lda VIA_PORTB           ; phase 1: skip remaining VBLANK (bit 5 LOW)
+        and #RETRACE_BIT
+        beq wait_vblank
+
+vbl_wait:
+
+        lda VIA_PORTB           ; phase 2: wait for active display to end (bit 5 HIGH)
+        and #RETRACE_BIT
+        bne vbl_wait
+        rts                     ; return at start of VBLANK
+```
+
+The buffer copy runs inside VBLANK, so the user never sees a partially updated screen. Frame rendering (decompression, drawing) happens outside VBLANK and can take as long as needed.
 

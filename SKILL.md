@@ -107,7 +107,9 @@ Use this table to pick the right file without reading every option above.
 | Read, generate, or relocate BASIC program text | `system/basic.md`           |                             |
 | Look up a BASIC keyword token value            | `system/basic.md`           |                             |
 | Set up a VBLANK IRQ or poll VBLANK             | `system/irq.md`             |                             |
+| Sync screen updates to VBLANK                  | `system/irq.md`             | `system/screen.md`          |
 | Write to the screen or use PETSCII             | `system/screen.md`          |                             |
+| Avoid screen flicker (double buffering)        | `system/screen.md`          | `system/irq.md`             |
 | Draw UI with semigraphics (boxes, lines)       | `system/graphics.md`        | `hardware/chip.md`          |
 | Draw checkboxes or option markers              | `system/graphics.md`        | `system/screen.md`          |
 | Draw a vertical bar graph (4-bit value)        | `system/graphics.md`        |                             |

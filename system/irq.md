@@ -147,14 +147,30 @@ Most programs should chain rather than replace, unless they have very tight timi
 
 ## VBLANK Polling (No IRQ)
 
-To synchronize to VBLANK without enabling interrupts, poll VIA PORT B bit 5:
+To synchronize to VBLANK without enabling interrupts, poll VIA PORT B bit 5. The signal is LOW during VBLANK (vertical retrace) and HIGH during active display.
+
+A single-phase wait that only checks for HIGH returns at an arbitrary point during active display -- the worst moment to update screen RAM. To sync to the **start** of VBLANK, use a two-phase wait:
+
+1. If already in VBLANK (bit 5 LOW), wait for it to end.
+2. Wait for active display to end (bit 5 goes LOW again).
+3. Return at the exact start of VBLANK.
 
 ```asm
+VIA_PORTB   = $E840
+RETRACE_BIT = $20
+
 wait_vblank:
 
-        lda $E840               ; VIA PORT B
-        and #$20                ; bit 5 = screen retrace signal
-        beq wait_vblank         ; wait until high
+        lda VIA_PORTB           ; phase 1: wait while VBLANK active (bit 5 LOW)
+        and #RETRACE_BIT
+        beq wait_vblank         ; branch while LOW -- skip remaining VBLANK
+
+vbl_wait:
+
+        lda VIA_PORTB           ; phase 2: wait while active display (bit 5 HIGH)
+        and #RETRACE_BIT
+        bne vbl_wait            ; branch while HIGH -- wait for next VBLANK
+        rts                     ; return at start of VBLANK
 ```
 
 This is simpler than IRQ setup for single-threaded programs that only need frame sync.
