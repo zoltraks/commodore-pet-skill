@@ -12,6 +12,22 @@ This file covers compression patterns for the PET 3032 in four progressive layer
 - **Working code examples** - verified ASM snippets
 - **Deep reference notes** - edge cases, caveats, implementation rules
 
+| Out of scope               | See instead          |
+|----------------------------|----------------------|
+| Screen RAM layout          | `system/screen.md`   |
+| DASM syntax and directives | `utility/dasm-assembler.md` |
+| Code formatting standard   | `code/standard.md`   |
+
+## Contents
+
+| Section                          | Line | What it covers                                          |
+|----------------------------------|------|---------------------------------------------------------|
+| RLE for Screen Codes ($00 Escape)| 31   | $00-escape RLE format, encode/decode routines           |
+| Byte-Run (Alternative Simple RLE)| 200  | Simpler RLE with sign-bit flag, when $00 escape is unsafe |
+| Frame-Delta Compression          | 300  | XOR delta frames for animation, keyframe + delta pairs  |
+| LZ4 Block Format                 | 399  | LZ4 token decode, block format, depacker routine        |
+| Screen-Oriented Packing          | 670  | Column-major packing, partial screen updates            |
+
 ## RLE for Screen Codes ($00 Escape)
 
 ### Why This Variant
