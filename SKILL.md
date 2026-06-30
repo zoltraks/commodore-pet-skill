@@ -102,7 +102,7 @@ Use this table to pick the right file without reading every option above.
 | ?SYNTAX ERROR from KERNAL calls           | `system/kernal.md`          | `utility/vice-emulator.md`  |
 | Set up a VBLANK IRQ or poll VBLANK        | `system/irq.md`             |                             |
 | Write to the screen or use PETSCII        | `system/screen.md`          |                             |
-| Draw UI with semigraphics (boxes, lines)  | `system/semigraphics.md`    | `hardware/chip.md`          |
+| Draw UI with semigraphics (boxes, lines)  | `system/graphics.md`        | `hardware/chip.md`          |
 | Switch between uppercase and lowercase    | `system/screen.md`          | `hardware/chip.md`          |
 | Load a PRG or data file from tape or disk | `system/load.md`            |                             |
 | Scan the keyboard or detect keypresses    | `system/keyboard.md`        |                             |
