@@ -70,6 +70,8 @@ The PET 3032 has 32 KB of contiguous RAM from `$0000` to `$7FFF`.
 | `$70-$87` | CHRGET routine - self-modifying code patched by BASIC at runtime; `$77-$78` = TXTPTR (current BASIC text pointer). This entire range is executable code in zero page. |
 | `$88-$8C` | RND seed                                                                                                                                                              |
 
+The `$13-$53` block includes the pointers that bound the program and its data: start of BASIC (`$28-$29`), end of program / start of variables (`$2A-$2B`), arrays (`$2C-$2F`), bottom of strings (`$30-$31`), top of memory (`$34-$35`), and the current line number (`$36-$37`). For the individual pointer table and the BASIC line format, see `system/basic.md`.
+
 ### Used by KERNAL
 
 | Range     | Description                                                                                                                                                             |

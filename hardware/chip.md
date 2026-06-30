@@ -180,6 +180,25 @@ PCR_L   = $0E           ; lowercase / text charset (PCR bits 3:1 = 111)
 | 1    | PORT B latch enable                                                                  |
 | 0    | PORT A latch enable                                                                  |
 
+### IFR and IER ($E84D / $E84E) - Interrupt Flags and Enables
+
+The interrupt flag register (IFR) and interrupt enable register (IER) share the same bit assignments. In the IFR a `1` bit means that source has triggered; in the IER a `1` bit means that source is allowed to assert IRQ.
+
+Writing the IER is special: bit 7 selects the operation. Write with bit 7 = `1` to **enable** every other bit that is set; write with bit 7 = `0` to **disable** every other bit that is set. The bits you leave clear are untouched either way.
+
+| Bit | Source                                |
+|-----|---------------------------------------|
+| 7   | IRQ status (IFR) / set-or-clear (IER) |
+| 6   | Timer 1 timeout                       |
+| 5   | Timer 2 timeout                       |
+| 4   | CB1 (cassette #1 read)                |
+| 3   | CB2                                   |
+| 2   | Shift register                        |
+| 1   | CA1                                   |
+| 0   | CA2                                   |
+
+The KERNAL leaves the VIA interrupts disabled and drives the 60 Hz system interrupt from PIA 1 instead (see `system/irq.md`). Enable VIA sources only in programs that take over the interrupt system.
+
 ### Timer 1 Example
 
 ```asm

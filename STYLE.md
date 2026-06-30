@@ -84,15 +84,18 @@ Write qualifiers as plain sentences in the section body instead.
 
 ## Tables
 
-The key formatting rules are summarised here.
+### Cell Structure
 
-### Separators
+Every cell in a column occupies the same fixed width between its pipes: the column's content width `W` plus two.
 
-Place the separator row immediately after the header row.
+- `W` = the length of the longest stripped cell content in the column, counting the header and every data row. Count every character including backticks and asterisks.
+- A data cell is `| ` + content + trailing spaces to width `W` + ` |`. Exactly one leading space and one trailing space; content is left-aligned and padded on the right only.
+- A separator cell is `|` + `W+2` hyphens + `|`. Hyphens are flush against the pipes, no spaces.
+- Minimum `W` is three characters.
 
-Use hyphens flush against the pipe characters -- no spaces between pipes and hyphens.
+### Worked Example
 
-The number of hyphens in each separator cell equals the column width plus two (one for each side space).
+`Name` (4) and `CHROUT` (6) give `W = 6`, so the separator cell is 8 hyphens and `Name` is padded with two trailing spaces.
 
 ```markdown
 | Name   | Address | Description            |
@@ -100,25 +103,13 @@ The number of hyphens in each separator cell equals the column width plus two (o
 | CHROUT | `$FFD2` | Output byte to channel |
 ```
 
-### Column Widths
-
-Calculate column width as the maximum character width of any cell in that column, including the header.
-
-Pad every cell with trailing spaces to match that width.
-
-Remove any padding that exceeds the widest cell -- do not over-pad.
-
-The minimum column width is three characters.
-
-Include backticks, asterisks, and all other Markdown formatting characters in the width measurement.
+Column widths here are 6, 7, 22 -- separator cells are 8, 9, 24 hyphens.
 
 ### Reformat After Editing
 
-When you add, remove, or modify any cell in an existing table, you must reformat the entire table afterwards.
+Editing any cell can change a column's `W`, so reformat the whole table after every edit: recompute each column's `W`, re-pad every data cell, and replace every separator cell with `W+2` hyphens.
 
-Adding or shortening a cell can change the widest cell in a column, which means every other cell in that column -- and the separator row -- must be re-padded to match.
-
-A table is only considered fully edited when every column is re-padded to its new width and every separator cell matches the new column width plus two.
+A table is only correctly edited when every cell in a column has the same width and every separator cell matches that width plus two.
 
 ### Addresses and Values in Tables
 

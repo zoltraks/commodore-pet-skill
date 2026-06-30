@@ -261,7 +261,7 @@ The SHIFT key state is reflected in the PETSCII code only for special characters
 
 ### KERNAL Keyboard Buffer
 
-The KERNAL keyboard buffer holds 10 characters (at $0270-$027A).
+The KERNAL keyboard buffer holds 10 characters (at `$026F-$0278`). The number of characters currently waiting is at `$9E`.
 
 The buffer is filled by the 60 Hz IRQ keyboard scan.
 

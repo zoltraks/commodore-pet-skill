@@ -104,7 +104,7 @@ The NMOS 6502 does not clear the decimal flag on IRQ entry.
 
 ## Chaining to the KERNAL Handler
 
-The KERNAL IRQ entry at `$E442` saves A/X/Y, then dispatches through CINV. The clock/keyboard handler lives at approximately `$E455` in Editor ROM, but this address varies between ROM versions. The safest way to chain is through the saved original CINV value.
+The hardware IRQ vector (`$FFFE`) points to the KERNAL IRQ entry at `$E61B`, which saves A/X/Y and then dispatches through CINV (`$0090`). The default clock/keyboard handler that CINV points to is at `$E62E` in Editor ROM. Both addresses are specific to BASIC 2 (new ROM); the safest, version-independent way to chain is through the saved original CINV value rather than a hard-coded address.
 
 To run your code first then pass control to the KERNAL:
 
@@ -163,10 +163,10 @@ The polling approach does not require reading `$E813`.
 
 ## Common Mistakes
 
-| Mistake                          | Consequence                           | Fix                                     |
-|----------------------------------|---------------------------------------|-----------------------------------------|
+| Mistake                          | Consequence                           | Fix                                                 |
+|----------------------------------|---------------------------------------|-----------------------------------------------------|
 | Skip `$E812` read                | IRQ re-fires, CPU locked              | Always read `$E812` (PIA1 Port B) in VBLANK handler |
-| Skip `CLD`                       | Wrong ADC/SBC results in handler      | Add `CLD` after register saves          |
-| No `SEI`/`CLI` around CINV write | IRQ fires during partial vector write | Always bracket CINV update with SEI/CLI |
-| Don't restore CINV on exit       | KERNAL broken after program exits     | Save `old_cinv`, restore in cleanup     |
-| Use `JSR` to chain               | `RTI` returns to wrong address        | Use `JMP` to chain to KERNAL handler    |
+| Skip `CLD`                       | Wrong ADC/SBC results in handler      | Add `CLD` after register saves                      |
+| No `SEI`/`CLI` around CINV write | IRQ fires during partial vector write | Always bracket CINV update with SEI/CLI             |
+| Don't restore CINV on exit       | KERNAL broken after program exits     | Save `old_cinv`, restore in cleanup                 |
+| Use `JSR` to chain               | `RTI` returns to wrong address        | Use `JMP` to chain to KERNAL handler                |
