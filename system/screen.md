@@ -433,14 +433,14 @@ The copy must complete within the VBLANK period. At 1 MHz, the 1000-byte copy ta
 
 ### Back Buffer Placement
 
-The back buffer is 1000 bytes, matching screen RAM. Place it in free RAM below `$8000`. A common choice is `$7C00`, leaving a 1024-byte gap below screen RAM:
+The back buffer is 1000 bytes, matching screen RAM. Place it in free RAM just below screen RAM, aligned to a 256-byte page boundary. The standard choice is `$7C00`, occupying the space just before the end of RAM and leaving a 1024-byte gap below screen RAM:
 
 ```asm
 SCREEN  = $8000
-BUFFER  = $7C00          ; 1000-byte back buffer
+BUFFER  = $7C00          ; 1000-byte back buffer, page-aligned
 ```
 
-The buffer does not need to be page-aligned, but page alignment makes the copy loop simpler (see the page-strided copy below).
+Page alignment is the convention, not merely a convenience: it lets the copy loop use the page-strided pattern below (3 full pages plus a 232-byte tail) without addressing corner cases. Keep the label `BUFFER` (not `SCREEN_BUFFER`) and keep `SCREEN` for screen RAM at `$8000`.
 
 ### Ready Flag
 
