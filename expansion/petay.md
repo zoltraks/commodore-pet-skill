@@ -137,9 +137,57 @@ The mixer register controls which channels produce tone and which produce noise.
 | 3   | Channel A noise | Channel A noise off |
 | 4   | Channel B noise | Channel B noise off |
 | 5   | Channel C noise | Channel C noise off |
-| 6-7 | (unused)        | (unused)            |
+| 6   | I/O port A: input  | I/O port A: output  |
+| 7   | I/O port B: input  | I/O port B: output  |
 
-To enable only channel A tone: set bits 0-5 to `111110` = `$FE`. To enable all three tone channels: `$F8`. To enable channel A tone and noise: `$3E`.
+PetAY does not connect the I/O ports; always write 0 to bits 6-7 to leave them as inputs.
+
+To enable only channel A tone: `$3E`. To enable all three tone channels: `$38`. To enable channel A tone and noise: `$36`.
+
+### Deriving Mixer Values
+
+**Assumptions (from the AY-8910 datasheet):**
+
+- Bits 0–5 are active-low channel enables: 0 = channel active, 1 = channel silent.
+- Bits 6–7 are I/O port direction flags: 0 = input (default), 1 = output.
+- PetAY does not connect the AY I/O ports to any external signal. Bits 6–7 have no effect on sound and should always be written 0.
+
+**Derivation procedure:**
+
+1. Start with all bits = 1 (everything off, I/O as input).
+2. Clear (set to 0) each bit for every channel you want active.
+3. Leave bits 6–7 = 0.
+
+```
+bits:  7  6  5  4  3  2  1  0
+       |  |  |  |  |  |  |  |
+       IO IO NC NB NA TC TB TA
+       B  A
+```
+
+Example — channel A tone only (`$3E`):
+
+```
+bits:  0  0  1  1  1  1  1  0   = $3E
+              ^  ^  ^  ^  ^  ^
+              NC NB NA TC TB TA=0 (on)
+```
+
+Example — channel A tone and noise (`$36`):
+
+```
+bits:  0  0  1  1  0  1  1  0   = $36
+                    ^           ^
+                    NA=0 (on)   TA=0 (on)
+```
+
+Example — silence all (`$3F`):
+
+```
+bits:  0  0  1  1  1  1  1  1   = $3F
+```
+
+**Why $FF silences but is wrong:** Writing `$FF` also sets bits 6–7 to 1, which puts both I/O ports into output mode. On PetAY this has no audible consequence because the ports are unconnected. However it modifies state beyond what was intended, and is inconsistent with the "always 0" rule for bits 6–7. Use `$3F`.
 
 ## Volume Registers ($08-$0A)
 
@@ -201,8 +249,9 @@ AY_VAL_L = AY_BASE+1     ; left AY value register
 A reusable subroutine that writes A to register X on the left AY chip. The caller saves and restores X; the routine clobbers nothing else.
 
 ```asm
-AY_REG_L = $A000
-AY_VAL_L = $A001
+AY_BASE  = $A000         ; $9000, $A000, or $B000 — set to match socket
+AY_REG_L = AY_BASE
+AY_VAL_L = AY_BASE+1
 
 ay_write_l:            ; X = register number (0-15), A = value; clobbers nothing.
 
@@ -214,8 +263,9 @@ ay_write_l:            ; X = register number (0-15), A = value; clobbers nothing
 For the right AY chip:
 
 ```asm
-AY_REG_R = $A002
-AY_VAL_R = $A003
+AY_BASE  = $A000         ; $9000, $A000, or $B000 — set to match socket
+AY_REG_R = AY_BASE+2
+AY_VAL_R = AY_BASE+3
 
 ay_write_r:            ; X = register number (0-15), A = value; clobbers nothing.
 
@@ -229,8 +279,9 @@ ay_write_r:            ; X = register number (0-15), A = value; clobbers nothing
 Play A4 (440 Hz) on channel A of the left AY chip. The divider for A4 at 1 MHz is 142 (`$8E` fine, `$00` coarse).
 
 ```asm
-AY_REG_L = $A000
-AY_VAL_L = $A001
+AY_BASE  = $A000         ; $9000, $A000, or $B000 — set to match socket
+AY_REG_L = AY_BASE
+AY_VAL_L = AY_BASE+1
 
 play_a4_left:
 
@@ -245,7 +296,7 @@ play_a4_left:
         sta AY_VAL_L
 
         ldx #$07              ; MIXER: enable channel A tone only
-        lda #$FE              ; 11111110 -> A tone on, B/C off, all noise off
+        lda #$3E              ; 00111110 -> A tone on, B/C off, all noise off
         stx AY_REG_L
         sta AY_VAL_L
 
@@ -272,15 +323,16 @@ Set the mixer bit for the channel to 1 (disabled), or set its volume to 0:
 To silence all output on both AY chips, disable all tone and noise channels via the mixer register:
 
 ```asm
-AY_REG_L = $A000
-AY_VAL_L = $A001
-AY_REG_R = $A002
-AY_VAL_R = $A003
+AY_BASE  = $A000         ; $9000, $A000, or $B000 — set to match socket
+AY_REG_L = AY_BASE
+AY_VAL_L = AY_BASE+1
+AY_REG_R = AY_BASE+2
+AY_VAL_R = AY_BASE+3
 
 silence_both:
 
         ldx #$07              ; MIXER register
-        lda #$FF              ; all tone and noise off
+        lda #$3F              ; all tone and noise off
         stx AY_REG_L
         sta AY_VAL_L
         stx AY_REG_R
@@ -297,21 +349,21 @@ The following BASIC program plays A4 (440 Hz) on the left AY and a higher tone o
 ```basic
 10 POKE 40960,0:POKE 40961,142
 20 POKE 40960,1:POKE 40961,0
-30 POKE 40960,7:POKE 40961,254
+30 POKE 40960,7:POKE 40961,62
 40 POKE 40960,8:POKE 40961,15
 50 POKE 40962,0:POKE 40963,125
 60 POKE 40962,1:POKE 40963,0
-70 POKE 40962,7:POKE 40963,254
+70 POKE 40962,7:POKE 40963,62
 80 POKE 40962,8:POKE 40963,15
 ```
 
 `40960` = `$A000` (left control), `40961` = `$A001` (left value), `40962` = `$A002` (right control), `40963` = `$A003` (right value). For the `$9000` socket, use 36864–36867; for `$B000`, use 45056–45059.
 
-Lines 10-40 set the left AY: channel A divider = 142 (A4), mixer = `$FE` (channel A tone on), volume = 15. Lines 50-80 set the right AY: channel A divider = 125, mixer = `$FE`, volume = 15.
+Lines 10-40 set the left AY: channel A divider = 142 (A4), mixer = `$3E` (channel A tone on), volume = 15. Lines 50-80 set the right AY: channel A divider = 125, mixer = `$3E`, volume = 15.
 
 To stop the sound, run:
 
 ```basic
-10 POKE 40960,7:POKE 40961,255
-20 POKE 40962,7:POKE 40963,255
+10 POKE 40960,7:POKE 40961,63
+20 POKE 40962,7:POKE 40963,63
 ```
