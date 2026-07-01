@@ -482,8 +482,8 @@ copy_loop:
 copy_tail:
 
         dex
-        lda BUFFER+$300-1,x     ; x = 231..0, reads $7FE7..$7F00
-        sta SCREEN+$300-1,x     ; writes $83E7..$8300
+        lda BUFFER+$300,x       ; x = 231..0, reads $7FE7..$7F00
+        sta SCREEN+$300,x       ; writes $83E7..$8300
         txa                     ; test X (loop counter), not the loaded byte
         bne copy_tail           ; 232 bytes done, total = 1000
         rts
@@ -500,19 +500,25 @@ Two fixes exist. Both are correct; pick either based on register availability:
 ```asm
 ; FIX 1: txa after sta -- bne tests X (counter)
         dex
-        lda BUFFER+$300-1,x
-        sta SCREEN+$300-1,x
+        lda BUFFER+$300,x
+        sta SCREEN+$300,x
         txa
         bne copy_tail
 
 ; FIX 2: dex after sta -- bne tests X (counter)
-        lda BUFFER+$300-1,x
-        sta SCREEN+$300-1,x
+        lda BUFFER+$300,x
+        sta SCREEN+$300,x
         dex
         bne copy_tail
 ```
 
 Fix 1 (`txa`) costs one extra byte and one extra cycle versus the broken version. Fix 2 (`dex`-after-`sta`) reorders the loop body and costs nothing extra. See `code/standard.md` for the general flag-semantics rule.
+
+### Tail Loop Address Off-by-One
+
+A separate bug in `copy_buffer` involved the base address used in the tail loop. The original code used `BUFFER+$300-1,x` (i.e. `BUFFER+$2FF+x`), which when x ranges from 231 down to 0 covers offsets `$2FF` through `$3E6` -- only 232 bytes, but shifted down by one from the intended `$300` through `$3E7`. This meant the last byte of screen memory (row 24, column 39) was never copied from the back buffer to the screen, while the byte at offset `$2FF` (already covered by the page-strided main loop) was copied twice.
+
+The fix is to use `BUFFER+$300,x` and `SCREEN+$300,x` without the `-1` offset. With x ranging from 231 to 0, this covers offsets `$300` through `$3E7` exactly. The `clear_screen` tail already used `BUFFER+$300,x` correctly -- only `copy_buffer` had the off-by-one.
 
 ### Bounded VBLANK Poll
 
@@ -604,6 +610,7 @@ The buffer copy runs inside VBLANK, so the user never sees a partially updated s
 | Mistake                                              | Consequence                                          | Fix                                                              |
 |------------------------------------------------------|------------------------------------------------------|------------------------------------------------------------------|
 | `bne copy_tail` after `lda` in copy tail             | Loop tests loaded byte, not counter; X wraps past 0 | Insert `txa` before `bne`, or move `dex` after `sta`             |
+| `BUFFER+$300-1,x` in copy tail (off-by-one)          | Last screen byte (row 24 col 39) never copied        | Use `BUFFER+$300,x` without the `-1` offset                      |
 | Unbounded VBLANK poll under VICE                     | Program hangs -- PB5 never toggles                   | Bound each phase to 256 iterations                               |
 | Writing past `$83E7` in copy tail                    | Overwrites KERNAL vars or I/O registers              | Use the 768 + 232 split, never a 4-page loop                     |
 | Forgetting to clear BUFFER in init                   | First blit shows garbage from uninitialized RAM     | Call `clear_screen` (writing to `BUFFER`) before first redraw    |
