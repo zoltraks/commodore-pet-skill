@@ -36,7 +36,7 @@ Follow these rules when writing new `.asm` files or editing existing ones to kee
 | End-of-File Format       | 472  | Trailing blank line rule                                            |
 | Naming Conventions       | 476  | Convention table for all identifier kinds, abbreviations            |
 | Column Alignment Summary | 491  | Column position table for every source element                      |
-| 6502 Flag Semantics      | 506  | Flag-affecting instructions, branch-after-load bug pattern          |
+| 6502 Flag Semantics      | 506  | Flag-affecting instructions, branch-after-load bug, BIT A-AND-operand hazard |
 
 ## Toolchain
 
@@ -622,3 +622,38 @@ Fix 1 (`txa`) costs one extra byte and one extra cycle. Fix 2 reorders the loop 
 When any instruction between the counter update and the branch does not affect flags, **the counter update must be the last instruction before the branch**. Apply this rule whenever a loop body contains `sta`, `jsr`, `jmp`, or any other non-flag instruction.
 
 If reordering is not possible (e.g., the counter must decrement before the load), insert `txa` or `tya` between the last flag-affecting instruction and the branch to restore the counter's flags.
+
+### BIT Tests A AND Operand, Not Operand Alone
+
+The `BIT` instruction performs a logical AND of the accumulator (`A`) with the memory operand, then sets the Z flag based on the **result of that AND**, not on the operand's value alone. N and V are copied from bits 7 and 6 of the operand.
+
+A common mistake is to use `bit flag_var` to test whether `flag_var` is zero, while A holds an unrelated data byte. In that case `bne`/`beq` tests `A AND flag_var`, not `flag_var`:
+
+```asm
+; BAD -- bne tests (A AND view_charset), not view_charset alone
+        lda (dp_lo),y           ; A = data byte from buffer
+        bit view_charset        ; Z = (A AND view_charset) == 0
+        bne is_lower            ; branches on bit 0 of the DATA, not the flag
+```
+
+If `view_charset` is `$01` (LOWER) and the data byte has bit 0 set (e.g. any odd PETSCII value), the branch is taken regardless of the actual flag value.
+
+**Fix 1: Test the flag before loading data** (preferred when register pressure is low):
+
+```asm
+        lda view_charset        ; A = flag
+        bne is_lower            ; tests the flag directly
+        lda (dp_lo),y           ; now load data
+```
+
+**Fix 2: Save/restore A around the flag test** (when the data byte must survive):
+
+```asm
+        pha                     ; save data byte
+        lda view_charset        ; A = flag
+        bne is_lower
+        pla                     ; restore data byte
+        ; ... process UPPER case
+```
+
+This hazard is specific to `BIT` -- `CMP`, `LDA`, and `INC`/`DEC` all set flags from their own result, not from a second operand.

@@ -30,8 +30,8 @@ This file covers PET 3032 screen I/O in four progressive layers:
 | Clear and Home          | 170  | CLR/HOME PETSCII, clear screen routine                        |
 | Reverse Video           | 207  | Bit 7, RVS on/off, highlight_row routine                      |
 | PETSCII Control Codes   | 340  | CHROUT control code table                                     |
-| Character Sets          | 364  | Uppercase/graphics vs lowercase/text, PCR switching           |
-| Double Buffering        | 421  | Back buffer, VBLANK sync, copy routine, tail flag hazard, bounded poll, common mistakes |
+| Character Sets          | 364  | Uppercase/graphics vs lowercase/text, PCR switching, charset-aware label rendering |
+| Double Buffering        | 443  | Back buffer, VBLANK sync, copy routine, tail flag hazard, bounded poll, common mistakes |
 | Raw Screen Codes        | 619  | Storing byte values directly as screen codes for hex viewer ASCII columns |
 | Frame Composition       | 650  | Drawing order for bordered frames with header, content, and footer       |
 
@@ -417,6 +417,27 @@ PCR_L   = $0E           ; lowercase / text charset
 ```
 
 See `hardware/chip.md` for the full PCR register reference and the CB2 hazard warning.
+
+### Charset-Aware Label Rendering
+
+The screen codes for uppercase letters differ between the two character sets: `A`-`Z` are `$01`-`$1A` in the uppercase set and `$41`-`$5A` in the lowercase set. The frame border and block codes are identical in both sets, but fixed text labels are not.
+
+When a program draws UI labels (e.g. `VIEW`, `EXIT`, `HELP`) as hardcoded screen codes and allows the user to switch character sets at runtime, the labels must be redrawn with the correct codes for the active set, or they will display as the wrong glyphs (typically lowercase letters or graphics symbols) in the other set.
+
+**Pattern**: keep a `char_offset` byte (`$00` for uppercase, `$40` for lowercase) and OR it into each label letter's screen code before storing it to the back buffer. Do not apply the offset to non-letter codes (spaces, borders, reversed-space fills):
+
+```asm
+view_char_offset = $00          ; $00 UPPER, $40 LOWER
+
+        ldy #3
+        lda #$96               ; 'V' reversed (uppercase-set code)
+        ora view_char_offset   ; shift to lowercase-set code if LOWER
+        sta (sp_lo),y
+```
+
+When the user presses a key to switch character sets, update `view_char_offset` and re-render the frame. The labels redraw automatically with the correct codes.
+
+**Filename exception**: text that comes from user data (e.g. a file name) should be converted once via `petscii_to_screen` and not re-translated on a charset switch. The name will then follow the active set -- `FILE.TXT` displays as `file.txt` in the lowercase set. This side effect is useful as a visible indicator of the active character set without adding a separate status field.
 
 For semigraphics characters, box drawing styles, window/line/rect drawing routines, and screen scrolling, see `system/graphics.md`.
 

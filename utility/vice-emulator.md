@@ -19,6 +19,7 @@
 | PET ROM Setup                       | 44   | How VICE finds ROMs; symlinking on Linux, bindist on Windows               |
 | Drive Types on PET                  | 116  | `-drive8type 2031` for D64; never 1541 on PET                              |
 | Running a PRG                       | 132  | Autostart modes, why disk autostart is most reliable                       |
+| c1541 Disk Image Building           | 171  | Building D64s, "readme" hang bug, interactive mode, filename case folding  |
 | Headless Debugging                  | 186  | Remote monitor over TCP, cycle limits, screen dumps, warp timing, Windows  |
 | Decoding Screen Codes               | 413  | Reading dumped `$8000-$83E7` bytes back into characters; row arithmetic    |
 | Keyboard Buffer Injection           | 466  | Writing to `$026F`/`$009E` to simulate key presses for automated testing   |
@@ -169,6 +170,35 @@ c1541 -format "diskname,01" d64 work.d64 \
 ```
 
 The first program file on the disk is what `LOAD"*",8` loads.
+
+### c1541 "readme" Hang Bug
+
+c1541 (VICE 3.7.1) has a bug where any `-write` argument containing the substring `readme` (case-insensitive, in either the host filename or the CBM-DOS name) causes the tool to hang indefinitely. The command never completes and never produces an error.
+
+**Affected**: both the command-line form (`c1541 -write file.txt "readme,s"`) and the interactive form (`write file.txt readme,s` inside a piped c1541 session).
+
+**Workaround**: write the file with a safe name (e.g. `zreadme,s`), then use c1541's `rename` command (which is not affected by the bug) to rename it on the disk:
+
+```bash
+c1541 -format "disk,01" d64 work.d64 \
+      -write data.txt "zreadme,s"
+
+printf 'attach work.d64\nrename zreadme README\nquit\n' | c1541
+```
+
+### c1541 Interactive Mode
+
+When the command-line form (`c1541 -format ... -write ...`) hangs or behaves unexpectedly, pipe commands into c1541's interactive mode instead. This gives finer control and separates the format and write steps:
+
+```bash
+printf 'format "diskname,01" d64 work.d64\nwrite prog.prg program,p\nwrite data.txt data,s\nquit\n' | c1541
+```
+
+Each command is processed line by line. Use `quit` or `exit` to terminate the session. This form is also useful for `rename`, `dir`, and `delete` operations that are awkward to express as command-line flags.
+
+### CBM-DOS Filename Case Folding
+
+CBM-DOS uppercases all filenames on disk. Two source names that differ only in case (e.g. `readme,s` and `README,S`) collide and produce a single `README` entry. When adding a new file, check that its uppercased name does not match an existing entry, or c1541 will either overwrite the wrong file or hang.
 
 ### Inject Mode Caveats
 
