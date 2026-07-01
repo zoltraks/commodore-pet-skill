@@ -31,9 +31,9 @@ This file covers PET 3032 screen I/O in four progressive layers:
 | Reverse Video           | 207  | Bit 7, RVS on/off, highlight_row routine                      |
 | PETSCII Control Codes   | 340  | CHROUT control code table                                     |
 | Character Sets          | 364  | Uppercase/graphics vs lowercase/text, PCR switching, charset-aware label rendering |
-| Double Buffering        | 443  | Back buffer, VBLANK sync, copy routine, tail flag hazard, bounded poll, common mistakes |
-| Raw Screen Codes        | 619  | Storing byte values directly as screen codes for hex viewer ASCII columns |
-| Frame Composition       | 650  | Drawing order for bordered frames with header, content, and footer       |
+| Double Buffering        | 446  | Back buffer, VBLANK sync, copy routine, tail flag hazard, bounded poll, deferred charset flush, common mistakes |
+| Raw Screen Codes        | 704  | Storing byte values directly as screen codes for hex viewer ASCII columns |
+| Frame Composition       | 786  | Drawing order for bordered frames with header, content, and footer       |
 
 ## Screen RAM Layout
 
@@ -418,6 +418,8 @@ PCR_L   = $0E           ; lowercase / text charset
 
 See `hardware/chip.md` for the full PCR register reference and the CB2 hazard warning.
 
+**Flicker hazard with double buffering**: writing PCR directly while the screen still shows the old frame content causes a one-frame flash -- the old content appears under the new character set until the next VBLANK blit. In a double-buffered program, defer the PCR write and flush it during VBLANK alongside the back-buffer copy. See "Synchronizing Character-Set Switches With VBLANK" under Double Buffering below.
+
 ### Charset-Aware Label Rendering
 
 The screen codes for uppercase letters differ between the two character sets: `A`-`Z` are `$01`-`$1A` in the uppercase set and `$41`-`$5A` in the lowercase set. The frame border and block codes are identical in both sets, but fixed text labels are not.
@@ -600,6 +602,65 @@ present_screen:
 
 For event-driven programs, call `present_screen` at the end of every redraw routine (`full_redraw`, `redraw_panels`, `redraw_active`, `view_render`) and after each interactive row-24 update (prompt label, prompt buffer, status message). The program's main loop is a `GETIN` poll; between keypresses, no redraw or present occurs.
 
+### Synchronizing Character-Set Switches With VBLANK
+
+The double-buffering principle applies not only to screen RAM content but also to display control registers that affect how the screen is interpreted. The most common case is the VIA PCR character-set switch (see "Switching Character Sets" above).
+
+**The hazard**: if a program writes PCR immediately when the user requests a charset change, but the new screen content is only blitted later during VBLANK, the user sees the OLD frame rendered under the NEW character set for one frame. This is a visible flash on every charset switch. The same mismatch occurs on viewer entry (PCR switches before the first viewer frame is blitted) and on viewer exit (PCR restores before the panel redraw is blitted).
+
+**The fix**: defer the PCR write so it happens during the same VBLANK window as the back-buffer blit. Stage the charset bits in a variable, set the `char_offset` byte immediately (so label rendering into the back buffer composes with the correct screen codes), and flush the staged PCR write inside `present_screen` between `wait_vblank` and `copy_buffer`:
+
+```asm
+; Stage the switch (called on key press, viewer entry, viewer exit)
+view_set_pcr_charset:
+
+        ldx view_charset
+        beq vspc_upper
+        lda #PCR_L             ; LOWER bits to stage
+        ldx #$40
+        bne vspc_store
+vspc_upper:
+
+        lda #PCR_U             ; UPPER bits to stage
+        ldx #$00
+vspc_store:
+
+        sta view_pending_pcr_cs ; stage the PCR write (do not touch PCR yet)
+        stx view_char_offset    ; set offset now for label rendering
+        lda #$ff
+        sta view_pcr_pending    ; mark a write as pending
+        rts
+
+; Flush the staged write during VBLANK (called by present_screen)
+view_flush_pcr:
+
+        lda view_pcr_pending
+        beq vfp_done            ; no-op when nothing is staged
+        lda PCR
+        and #$F1               ; clear bits 3:1
+        ora view_pending_pcr_cs ; apply staged bits
+        sta PCR
+        lda #0
+        sta view_pcr_pending
+vfp_done:
+
+        rts
+
+; Extended present routine with deferred register flush
+present_screen:
+
+        jsr wait_vblank
+        jsr view_flush_pcr      ; apply staged PCR charset during VBLANK
+        jsr copy_buffer
+        rts
+```
+
+The PCR read-modify-write still preserves CB2 (IEEE-488 NDAC). The flush adds roughly 10 cycles, negligible against the 6000-cycle copy budget. When nothing is staged (all main-program present calls), the cost is one load plus one branch.
+
+**When to use this pattern**: any time a display control register change affects how the current screen content is interpreted, and the new content is being composed into a back buffer. This includes interactive charset switches, and entry/exit transitions where the register changes before the first or last frame is blitted.
+
+**When not needed**: if the register change and the content change are both atomic relative to a single `GETIN` poll (no double buffering), or if the register does not affect how existing screen content is displayed.
+
 ### Main Loop with VBLANK Sync
 
 The main loop synchronizes screen updates to VBLANK and only copies when a new frame is ready:
@@ -630,14 +691,15 @@ The buffer copy runs inside VBLANK, so the user never sees a partially updated s
 
 ### Common Mistakes
 
-| Mistake                                              | Consequence                                          | Fix                                                              |
-|------------------------------------------------------|------------------------------------------------------|------------------------------------------------------------------|
-| `bne copy_tail` after `lda` in copy tail             | Loop tests loaded byte, not counter; X wraps past 0 | Insert `txa` before `bne`, or move `dex` after `sta`             |
-| `BUFFER+$300-1,x` in copy tail (off-by-one)          | Last screen byte (row 24 col 39) never copied        | Use `BUFFER+$300,x` without the `-1` offset                      |
-| Unbounded VBLANK poll under VICE                     | Program hangs -- PB5 never toggles                   | Bound each phase to 256 iterations                               |
-| Writing past `$83E7` in copy tail                    | Overwrites KERNAL vars or I/O registers              | Use the 768 + 232 split, never a 4-page loop                     |
-| Forgetting to clear BUFFER in init                   | First blit shows garbage from uninitialized RAM     | Call `clear_screen` (writing to `BUFFER`) before first redraw    |
-| Calling `present_screen` inside a tight poll loop    | Wastes cycles on redundant blits                     | Call only after a redraw or interactive update                    |
+| Mistake                                                            | Consequence                                          | Fix                                                                  |
+|--------------------------------------------------------------------|------------------------------------------------------|----------------------------------------------------------------------|
+| `bne copy_tail` after `lda` in copy tail                           | Loop tests loaded byte, not counter; X wraps past 0 | Insert `txa` before `bne`, or move `dex` after `sta`                 |
+| `BUFFER+$300-1,x` in copy tail (off-by-one)                        | Last screen byte (row 24 col 39) never copied        | Use `BUFFER+$300,x` without the `-1` offset                          |
+| Unbounded VBLANK poll under VICE                                   | Program hangs -- PB5 never toggles                   | Bound each phase to 256 iterations                                   |
+| Writing past `$83E7` in copy tail                                  | Overwrites KERNAL vars or I/O registers              | Use the 768 + 232 split, never a 4-page loop                         |
+| Forgetting to clear BUFFER in init                                 | First blit shows garbage from uninitialized RAM     | Call `clear_screen` (writing to `BUFFER`) before first redraw        |
+| Calling `present_screen` inside a tight poll loop                  | Wastes cycles on redundant blits                     | Call only after a redraw or interactive update                        |
+| Writing PCR charset immediately in a double-buffered program       | Old frame flashes under new charset for one frame    | Stage the PCR write and flush it during VBLANK alongside the blit    |
 
 ## Raw Screen Codes
 

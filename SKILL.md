@@ -118,6 +118,7 @@ Use this table to pick the right file without reading every option above.
 | Sync screen updates to VBLANK                  | `system/irq.md`             | `system/screen.md`          |
 | Write to the screen or use PETSCII             | `system/screen.md`          |                             |
 | Avoid screen flicker (double buffering)        | `system/screen.md`          | `system/irq.md`             |
+| Switch character set without flicker           | `system/screen.md`          | `hardware/chip.md`          |
 | Draw UI with semigraphics (boxes, lines)       | `system/graphics.md`        | `hardware/chip.md`          |
 | Draw checkboxes or option markers              | `system/graphics.md`        | `system/screen.md`          |
 | Draw a vertical bar graph (4-bit value)        | `system/graphics.md`        |                             |
@@ -174,4 +175,4 @@ Use the table of contents to jump to the relevant section rather than reading th
 | `example/general.md`        | ~610  |
 | `utility/dasm-assembler.md` | ~570  |
 | `code/standard.md`          | ~560  |
-| `system/screen.md`          | ~530  |
+| `system/screen.md`          | ~850  |
