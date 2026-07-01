@@ -22,20 +22,20 @@ Do not use C64 addresses - they differ.
 
 ## Contents
 
-| Section                    | Line | What it covers                                                                                     |
-|----------------------------|------|----------------------------------------------------------------------------------------------------|
-| File Architecture Overview | 23   | Logical files, device numbers, secondary addresses, file types                                     |
-| KERNAL Routine Reference   | 122  | pet_setnam, pet_setlfs, OPEN, CLOSE, CHKIN, CHKOUT, CLRCHN, CHRIN, CHROUT, LOAD, SAVE, CLALL, STOP |
-| Call Sequences             | 781  | Open-read, open-write, load PRG, save PRG patterns                                                 |
-| EOF Detection              | 973  | STATUS bit 6 (disk), STATUS bit 4 (cassette)                                                       |
-| Error Handling             | 1025 | OPEN error codes, device not present, file not found                                               |
-| PETSCII Filename Rules     | 1093 | Uppercase, wildcards, drive prefix                                                                 |
-| Tape File Notes            | 1119 | Cassette SA values, sequential vs PRG                                                              |
-| Multiple Open Files        | 1131 | Table limits, safe LFN allocation                                                                  |
-| Chunk-Based Partial Reading| 1186 | Re-open and skip to offset, read fixed-size chunks, STATUS-based EOF                               |
-| No Backward Seek           | 1284 | CBM-DOS cannot seek backward; re-open and skip forward for scroll-up                               |
-| Zero-Page Save and Restore | 1300 | restore_zp pattern: save $FB-$FE on entry, restore before each KERNAL call                         |
-| Troubleshooting            | 1356 | Common bugs and their causes                                                                       |
+| Section                     | Line | What it covers                                                                                     |
+|-----------------------------|------|----------------------------------------------------------------------------------------------------|
+| File Architecture Overview  | 40   | Logical files, device numbers, secondary addresses, file types                                     |
+| KERNAL Routine Reference    | 139  | pet_setnam, pet_setlfs, OPEN, CLOSE, CHKIN, CHKOUT, CLRCHN, CHRIN, CHROUT, LOAD, SAVE, CLALL, STOP |
+| Call Sequences              | 821  | Open-read, open-write, load PRG, save PRG patterns                                                 |
+| EOF Detection               | 1009 | STATUS bit 6 (disk), STATUS bit 4 (cassette)                                                       |
+| Error Handling              | 1061 | OPEN error codes, device not present, file not found                                               |
+| PETSCII Filename Rules      | 1123 | Uppercase, wildcards, drive prefix                                                                 |
+| Tape File Notes             | 1149 | Cassette SA values, sequential vs PRG                                                              |
+| Multiple Open Files         | 1161 | Table limits, safe LFN allocation                                                                  |
+| Chunk-Based Partial Reading | 1190 | Re-open and skip to offset, read fixed-size chunks, STATUS-based EOF                               |
+| No Backward Seek            | 1308 | CBM-DOS cannot seek backward; re-open and skip forward for scroll-up                               |
+| Zero-Page Save and Restore  | 1336 | restore_zp pattern: save $FB-$FE on entry, restore before each KERNAL call                         |
+| Troubleshooting             | 1382 | Common bugs and their causes                                                                       |
 
 ## File Architecture Overview
 
@@ -126,15 +126,15 @@ Use SA 2-14 for sequential files.
 
 ### BASIC Commands and KERNAL Calls
 
-| BASIC Statement        | KERNAL calls used (from ML)               |
-|------------------------|--------------------------------------------|
-| `OPEN n,dev,sa,"name"` | pet_setnam, pet_setlfs, pet_open           |
-| `CLOSE n`              | pet_close                                  |
-| `INPUT# n, var`        | CHKIN, CHRIN (loop), CLRCHN                |
-| `PRINT# n, data`       | CHKOUT, CHROUT (loop), CLRCHN              |
-| `GET# n, var`          | CHKIN, CHRIN, CLRCHN                       |
-| `LOAD "name", dev`     | pet_setnam, pet_setlfs, LOAD               |
-| `SAVE "name", dev`     | pet_setnam, pet_setlfs, SAVE               |
+| BASIC Statement        | KERNAL calls used (from ML)      |
+|------------------------|----------------------------------|
+| `OPEN n,dev,sa,"name"` | pet_setnam, pet_setlfs, pet_open |
+| `CLOSE n`              | pet_close                        |
+| `INPUT# n, var`        | CHKIN, CHRIN (loop), CLRCHN      |
+| `PRINT# n, data`       | CHKOUT, CHROUT (loop), CLRCHN    |
+| `GET# n, var`          | CHKIN, CHRIN, CLRCHN             |
+| `LOAD "name", dev`     | pet_setnam, pet_setlfs, LOAD     |
+| `SAVE "name", dev`     | pet_setnam, pet_setlfs, SAVE     |
 
 ## KERNAL Routine Reference
 
@@ -280,9 +280,9 @@ Must be called after pet_setnam and before pet_open, LOAD, or SAVE.
 
 **Outputs:**
 
-| Register | Value                         |
-|----------|-------------------------------|
-| C        | 0 = success, 1 = error        |
+| Register | Value                  |
+|----------|------------------------|
+| C        | 0 = success, 1 = error |
 
 **Registers used:** A, X, Y.
 
@@ -617,9 +617,9 @@ Must call pet_setnam and pet_setlfs first.
 
 **Inputs:**
 
-| Register | Value                                      |
-|----------|--------------------------------------------|
-| A        | 0 = load, 1 = verify (compare to memory)   |
+| Register | Value                                          |
+|----------|------------------------------------------------|
+| A        | 0 = load, 1 = verify (compare to memory)       |
 | X        | Load address low byte (if SA=1 on pet_setlfs)  |
 | Y        | Load address high byte (if SA=1 on pet_setlfs) |
 
@@ -1381,17 +1381,17 @@ The `$FB`-`$FE` bytes are KERNAL tape pointers, safe to borrow while the tape dr
 
 ## Troubleshooting
 
-| Symptom                                | Likely cause                                                          |
-|----------------------------------------|-----------------------------------------------------------------------|
-| `?SYNTAX ERROR` after calling OPEN     | Used `jsr $FFBD` (SETNAM) or `jsr $FFBA` (SETLFS) — these don't exist on PET. Use pet_setnam/pet_setlfs wrappers instead. |
-| `?SYNTAX ERROR` after calling OPEN     | Used `jsr $FFC0` (OPEN jump table) from machine code — it includes BASIC parsing. Use pet_open (calls $F560) instead. |
-| OPEN jumps to BASIC error handler      | PET OPEN/CLOSE/CHKIN don't use carry for errors — they jump to $CE03 on failure. If they return, they succeeded. |
-| pet_open returns carry set             | File count ($AE) did not increase — OPEN failed internally. Check device, SA, filename. |
-| CHRIN returns garbage after CHKIN      | File not opened for read; wrong SA or file opened for write           |
-| STATUS bit 0 set after CHRIN           | IEEE-488 read timeout; drive not responding                           |
-| STATUS bit 1 set after CHROUT          | IEEE-488 write timeout; drive not responding                          |
-| STATUS bit 4 set                       | Unrecoverable read error or file not found on cassette                |
-| File writes but drive LED flashes      | DOS error; read command channel (SA=15) for error code                |
-| CHROUT goes to screen not file         | CLRCHN was called; call CHKOUT again before writing                   |
-| LOAD returns incorrect end address     | SA=0 used with non-PRG file; use SA=1 with explicit load address      |
-| Program hangs after file operation     | CLRCHN not called; KERNAL still reading from file instead of keyboard |
+| Symptom                            | Likely cause                                                                                                              |
+|------------------------------------|---------------------------------------------------------------------------------------------------------------------------|
+| `?SYNTAX ERROR` after calling OPEN | Used `jsr $FFBD` (SETNAM) or `jsr $FFBA` (SETLFS) — these don't exist on PET. Use pet_setnam/pet_setlfs wrappers instead. |
+| `?SYNTAX ERROR` after calling OPEN | Used `jsr $FFC0` (OPEN jump table) from machine code — it includes BASIC parsing. Use pet_open (calls $F560) instead.     |
+| OPEN jumps to BASIC error handler  | PET OPEN/CLOSE/CHKIN don't use carry for errors — they jump to $CE03 on failure. If they return, they succeeded.          |
+| pet_open returns carry set         | File count ($AE) did not increase — OPEN failed internally. Check device, SA, filename.                                   |
+| CHRIN returns garbage after CHKIN  | File not opened for read; wrong SA or file opened for write                                                               |
+| STATUS bit 0 set after CHRIN       | IEEE-488 read timeout; drive not responding                                                                               |
+| STATUS bit 1 set after CHROUT      | IEEE-488 write timeout; drive not responding                                                                              |
+| STATUS bit 4 set                   | Unrecoverable read error or file not found on cassette                                                                    |
+| File writes but drive LED flashes  | DOS error; read command channel (SA=15) for error code                                                                    |
+| CHROUT goes to screen not file     | CLRCHN was called; call CHKOUT again before writing                                                                       |
+| LOAD returns incorrect end address | SA=0 used with non-PRG file; use SA=1 with explicit load address                                                          |
+| Program hangs after file operation | CLRCHN not called; KERNAL still reading from file instead of keyboard                                                     |

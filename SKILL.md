@@ -163,12 +163,15 @@ These files are long and have their own table of contents at the top.
 
 Use the table of contents to jump to the relevant section rather than reading the whole file.
 
-| File                       | Lines |
-|----------------------------|-------|
-| `system/file.md`           | ~1200 |
-| `utility/vice-emulator.md` | ~1030 |
-| `example/file.md`          | ~1000 |
-| `system/disk.md`           | ~780  |
-| `code/compression.md`      | ~680  |
-| `example/general.md`       | ~595  |
-| `system/graphics.md`       | ~750  |
+| File                        | Lines |
+|-----------------------------|-------|
+| `system/file.md`            | ~1400 |
+| `system/graphics.md`        | ~1090 |
+| `utility/vice-emulator.md`  | ~1030 |
+| `example/file.md`           | ~1000 |
+| `system/disk.md`            | ~780  |
+| `code/compression.md`       | ~680  |
+| `example/general.md`        | ~610  |
+| `utility/dasm-assembler.md` | ~570  |
+| `code/standard.md`          | ~560  |
+| `system/screen.md`          | ~530  |

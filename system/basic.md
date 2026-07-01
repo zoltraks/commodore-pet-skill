@@ -21,14 +21,14 @@ BASIC program text starts at `$0401` (decimal 1025). Location `$0400` holds a si
 
 Variables and arrays grow upward from the end of the program; strings grow downward from the top of memory. Five zero-page pointers track these regions.
 
-| Pointer   | Points to                                  |
-|-----------|--------------------------------------------|
-| `$28-$29` | Start of BASIC text (`$0401`)              |
-| `$2A-$2B` | End of BASIC text / start of variables     |
-| `$2C-$2D` | End of variables / start of arrays         |
-| `$2E-$2F` | End of arrays                              |
-| `$30-$31` | Bottom of string space (moving down)       |
-| `$34-$35` | Top of BASIC memory (highest usable RAM)   |
+| Pointer   | Points to                                |
+|-----------|------------------------------------------|
+| `$28-$29` | Start of BASIC text (`$0401`)            |
+| `$2A-$2B` | End of BASIC text / start of variables   |
+| `$2C-$2D` | End of variables / start of arrays       |
+| `$2E-$2F` | End of arrays                            |
+| `$30-$31` | Bottom of string space (moving down)     |
+| `$34-$35` | Top of BASIC memory (highest usable RAM) |
 
 Lower `$34-$35` before BASIC starts to reserve high memory for machine code or data. The currently executing line number is in `$36-$37`; it reads `$00` when BASIC is in direct mode.
 

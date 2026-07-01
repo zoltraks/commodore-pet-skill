@@ -19,16 +19,16 @@ Every example assembles cleanly with DASM and follows the conventions in `system
 
 | Section                            | Line | What it covers                                         |
 |------------------------------------|------|--------------------------------------------------------|
-| Address Definitions                | 18   | Standard KERNAL equates block to paste at top of file  |
-| Load a PRG File                    | 45   | LOAD with SA=0 (file address) and SA=1 (fixed address) |
-| Save a PRG File                    | 139  | SAVE from zero-page pointer to end address             |
-| Read a Sequential File             | 206  | OPEN + CHKIN + CHRIN loop + STATUS EOF check + CLOSE   |
-| Write a Sequential File            | 341  | OPEN + CHKOUT + CHROUT loop + STATUS check + CLOSE     |
-| Send a DOS Command                 | 448  | SA=15 OPEN with command string, reopen to read status  |
-| Read the Disk Directory            | 580  | Open `$`, skip header, parse BASIC-format lines        |
-| Complete File I/O Program Template | 709  | Full program with init, read, error paths, CLOSE       |
-| Common Mistakes                    | 872  | CLRCHN, CLOSE on error, SA=0 misuse, LFN conflicts     |
-| Quick Reference: Call Sequences    | 920  | One-line summary of every operation                    |
+| Address Definitions                | 33   | Standard KERNAL equates block to paste at top of file  |
+| Load a PRG File                    | 105  | LOAD with SA=0 (file address) and SA=1 (fixed address) |
+| Save a PRG File                    | 202  | SAVE from zero-page pointer to end address             |
+| Read a Sequential File             | 268  | OPEN + CHKIN + CHRIN loop + STATUS EOF check + CLOSE   |
+| Write a Sequential File            | 405  | OPEN + CHKOUT + CHROUT loop + STATUS check + CLOSE     |
+| Send a DOS Command                 | 517  | SA=15 OPEN with command string, reopen to read status  |
+| Read the Disk Directory            | 649  | Open `$`, skip header, parse BASIC-format lines        |
+| Complete File I/O Program Template | 775  | Full program with init, read, error paths, CLOSE       |
+| Common Mistakes                    | 943  | CLRCHN, CLOSE on error, SA=0 misuse, LFN conflicts     |
+| Quick Reference: Call Sequences    | 991  | One-line summary of every operation                    |
 
 ## Address Definitions
 
@@ -992,12 +992,12 @@ Send `I0` through the command channel at program start to clear the banner.
 
 | Operation           | Call sequence                                                           |
 |---------------------|-------------------------------------------------------------------------|
-| Load PRG from disk  | SETNAM, SETLFS (SA=0), LOAD                                             |
-| Save PRG to disk    | SETNAM, SETLFS (SA=1), SAVE                                             |
-| Open SEQ read       | SETNAM ("NAME,S,R"), SETLFS (SA=2+), OPEN, CHKIN                        |
+| Load PRG from disk  | pet_setnam, pet_setlfs (SA=0), LOAD                                     |
+| Save PRG to disk    | pet_setnam, pet_setlfs (SA=1), SAVE                                     |
+| Open SEQ read       | pet_setnam ("NAME,S,R"), pet_setlfs (SA=2+), OPEN, CHKIN                |
 | Read from SEQ file  | CHRIN (store byte, then check STATUS bit 7 for disk EOF), CLRCHN, CLOSE |
-| Open SEQ write      | SETNAM ("NAME,S,W"), SETLFS (SA=2+), OPEN, CHKOUT                       |
+| Open SEQ write      | pet_setnam ("NAME,S,W"), pet_setlfs (SA=2+), OPEN, CHKOUT               |
 | Write to SEQ file   | CHROUT (check STATUS), CLRCHN, CLOSE                                    |
-| Send DOS command    | SETNAM (cmd as name), SETLFS (SA=15), OPEN, CLOSE                       |
-| Read drive status   | SETNAM (empty), SETLFS (SA=15), OPEN, CHKIN, CHRIN, CLOSE               |
-| Read disk directory | SETNAM ("$"), SETLFS (SA=0), OPEN, CHKIN, CHRIN loop                    |
+| Send DOS command    | pet_setnam (cmd as name), pet_setlfs (SA=15), OPEN, CLOSE               |
+| Read drive status   | pet_setnam (empty), pet_setlfs (SA=15), OPEN, CHKIN, CHRIN, CLOSE       |
+| Read disk directory | pet_setnam ("$"), pet_setlfs (SA=0), OPEN, CHKIN, CHRIN loop            |

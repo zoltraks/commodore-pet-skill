@@ -12,13 +12,13 @@ This file covers PET 3032 screen I/O in four progressive layers:
 - **Working code examples** - verified ASM snippets
 - **Deep reference notes** - edge cases, caveats, implementation rules
 
-| Out of scope                  | See instead                |
-|-------------------------------|----------------------------|
-| CRTC/PIA/VIA register details | `hardware/chip.md`         |
-| KERNAL routines               | `system/kernal.md`         |
-| Memory map                    | `system/memory.md`         |
-| Keyboard matrix and GETIN     | `system/keyboard.md`       |
-| Semigraphics and box drawing  | `system/graphics.md`       |
+| Out of scope                  | See instead          |
+|-------------------------------|----------------------|
+| CRTC/PIA/VIA register details | `hardware/chip.md`   |
+| KERNAL routines               | `system/kernal.md`   |
+| Memory map                    | `system/memory.md`   |
+| Keyboard matrix and GETIN     | `system/keyboard.md` |
+| Semigraphics and box drawing  | `system/graphics.md` |
 
 ## Contents
 
@@ -338,9 +338,9 @@ menu_show:
 
 Set `menu_count` to the number of items. Use `menu_move_down` and a mirror `menu_move_up` for arrow key navigation.
 
-## PETSCII Control Codes (for CHROUT)
+## PETSCII Control Codes
 
-These codes are sent to `CHROUT` ($FFD2) to control the cursor and screen.
+These codes are sent to `CHROUT` (`$FFD2`) to control the cursor and screen.
 
 They are not stored in screen RAM.
 
@@ -385,12 +385,12 @@ The lowercase set replaces many semigraphics glyphs with lowercase letters a-z. 
 
 The box-drawing and block characters in the `$40`-`$7F` range that are **not letters** are identical in both character sets. The ROM stores the same pixel patterns for these codes in both halves. Specifically, these codes produce the same glyph regardless of which set is active:
 
-| Shared (identical in both sets)     | Differ (letters in one set)    |
-|-------------------------------------|--------------------------------|
-| `$40`, `$5B`-`$5D`                  | `$41`-`$5A` (A-Z vs a-z)       |
-| `$60`-`$68`, `$6A`-`$6C`            | `$5E`, `$5F`                   |
-| `$6D`-`$6F`, `$70`-`$79`            | `$69` (triangle vs other)      |
-| `$7B`-`$7F`                         | `$7A`                          |
+| Shared (identical in both sets) | Differ (letters in one set) |
+|---------------------------------|-----------------------------|
+| `$40`, `$5B`-`$5D`              | `$41`-`$5A` (A-Z vs a-z)    |
+| `$60`-`$68`, `$6A`-`$6C`        | `$5E`, `$5F`                |
+| `$6D`-`$6F`, `$70`-`$79`        | `$69` (triangle vs other)   |
+| `$7B`-`$7F`                     | `$7A`                       |
 
 This means UI elements drawn with the box-drawing codes below work in **both** character sets without switching. You only need to switch to `PCR_U` if you need uppercase-only symbols that the lowercase set replaces with letters.
 

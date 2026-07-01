@@ -11,9 +11,9 @@ This file provides verified, runnable code examples for the PET 3032. Each examp
 
 | Section                        | Line | What it covers                                       |
 |--------------------------------|------|------------------------------------------------------|
-| Minimal BASIC Stub             | 10   | Shortest valid BASIC stub at $0401, SYS1038          |
-| Clear Screen                   | 43   | Fill 1000 bytes of screen RAM with space character   |
-| Wait for Key Press             | 78   | Poll GETIN until non-zero                            |
+| Minimal BASIC Stub             | 25   | Shortest valid BASIC stub at $0401, SYS1038          |
+| Clear Screen                   | 56   | Fill 1000 bytes of screen RAM with space character   |
+| Wait for Key Press             | 97   | Poll GETIN until non-zero                            |
 | VBLANK Polling                 | 121  | Two-phase VBLANK poll via VIA PORT B bit 5           |
 | Copy Screen to Screen          | 155  | Copy 1000 bytes between two page-aligned buffers     |
 | Switch Character Set           | 202  | PCR register values for uppercase and lowercase sets |

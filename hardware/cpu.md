@@ -104,22 +104,22 @@ The most common bug from misunderstanding flag updates is the branch-after-load 
 
 ## Arithmetic and Logical
 
-| Instruction | Description         | Example         |
-|-------------|---------------------|-----------------|
-| ADC         | Add with carry      | `adc #$01`      |
-| SBC         | Subtract with carry | `sbc #$01`      |
-| INC         | Increment memory    | `inc $F7`       |
-| INX         | Increment X         | `inx`           |
-| INY         | Increment Y         | `iny`           |
-| DEC         | Decrement memory    | `dec $F8`       |
-| DEX         | Decrement X         | `dex`           |
-| DEY         | Decrement Y         | `dey`           |
-| AND         | Logical AND         | `and #$0F`      |
-| ORA         | Logical OR          | `ora #$20`      |
-| EOR         | Exclusive OR        | `eor #$FF`      |
-| CMP         | Compare accumulator | `cmp #$84`      |
-| CPX         | Compare X           | `cpx #$0F`      |
-| CPY         | Compare Y           | `cpy #$00`      |
+| Instruction | Description         | Example    |
+|-------------|---------------------|------------|
+| ADC         | Add with carry      | `adc #$01` |
+| SBC         | Subtract with carry | `sbc #$01` |
+| INC         | Increment memory    | `inc $F7`  |
+| INX         | Increment X         | `inx`      |
+| INY         | Increment Y         | `iny`      |
+| DEC         | Decrement memory    | `dec $F8`  |
+| DEX         | Decrement X         | `dex`      |
+| DEY         | Decrement Y         | `dey`      |
+| AND         | Logical AND         | `and #$0F` |
+| ORA         | Logical OR          | `ora #$20` |
+| EOR         | Exclusive OR        | `eor #$FF` |
+| CMP         | Compare accumulator | `cmp #$84` |
+| CPX         | Compare X           | `cpx #$0F` |
+| CPY         | Compare Y           | `cpy #$00` |
 
 ## Branch and Jump
 

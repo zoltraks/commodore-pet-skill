@@ -133,7 +133,7 @@ done:
 ### Table-Driven Bit Reverse
 
 ```asm
-        ldx A
+        tax
         lda bit_reverse_table,x
 
 bit_reverse_table:

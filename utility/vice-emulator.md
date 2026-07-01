@@ -13,23 +13,23 @@
 
 ## Contents
 
-| Section                          | Line | What it covers                                                             |
-|----------------------------------|------|----------------------------------------------------------------------------|
-| Invocation                       | 34   | Minimal command form and model flag                                        |
-| PET ROM Setup                    | 44   | How VICE finds ROMs; symlinking on Linux, bindist on Windows              |
-| Drive Types on PET               | 116  | `-drive8type 2031` for D64; never 1541 on PET                              |
-| Running a PRG                    | 132  | Autostart modes, why disk autostart is most reliable                       |
-| Headless Debugging               | 186  | Remote monitor over TCP, cycle limits, screen dumps, warp timing, Windows  |
-| Decoding Screen Codes            | 413  | Reading dumped `$8000-$83E7` bytes back into characters; row arithmetic    |
-| Signal-Byte Tracing              | 466  | Writing trace bytes to safe RAM to locate crash points                     |
-| Memory Landmarks                 | 514  | Addresses worth checking during diagnostics                                |
-| Verifying KERNAL Jump Table      | 542  | Disassembling `$FFC0-$FFEA`; PET vs C64 entry differences                 |
-| Diagnosing Crashes               | 580  | SYNTAX ERROR from bad KERNAL calls, KERNAL hang, SP depth, VIA PCR hazard  |
-| Debugging Workflow               | 638  | Step-by-step recipe: check if program ran, breakpoint, step, watch, trace  |
-| Built-in Monitor                 | 737  | Opening the monitor, full command reference, register modification, memory |
-| Breakpoints                      | 888  | initbreak, break, watch, trace, conditional, warp-mode timing              |
-| Monitor Scripts                  | 937  | moncommands file for automated debug sessions                              |
-| Useful Flags                     | 963  | warp, speed, keybuf, logging                                               |
+| Section                             | Line | What it covers                                                             |
+|-------------------------------------|------|----------------------------------------------------------------------------|
+| Invocation                          | 34   | Minimal command form and model flag                                        |
+| PET ROM Setup                       | 44   | How VICE finds ROMs; symlinking on Linux, bindist on Windows               |
+| Drive Types on PET                  | 116  | `-drive8type 2031` for D64; never 1541 on PET                              |
+| Running a PRG                       | 132  | Autostart modes, why disk autostart is most reliable                       |
+| Headless Debugging                  | 186  | Remote monitor over TCP, cycle limits, screen dumps, warp timing, Windows  |
+| Decoding Screen Codes               | 413  | Reading dumped `$8000-$83E7` bytes back into characters; row arithmetic    |
+| Signal-Byte Tracing                 | 466  | Writing trace bytes to safe RAM to locate crash points                     |
+| Memory Landmarks                    | 514  | Addresses worth checking during diagnostics                                |
+| Verifying KERNAL Jump Table Entries | 542  | Disassembling `$FFC0-$FFEA`; PET vs C64 entry differences                  |
+| Diagnosing Crashes                  | 580  | SYNTAX ERROR from bad KERNAL calls, KERNAL hang, SP depth, VIA PCR hazard  |
+| Debugging Workflow                  | 638  | Step-by-step recipe: check if program ran, breakpoint, step, watch, trace  |
+| Built-in Monitor                    | 737  | Opening the monitor, full command reference, register modification, memory |
+| Breakpoints                         | 888  | initbreak, break, watch, trace, conditional, warp-mode timing              |
+| Monitor Scripts                     | 937  | moncommands file for automated debug sessions                              |
+| Useful Flags                        | 963  | warp, speed, keybuf, logging                                               |
 
 ## Invocation
 
@@ -337,12 +337,12 @@ s.close()
 
 Key advantages over `nc`:
 
-| Issue              | `nc`                              | Python socket                         |
-|--------------------|-----------------------------------|---------------------------------------|
-| Timing             | Fixed `sleep`/`-q` guesswork      | `settimeout` + recv loop              |
-| Output capture     | May truncate on early close       | `recv` loop drains all output         |
-| `-q` flag          | Behaviour varies by `nc` variant  | No dependency                         |
-| Multiple commands  | One-shot pipe, reconnect per call | Persistent connection, reuse socket   |
+| Issue             | `nc`                              | Python socket                       |
+|-------------------|-----------------------------------|-------------------------------------|
+| Timing            | Fixed `sleep`/`-q` guesswork      | `settimeout` + recv loop            |
+| Output capture    | May truncate on early close       | `recv` loop drains all output       |
+| `-q` flag         | Behaviour varies by `nc` variant  | No dependency                       |
+| Multiple commands | One-shot pipe, reconnect per call | Persistent connection, reuse socket |
 
 On Windows, `nc` is typically not installed. The PowerShell TCP snippet above and the Python socket script are the recommended alternatives. The Python script works unchanged on both Linux and Windows.
 
@@ -571,11 +571,11 @@ PET jump table entries that DO exist:
 
 The PET does NOT have these C64-only entries:
 
-| Address | C64 routine | PET status                          |
-|---------|-------------|-------------------------------------|
-| `$FFB7` | READST      | Not present; ROM text/filler bytes  |
-| `$FFBA` | SETLFS      | Not present; bytes are `$AA` (TAX)  |
-| `$FFBD` | SETNAM      | Not present; bytes are `$AA` (TAX)  |
+| Address | C64 routine | PET status                         |
+|---------|-------------|------------------------------------|
+| `$FFB7` | READST      | Not present; ROM text/filler bytes |
+| `$FFBA` | SETLFS      | Not present; bytes are `$AA` (TAX) |
+| `$FFBD` | SETNAM      | Not present; bytes are `$AA` (TAX) |
 
 ## Diagnosing Crashes
 
@@ -585,11 +585,11 @@ If `?SYNTAX ERROR IN 10` appears and the program uses `jsr $FFBD` (SETNAM) or `j
 
 The bytes at `$FFBD` are `$AA` (the `TAX` instruction), so `jsr $FFBD` executes `TAX TAX TAX` then falls through into `OPEN` at `$FFC0` with wrong parameters. OPEN fails and jumps to the BASIC error handler at `$CE03`, which prints the syntax error.
 
-| Symptom                                  | Cause                                                            |
-|------------------------------------------|------------------------------------------------------------------|
-| `?SYNTAX ERROR IN 10` after `jsr $FFBD`  | `$FFBD` is not SETNAM on PET; bytes are `$AA` (TAX)              |
-| `?SYNTAX ERROR IN 10` after `jsr $FFBA`  | `$FFBA` is not SETLFS on PET; same fall-through into OPEN        |
-| OPEN hangs or returns garbage            | OPEN received uninitialised filename/length pointers             |
+| Symptom                                 | Cause                                                     |
+|-----------------------------------------|-----------------------------------------------------------|
+| `?SYNTAX ERROR IN 10` after `jsr $FFBD` | `$FFBD` is not SETNAM on PET; bytes are `$AA` (TAX)       |
+| `?SYNTAX ERROR IN 10` after `jsr $FFBA` | `$FFBA` is not SETLFS on PET; same fall-through into OPEN |
+| OPEN hangs or returns garbage           | OPEN received uninitialised filename/length pointers      |
 
 **Fix**: use PET-specific wrappers that set the zero-page locations directly instead of calling non-existent KERNAL entries. On the PET, the filename length goes to `$D1`, the filename address to `$DA/$DB`, the logical file number to `$D2`, the secondary address to `$D3`, and the device number to `$D4`. Set those locations directly in your code before calling the low-level OPEN logic at `$F560` (not the jump table entry at `$FFC0`, which includes BASIC parameter parsing). See `system/kernal.md` for the complete wrapper routines.
 

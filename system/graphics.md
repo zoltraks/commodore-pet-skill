@@ -23,13 +23,13 @@ This file covers PET 3032 semigraphics and UI drawing techniques in four progres
 
 | Section                 | Line | What it covers                                                      |
 |-------------------------|------|---------------------------------------------------------------------|
-| Semigraphics Characters | 33   | Block, fill, quarter-block, center-line, edge-line character tables |
-| Box Drawing Styles      | 97   | Four styles: center-line, thick, medium, thin; choosing a style     |
-| Center-Line Connectors  | 183  | Full connector set: corners, T-junctions, cross, grid frame example |
-| Drawing Routines        | 237  | draw_box_xy, horizontal/vertical dividers, fill_rect, progress bar  |
-| Double-Density Plotting | 740  | 80x50 pixel grid via 2x2 quadrant chars; quadrant map; plot_point   |
-| Title Bar               | 856  | Reverse-video full-width title/status bar                           |
-| Option Markers          | 867  | Checkbox markers for both character sets, toggle routine            |
+| Semigraphics Characters | 36   | Block, fill, quarter-block, center-line, edge-line character tables |
+| Box Drawing Styles      | 100  | Four styles: center-line, thick, medium, thin; choosing a style     |
+| Center-Line Connectors  | 186  | Full connector set: corners, T-junctions, cross, grid frame example |
+| Drawing Routines        | 240  | draw_box_xy, horizontal/vertical dividers, fill_rect, progress bar  |
+| Double-Density Plotting | 743  | 80x50 pixel grid via 2x2 quadrant chars; quadrant map; plot_point   |
+| Title Bar               | 859  | Reverse-video full-width title/status bar                           |
+| Option Markers          | 870  | Checkbox markers for both character sets, toggle routine            |
 | Vertical Bar Graphs     | 950  | 4-bit value bars, 2-cell fill characters, lookup table, draw_bar    |
 | Screen Scrolling        | 1061 | Software scroll-up by copying screen RAM                            |
 
@@ -750,24 +750,24 @@ Pixel `(x, y)` with `(0, 0)` at the top-left maps to cell column `x / 2`, cell r
 
 Screen code for each combination of lit quadrants, verified against the 901447-10 character ROM. Combinations beyond the four base quarter-blocks use the reverse-video glyph (bit 7 set).
 
-| TL | TR | BL | BR | Screen code | Looks like  |
-|----|----|----|----|-------------|-------------|
-| .  | .  | .  | .  | `$20`       | empty       |
-| #  | .  | .  | .  | `$7E`       | TL quarter  |
-| .  | #  | .  | .  | `$7C`       | TR quarter  |
-| #  | #  | .  | .  | `$E2`       | top half    |
-| .  | .  | #  | .  | `$7B`       | BL quarter  |
-| #  | .  | #  | .  | `$61`       | left half   |
-| .  | #  | #  | .  | `$FF`       | diagonal /  |
-| #  | #  | #  | .  | `$EC`       | all but BR  |
-| .  | .  | .  | #  | `$6C`       | BR quarter  |
-| #  | .  | .  | #  | `$7F`       | diagonal \  |
-| .  | #  | .  | #  | `$E1`       | right half  |
-| #  | #  | .  | #  | `$FB`       | all but BL  |
-| .  | .  | #  | #  | `$62`       | bottom half |
-| #  | .  | #  | #  | `$FC`       | all but TR  |
-| .  | #  | #  | #  | `$FE`       | all but TL  |
-| #  | #  | #  | #  | `$A0`       | full block  |
+| TL  | TR  | BL  | BR  | Screen code | Looks like  |
+|-----|-----|-----|-----|-------------|-------------|
+| .   | .   | .   | .   | `$20`       | empty       |
+| #   | .   | .   | .   | `$7E`       | TL quarter  |
+| .   | #   | .   | .   | `$7C`       | TR quarter  |
+| #   | #   | .   | .   | `$E2`       | top half    |
+| .   | .   | #   | .   | `$7B`       | BL quarter  |
+| #   | .   | #   | .   | `$61`       | left half   |
+| .   | #   | #   | .   | `$FF`       | diagonal /  |
+| #   | #   | #   | .   | `$EC`       | all but BR  |
+| .   | .   | .   | #   | `$6C`       | BR quarter  |
+| #   | .   | .   | #   | `$7F`       | diagonal \  |
+| .   | #   | .   | #   | `$E1`       | right half  |
+| #   | #   | .   | #   | `$FB`       | all but BL  |
+| .   | .   | #   | #   | `$62`       | bottom half |
+| #   | .   | #   | #   | `$FC`       | all but TR  |
+| .   | #   | #   | #   | `$FE`       | all but TL  |
+| #   | #   | #   | #   | `$A0`       | full block  |
 
 ### plot_point Routine
 
@@ -856,7 +856,7 @@ To clear a pixel instead of setting it, force the target quadrant off while leav
 
 Plotting onto a cell that holds a normal character (text) finds no matching quadrant pattern, so the cell is treated as empty and the character is replaced. Keep plotted graphics and text in separate screen regions.
 
-## Title Bar (Reverse Video)
+## Title Bar
 
 A full-width title bar or status bar is a row with reverse video (bit 7) set on every character. Use `highlight_row` (defined in `system/screen.md`) for this purpose -- it sets bit 7 on all 40 characters in a row.
 
@@ -867,9 +867,9 @@ A full-width title bar or status bar is a row with reverse video (bit 7) set on 
 
 To write text into the title bar, OR each character's screen code with `$80` before storing it to screen RAM. See `system/screen.md` "Reverse Video" section for per-character and global reverse mode techniques.
 
-## Option Markers (Checkboxes)
+## Option Markers
 
-The PET character sets provide markers for checkable options -- checkboxes, radio buttons, and toggle states. The available marker characters depend on which character set is active, because the `$41`-`$5A` range contains graphics glyphs in the uppercase set but letters in the lowercase set.
+The PET character sets provide markers for checkable options -- checkboxes, radio buttons, and toggle states. -- checkboxes, radio buttons, and toggle states. The available marker characters depend on which character set is active, because the `$41`-`$5A` range contains graphics glyphs in the uppercase set but letters in the lowercase set.
 
 ### Marker Characters
 

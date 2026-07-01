@@ -23,24 +23,24 @@ This file covers DASM for PET 3032 work in four progressive layers:
 
 ## Contents
 
-| Section              | Line | What it covers                                                                    |
-|----------------------|------|-----------------------------------------------------------------------------------|
-| Command Line         | 45   | Invocation flags: `-f1`, `-o`, `-I`, `-D`, direct binary vs Docker                |
-| Docker               | 89   | dasm-container image: build, compile, includes, output                            |
-| Processor Directive  | 168  | `processor 6502` requirement                                                      |
-| Origin Directive     | 176  | `org $0401` and relocation                                                        |
-| Addressing Modes     | 192  | Immediate, ZP, absolute, indexed, indirect syntax                                 |
-| Accumulator-Mode     | 209  | `lsr` vs `lsr a` -- bare form required, `a` suffix causes unresolved symbol       |
-| Character Literals   | 234  | `byte "x"` works, `#'x'` immediate fails -- use hex values for brackets           |
-| Data Directives      | 271  | `byte`, `word`, `hex`, `ds`, `dc`                                                 |
-| Labels and Equates   | 320  | Local labels, `equ`/`=`, forward references                                       |
-| Comments             | 395  | Semicolon style, tab-stop alignment                                               |
-| Macros               | 407  | `mac`/`endm`, arguments, nesting                                                  |
-| Conditional Assembly | 432  | `ifconst`, `ifnconst`, `else`, `endif`                                            |
-| Repeat Loops         | 454  | `repeat`/`repend`                                                                 |
-| Segments             | 464  | `seg`, `seg.u` for BSS, linking multiple segments                                 |
-| Include Files        | 472  | `include` and `incbin` directives                                                 |
-| Common Errors        | 484  | Real error messages, unresolved symbols, syntax errors, branch out of range      |
+| Section                 | Line | What it covers                                                              |
+|-------------------------|------|-----------------------------------------------------------------------------|
+| Command Line            | 45   | Invocation flags: `-f1`, `-o`, `-I`, `-D`, direct binary vs Docker          |
+| Docker                  | 89   | dasm-container image: build, compile, includes, output                      |
+| Processor Directive     | 168  | `processor 6502` requirement                                                |
+| Origin Directive        | 176  | `org $0401` and relocation                                                  |
+| Addressing Modes        | 192  | Immediate, ZP, absolute, indexed, indirect syntax                           |
+| Accumulator-Mode Syntax | 211  | `lsr` vs `lsr a` -- bare form required, `a` suffix causes unresolved symbol |
+| Character Literals      | 234  | `byte "x"` works, `#'x'` immediate fails -- use hex values for brackets     |
+| Data Directives         | 271  | `byte`, `word`, `hex`, `ds`, `dc`                                           |
+| Labels and Equates      | 320  | Local labels, `equ`/`=`, forward references                                 |
+| Comments                | 395  | Semicolon style, tab-stop alignment                                         |
+| Macros                  | 407  | `mac`/`endm`, arguments, nesting                                            |
+| Conditional Assembly    | 432  | `ifconst`, `ifnconst`, `else`, `endif`                                      |
+| Repeat Loops            | 454  | `repeat`/`repend`                                                           |
+| Segments                | 464  | `seg`, `seg.u` for BSS, linking multiple segments                           |
+| Include Files           | 472  | `include` and `incbin` directives                                           |
+| Common Errors           | 484  | Real error messages, unresolved symbols, syntax errors, branch out of range |
 
 For file structure, formatting conventions, naming rules, column alignment, comment placement, section headers, and BASIC stub layout, see `code/standard.md`.
 

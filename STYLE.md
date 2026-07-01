@@ -78,9 +78,21 @@ Use H3 (`###`) for subsections.
 
 Do not use H4 or deeper.
 
-Do not put qualifiers in parentheses inside headings.
+Parenthetical content in headings is allowed for compact technical identifiers only.
 
-Write qualifiers as plain sentences in the section body instead.
+Acceptable uses:
+
+- Address ranges or specific addresses: `PIA 1 ($E810-$E813)`, `KERNAL Jump Table ($FFC0-$FFEA)`
+- Register or chip numbers: `Mixer Register ($07)`, `CRTC 6545 ($E880-$E88F)`
+- Alternative names or aliases: `byte (DC.B)`, `Loading a Binary File (LOAD)`, `Using KERNAL (CHROUT)`
+- Short parameter values: `Loading to a Fixed Address (SA=1)`, `Hex Offset (4-Digit)`
+- Standard disambiguators: `IRQ (Maskable)`, `NMI (Non-Maskable)`, `Scratch (Delete) File`
+
+Do not put descriptive qualifiers or usage notes in parentheses inside headings.
+
+Write those as plain sentences in the section body instead.
+
+Examples of what to avoid: `(Reference Only)`, `(fastest, largest)`, `(recommended for PET)`, `(Fallback When Docker Is Unavailable)`.
 
 ## Tables
 
