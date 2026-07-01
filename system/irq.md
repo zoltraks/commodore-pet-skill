@@ -177,6 +177,51 @@ This is simpler than IRQ setup for single-threaded programs that only need frame
 
 The polling approach does not require reading `$E813`.
 
+### Emulator Limitation: VICE xpet
+
+VICE 3.7 xpet does not mirror the VBLANK signal onto VIA PB5 (`$E840` bit 5). The unbounded two-phase poll above loops forever under VICE because the retrace bit never toggles. The program appears frozen with the initial screen visible and keyboard input stops responding.
+
+The KERNAL IRQ handler (driven by PIA1 CB1) still fires correctly under VICE, so `GETIN` works as long as the CPU is not stuck in a polling loop. The problem is exclusively the VIA PB5 poll.
+
+Use a bounded poll that gives up after a fixed number of iterations per phase. On real hardware the bound is never reached. On VICE the bound expires and the caller proceeds without sync:
+
+```asm
+VIA_PORTB   = $E840
+RETRACE_BIT = $20
+
+wait_vblank:
+
+        ldx #$00
+
+wv_p1:
+
+        lda VIA_PORTB
+        and #RETRACE_BIT
+        bne wv_p2               ; bit HIGH: VBLANK ended -> phase 2
+        dex
+        bne wv_p1
+        rts                     ; phase 1 bound exhausted: give up (no sync)
+
+wv_p2:
+
+        ldx #$00
+
+wv_p2_loop:
+
+        lda VIA_PORTB
+        and #RETRACE_BIT
+        beq wv_done             ; bit LOW: VBLANK started
+        dex
+        bne wv_p2_loop
+        rts                     ; phase 2 bound exhausted: give up (no sync)
+
+wv_done:
+
+        rts                     ; at start of VBLANK
+```
+
+A 256-iteration bound per phase is approximately 2 ms at 1 MHz. See `system/screen.md` for the full double-buffering present routine that uses this bounded poll.
+
 ## Common Mistakes
 
 | Mistake                          | Consequence                           | Fix                                                 |
@@ -186,3 +231,4 @@ The polling approach does not require reading `$E813`.
 | No `SEI`/`CLI` around CINV write | IRQ fires during partial vector write | Always bracket CINV update with SEI/CLI             |
 | Don't restore CINV on exit       | KERNAL broken after program exits     | Save `old_cinv`, restore in cleanup                 |
 | Use `JSR` to chain               | `RTI` returns to wrong address        | Use `JMP` to chain to KERNAL handler                |
+| Unbounded PB5 poll under VICE    | Program hangs -- bit never toggles    | Bound each phase to 256 iterations                  |

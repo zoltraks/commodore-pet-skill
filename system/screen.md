@@ -31,7 +31,7 @@ This file covers PET 3032 screen I/O in four progressive layers:
 | Reverse Video           | 207  | Bit 7, RVS on/off, highlight_row routine                      |
 | PETSCII Control Codes   | 340  | CHROUT control code table                                     |
 | Character Sets          | 364  | Uppercase/graphics vs lowercase/text, PCR switching           |
-| Double Buffering        | 420  | Back buffer, VBLANK sync, copy routine, flicker-free updates  |
+| Double Buffering        | 421  | Back buffer, VBLANK sync, copy routine, tail flag hazard, bounded poll, common mistakes |
 
 ## Screen RAM Layout
 
@@ -205,7 +205,7 @@ clear_tail:
         rts
 ```
 
-## Reverse Video
+The `clear_tail` loop is safe because `sta` does not affect flags -- `bne` tests the Z flag set by `dex`. This differs from the `copy_buffer` tail, which inserts an `lda` between `dex` and `sta`. See the Tail Loop Flag Hazard section under Double Buffering below.
 
 ### Per-Character Reverse
 
@@ -452,6 +452,8 @@ READY   = $0351          ; 0 = no frame ready, 1 = frame ready to copy
 
 The main loop checks the flag each VBLANK. If set, it copies the buffer and clears the flag. If not set, it skips the copy -- the screen keeps showing the previous frame.
 
+For event-driven programs (file managers, editors) that redraw only on keypress, a `READY` flag is unnecessary. Call the present routine directly after each redraw -- the program spends most of its time in a `GETIN` poll loop, not rendering frames.
+
 ### Buffer Copy Routine
 
 Copy 1000 bytes from `BUFFER` to `SCREEN` using the same page-strided pattern as the screen clear (3 full pages + 232-byte tail):
@@ -482,9 +484,92 @@ copy_tail:
         dex
         lda BUFFER+$300-1,x     ; x = 231..0, reads $7FE7..$7F00
         sta SCREEN+$300-1,x     ; writes $83E7..$8300
+        txa                     ; test X (loop counter), not the loaded byte
         bne copy_tail           ; 232 bytes done, total = 1000
         rts
 ```
+
+### Tail Loop Flag Hazard
+
+The `copy_tail` section above contains a subtle flag hazard that does not affect the `clear_screen` tail. In `clear_screen`, the tail body is `dex` / `sta` / `bne` -- `sta` does not affect flags, so `bne` correctly tests the Z flag set by `dex`. In `copy_buffer`, the tail body is `dex` / `lda` / `sta` / `bne` -- `lda` **does** affect the Z flag, so `bne` tests the loaded byte, not the loop counter.
+
+If the back buffer tail region contains no `$00` bytes (common with uninitialized RAM filled with `$AA` or other garbage), the loop never exits when X reaches zero. Instead, X wraps from `$00` to `$FF`, and the loop continues writing past `$83E7` into `$83E8-$83FF` and beyond -- overwriting KERNAL variables, I/O registers, or VIA/PIA hardware. This corrupts the keyboard interrupt and freezes input.
+
+Two fixes exist. Both are correct; pick either based on register availability:
+
+```asm
+; FIX 1: txa after sta -- bne tests X (counter)
+        dex
+        lda BUFFER+$300-1,x
+        sta SCREEN+$300-1,x
+        txa
+        bne copy_tail
+
+; FIX 2: dex after sta -- bne tests X (counter)
+        lda BUFFER+$300-1,x
+        sta SCREEN+$300-1,x
+        dex
+        bne copy_tail
+```
+
+Fix 1 (`txa`) costs one extra byte and one extra cycle versus the broken version. Fix 2 (`dex`-after-`sta`) reorders the loop body and costs nothing extra. See `code/standard.md` for the general flag-semantics rule.
+
+### Bounded VBLANK Poll
+
+The unbounded two-phase VBLANK poll in `system/irq.md` hangs forever if the retrace bit never toggles. VICE 3.7 xpet does not mirror the VBLANK signal onto VIA PB5 (`$E840` bit 5), so the poll loops indefinitely and the program appears frozen with the initial screen visible.
+
+Use a bounded poll that gives up after a fixed number of iterations. On real hardware the bound is never reached (the bit toggles within one frame). On emulators without the retrace bit, the bound expires and the copy proceeds without sync -- still flicker-free because the full 1000-byte copy is atomic relative to a single `GETIN` poll:
+
+```asm
+VIA_PORTB   = $E840
+RETRACE_BIT = $20
+
+wait_vblank:
+
+        ldx #$00
+
+wv_p1:
+
+        lda VIA_PORTB
+        and #RETRACE_BIT
+        bne wv_p2               ; bit HIGH: VBLANK ended -> phase 2
+        dex
+        bne wv_p1
+        rts                     ; phase 1 bound exhausted: give up (no sync)
+
+wv_p2:
+
+        ldx #$00
+
+wv_p2_loop:
+
+        lda VIA_PORTB
+        and #RETRACE_BIT
+        beq wv_done             ; bit LOW: VBLANK started
+        dex
+        bne wv_p2_loop
+        rts                     ; phase 2 bound exhausted: give up (no sync)
+
+wv_done:
+
+        rts                     ; at start of VBLANK
+```
+
+A 256-iteration bound per phase is approximately 2 ms at 1 MHz -- short enough to keep interactive response snappy if the bit is stuck, long enough to catch a real VBLANK (approximately 1.6 ms at 60 Hz).
+
+### Present Routine
+
+The present routine combines VBLANK sync and buffer copy. Call it after each redraw entry point:
+
+```asm
+present_screen:
+
+        jsr wait_vblank
+        jsr copy_buffer
+        rts
+```
+
+For event-driven programs, call `present_screen` at the end of every redraw routine (`full_redraw`, `redraw_panels`, `redraw_active`, `view_render`) and after each interactive row-24 update (prompt label, prompt buffer, status message). The program's main loop is a `GETIN` poll; between keypresses, no redraw or present occurs.
 
 ### Main Loop with VBLANK Sync
 
@@ -510,20 +595,17 @@ no_copy:
         ; ... set READY = 1 after rendering ...
 
         jmp main_loop
-
-wait_vblank:
-
-        lda VIA_PORTB           ; phase 1: skip remaining VBLANK (bit 5 LOW)
-        and #RETRACE_BIT
-        beq wait_vblank
-
-vbl_wait:
-
-        lda VIA_PORTB           ; phase 2: wait for active display to end (bit 5 HIGH)
-        and #RETRACE_BIT
-        bne vbl_wait
-        rts                     ; return at start of VBLANK
 ```
 
 The buffer copy runs inside VBLANK, so the user never sees a partially updated screen. Frame rendering (decompression, drawing) happens outside VBLANK and can take as long as needed.
+
+### Common Mistakes
+
+| Mistake                                              | Consequence                                          | Fix                                                              |
+|------------------------------------------------------|------------------------------------------------------|------------------------------------------------------------------|
+| `bne copy_tail` after `lda` in copy tail             | Loop tests loaded byte, not counter; X wraps past 0 | Insert `txa` before `bne`, or move `dex` after `sta`             |
+| Unbounded VBLANK poll under VICE                     | Program hangs -- PB5 never toggles                   | Bound each phase to 256 iterations                               |
+| Writing past `$83E7` in copy tail                    | Overwrites KERNAL vars or I/O registers              | Use the 768 + 232 split, never a 4-page loop                     |
+| Forgetting to clear BUFFER in init                   | First blit shows garbage from uninitialized RAM     | Call `clear_screen` (writing to `BUFFER`) before first redraw    |
+| Calling `present_screen` inside a tight poll loop    | Wastes cycles on redundant blits                     | Call only after a redraw or interactive update                    |
 

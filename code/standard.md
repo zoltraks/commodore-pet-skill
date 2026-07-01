@@ -542,16 +542,31 @@ This common loop bug places `dex` too early, then relies on `sta` which does not
         bne copy_loop
 ```
 
-If the loaded byte happens to be zero, `bne` exits the loop even though X has not reached zero. The correct order puts `dex` immediately before the branch so the branch tests the loop counter:
+If the loaded byte happens to be zero, `bne` exits the loop even though X has not reached zero. If the loaded byte is never zero (common with uninitialized RAM filled with `$AA`), the loop never exits when X wraps past zero -- it continues writing past the intended range, corrupting memory.
+
+This bug was found in the double-buffer `copy_tail` routine. See `system/screen.md` for the full real-world example and its consequences.
+
+Two fixes exist. Both are correct:
 
 ```asm
-; GOOD -- bne tests dex flags (loop counter)
+; FIX 1: txa after sta -- bne tests X (counter)
+        dex
+        lda BUFFER+$300-1,x
+        sta SCREEN+$300-1,x
+        txa
+        bne copy_loop
+
+; FIX 2: dex after sta -- bne tests X (counter)
         lda BUFFER+$300-1,x
         sta SCREEN+$300-1,x
         dex
         bne copy_loop
 ```
 
+Fix 1 (`txa`) costs one extra byte and one extra cycle. Fix 2 reorders the loop body and costs nothing extra.
+
 ### Decision Rule
 
 When any instruction between the counter update and the branch does not affect flags, **the counter update must be the last instruction before the branch**. Apply this rule whenever a loop body contains `sta`, `jsr`, `jmp`, or any other non-flag instruction.
+
+If reordering is not possible (e.g., the counter must decrement before the load), insert `txa` or `tya` between the last flag-affecting instruction and the branch to restore the counter's flags.
