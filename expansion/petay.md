@@ -3,7 +3,7 @@
 ## Purpose
 
 > **Scope:** PetAY extension card: dual AY-8910 stereo sound, I/O addresses, register map, frequency calculation, programming
-> **Key items:** `$A000`-`$A003`, AY-8910 register map, 1 MHz clock, frequency divider, mixer, envelope, stereo left/right
+> **Key items:** `$9000`/`$A000`/`$B000` configurable base, AY-8910 register map, 1 MHz clock, frequency divider, mixer, envelope, stereo left/right, read-is-write limitation
 
 | Out of scope              | See instead         |
 |---------------------------|---------------------|
@@ -19,16 +19,42 @@ The AY-8910 chips run at a 1 MHz internal clock. This clock frequency determines
 
 ## I/O Addresses
 
-The board occupies 4 memory-mapped addresses at `$A000`-`$A003`. This region is otherwise the expansion ROM area (`$A000`-`$AFFF`); the PetAY board decodes only the first 4 bytes.
+The PetAY can be installed in one of three expansion ROM sockets on the PET motherboard. The socket determines the base address:
 
-| Address | Register | Chip         | Role                             |
-|---------|----------|--------------|----------------------------------|
-| `$A000` | AY_REG_L | AY 1 (left)  | Select AY register (0-15)        |
-| `$A001` | AY_VAL_L | AY 1 (left)  | Write value to selected register |
-| `$A002` | AY_REG_R | AY 2 (right) | Select AY register (0-15)        |
-| `$A003` | AY_VAL_R | AY 2 (right) | Write value to selected register |
+| Socket | Base     | High byte |
+|--------|----------|-----------|
+| $9xxx  | `$9000`  | `$90`     |
+| $Axxx  | `$A000`  | `$A0`     |
+| $Bxxx  | `$B000`  | `$B0`     |
+
+The default installation is `$A000`. The board decodes only the first 4 bytes of the selected page.
+
+Because the base address is installation-dependent, software should define it as a single configurable constant and derive all register addresses from it:
+
+```asm
+AY_BASE  = $A000         ; $9000, $A000, or $B000 — set to match socket
+AY_REG_L = AY_BASE       ; AY 1 (left)  select register
+AY_VAL_L = AY_BASE+1     ; AY 1 (left)  value register
+AY_REG_R = AY_BASE+2     ; AY 2 (right) select register
+AY_VAL_R = AY_BASE+3     ; AY 2 (right) value register
+```
+
+| Offset | Register | Chip         | Role                             |
+|--------|----------|--------------|----------------------------------|
+| `+0`   | AY_REG_L | AY 1 (left)  | Select AY register (0-15)        |
+| `+1`   | AY_VAL_L | AY 1 (left)  | Write value to selected register |
+| `+2`   | AY_REG_R | AY 2 (right) | Select AY register (0-15)        |
+| `+3`   | AY_VAL_R | AY 2 (right) | Write value to selected register |
 
 Each AY chip has 16 internal registers. To write a value, first write the register number to the select register, then write the value to the value register. Both writes take effect immediately.
+
+## Read/Write Limitation
+
+The expansion ROM sockets used by the PetAY lack a R/W line connection. The board sees every bus access — read or write — as a write. Reading any of the four addresses writes the current data bus value into the AY chip instead of returning a register value.
+
+The data bus is not driven during a CPU read cycle, so it floats and is pulled toward `$FF` by bus resistors, or picks up noise from a previous cycle. Either way the AY registers will be corrupted by the read.
+
+Never read AY addresses. Track all register state in shadow variables in RAM and write-only to the chip. When you need to know a register's current value, read the shadow, not the chip.
 
 ## AY-8910 Register Map
 
@@ -160,8 +186,9 @@ To use the envelope on a channel, set bit 4 of that channel's volume register an
 To write a value to an AY register, write the register number to the select register, then the value to the value register:
 
 ```asm
-AY_REG_L = $A000         ; left AY select register
-AY_VAL_L  = $A001         ; left AY value register
+AY_BASE  = $A000         ; $9000, $A000, or $B000 — set to match socket
+AY_REG_L = AY_BASE       ; left AY select register
+AY_VAL_L = AY_BASE+1     ; left AY value register
 
         lda #$08              ; register 8 = VOLUME_A
         sta AY_REG_L
@@ -184,7 +211,7 @@ ay_write_l:            ; X = register number (0-15), A = value; clobbers nothing
         rts
 ```
 
-For the right AY chip, use `$A002`/`$A003`:
+For the right AY chip:
 
 ```asm
 AY_REG_R = $A002
@@ -278,7 +305,7 @@ The following BASIC program plays A4 (440 Hz) on the left AY and a higher tone o
 80 POKE 40962,8:POKE 40963,15
 ```
 
-`40960` = `$A000` (left control), `40961` = `$A001` (left value), `40962` = `$A002` (right control), `40963` = `$A003` (right value).
+`40960` = `$A000` (left control), `40961` = `$A001` (left value), `40962` = `$A002` (right control), `40963` = `$A003` (right value). For the `$9000` socket, use 36864–36867; for `$B000`, use 45056–45059.
 
 Lines 10-40 set the left AY: channel A divider = 142 (A4), mixer = `$FE` (channel A tone on), volume = 15. Lines 50-80 set the right AY: channel A divider = 125, mixer = `$FE`, volume = 15.
 
