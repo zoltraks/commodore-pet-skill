@@ -175,7 +175,7 @@ A reusable subroutine that writes A to register X on the left AY chip. The calle
 
 ```asm
 AY_REG_L = $A000
-AY_VAL_L  = $A001
+AY_VAL_L = $A001
 
 ay_write_l:            ; X = register number (0-15), A = value; clobbers nothing.
 
@@ -188,7 +188,7 @@ For the right AY chip, use `$A002`/`$A003`:
 
 ```asm
 AY_REG_R = $A002
-AY_VAL_R  = $A003
+AY_VAL_R = $A003
 
 ay_write_r:            ; X = register number (0-15), A = value; clobbers nothing.
 
@@ -203,7 +203,7 @@ Play A4 (440 Hz) on channel A of the left AY chip. The divider for A4 at 1 MHz i
 
 ```asm
 AY_REG_L = $A000
-AY_VAL_L  = $A001
+AY_VAL_L = $A001
 
 play_a4_left:
 
@@ -246,9 +246,9 @@ To silence all output on both AY chips, disable all tone and noise channels via 
 
 ```asm
 AY_REG_L = $A000
-AY_VAL_L  = $A001
+AY_VAL_L = $A001
 AY_REG_R = $A002
-AY_VAL_R  = $A003
+AY_VAL_R = $A003
 
 silence_both:
 
