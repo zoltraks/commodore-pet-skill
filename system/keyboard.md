@@ -29,6 +29,7 @@ This file covers PET 3032 keyboard input in four progressive layers:
 | Detect simultaneous key presses      | Multi-Key Detection      |
 | Full matrix layout                   | Keyboard Matrix Map      |
 | PETSCII code for a key               | Common PETSCII Key Codes |
+| Keyboard buffer structure and injection | Keyboard Buffer Injection |
 
 ## Physical Key Layout
 
@@ -290,3 +291,109 @@ The PET keyboard matrix has no diodes.
 With three or more keys pressed simultaneously, a phantom keypress may be detected on unintended rows.
 
 This is normal hardware behavior.
+
+## Keyboard Buffer Injection
+
+The KERNAL keyboard buffer can be written directly to simulate key presses. This is useful for automated testing under the VICE emulator (see `utility/vice-emulator.md`) and for programs that need to pre-fill the buffer.
+
+### Buffer Layout
+
+| Address    | Size  | Purpose                                      |
+|------------|-------|----------------------------------------------|
+| `$026F`    | 10 bytes | Keyboard buffer (circular, holds up to 10 PETSCII codes) |
+| `$009E`    | 1 byte | Number of characters currently in the buffer |
+
+The buffer is a FIFO: `GETIN` reads from the front and decrements the count. The 60 Hz IRQ scan appends to the buffer and increments the count.
+
+### Injecting a Single Key
+
+To simulate a key press, write the PETSCII code to `$026F` and set the count at `$9E` to 1:
+
+```asm
+        lda #$56                ; PETSCII 'V'
+        sta $026F
+        lda #1
+        sta $9E
+```
+
+The next `GETIN` call will return `$56` (the 'V' key) and reset the count to 0.
+
+### Injecting via VICE Remote Monitor
+
+When debugging with the VICE remote monitor over TCP, inject keys by writing to memory with the monitor's `>` command:
+
+```
+> $026F 56
+> $009E 01
+```
+
+This writes PETSCII `$56` ('V') to the buffer and sets the count to 1. After a short delay (to let the program's `GETIN` loop consume the key), dump screen memory to verify the result:
+
+```
+m $8000 $83E7
+```
+
+### Automated Test Script Pattern
+
+A Python script can drive the VICE remote monitor to inject sequences of keys and verify screen output:
+
+```python
+import socket, time
+
+sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+sock.connect(("127.0.0.1", 6512))
+sock.settimeout(2.0)
+
+def cmd(c):
+    sock.sendall((c + "\n").encode())
+    time.sleep(0.3)
+    data = b""
+    try:
+        while True:
+            chunk = sock.recv(4096)
+            if not chunk: break
+            data += chunk
+    except socket.timeout:
+        pass
+    return data.decode("ascii", errors="replace")
+
+def inject_key(petscii):
+    cmd(f"> $026F {petscii:02X}")
+    cmd("> $009E 01")
+    time.sleep(3)  # let the program process the key
+
+def dump_row(row):
+    addr = 0x8000 + row * 40
+    return cmd(f"m ${addr:04X} ${addr+39:04X}")
+
+# Open viewer
+inject_key(0x56)  # 'V'
+# Switch to hex
+inject_key(0x48)  # 'H'
+# Verify screen
+print(dump_row(0))  # header
+print(dump_row(2))  # first content row
+```
+
+### Key Codes for Common Test Actions
+
+| Action              | PETSCII | Hex   |
+|---------------------|---------|-------|
+| Open viewer         | `V`     | `$56` |
+| Switch to hex       | `H`     | `$48` |
+| Switch to text      | `T`     | `$54` |
+| Exit viewer         | `E`     | `$45` |
+| Quit program        | `Q`     | `$51` |
+| Cursor up           | (special) | `$91` |
+| Cursor down         | (special) | `$11` |
+| Cursor left         | (special) | `$9D` |
+| Cursor right        | (special) | `$1D` |
+| HOME                | (special) | `$13` |
+| RUN/STOP            | (special) | `$03` |
+| RETURN              | (special) | `$0D` |
+
+### Timing Considerations
+
+The program's main loop polls `GETIN` in a tight loop. After injecting a key, wait at least 1-2 seconds of wall-clock time (in warp mode) for the program to process the key and redraw the screen. Without this delay, the monitor may read screen memory before the program has consumed the key and updated the display.
+
+The keyboard buffer holds only 10 characters. For multi-key sequences, inject keys one at a time with delays between each, rather than filling the buffer with multiple keys at once.

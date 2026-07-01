@@ -32,6 +32,10 @@ This file covers PET 3032 semigraphics and UI drawing techniques in four progres
 | Option Markers          | 870  | Checkbox markers for both character sets, toggle routine            |
 | Vertical Bar Graphs     | 950  | 4-bit value bars, 2-cell fill characters, lookup table, draw_bar    |
 | Screen Scrolling        | 1061 | Software scroll-up by copying screen RAM                            |
+| Half-Block Borders      | 1095 | Half-block characters for header/footer bar edges                   |
+| Mixed Reverse Video     | 1130 | Mixing reversed and normal characters within one row                |
+| Divided Frame Layout    | 1175 | T-junctions on top/bottom borders, vertical dividers on content rows|
+| Header and Footer Bars  | 1220 | Bordered reverse-video bars with dynamic content and shortcut labels|
 
 ## Semigraphics Characters
 
@@ -1092,3 +1096,314 @@ clr:
         bpl clr
         rts
 ```
+
+## Half-Block Borders
+
+The half-block characters produce clean vertical edges for reverse-video bars. When a row is filled with reversed characters (bit 7 set), the left and right edges need special treatment to create a visually distinct border.
+
+### Half-Block Characters for Bar Edges
+
+| Screen Code | Reversed | Pixel Pattern     | Description                     |
+|-------------|----------|-------------------|---------------------------------|
+| `$61`       | `$E1`    | `####....` all rows | Left half block (left 4px filled) |
+| `$62`       | `$E2`    | rows 4-7 solid    | Lower half block                 |
+
+`$61` is the left half block: the left 4 columns of the 8x8 cell are filled. `$E1` is `$61` with bit 7 set (reversed), which inverts to the **right** 4 columns filled. Together they form a matched pair for bar edges:
+
+- **Left edge of a reverse-video bar**: `$E1` (reversed left half block = right 4px filled). The reversed space (`$A0`) fills the rest of the bar, so the left edge shows a 4-pixel-wide filled block that aligns with the reversed content.
+- **Right edge of a reverse-video bar**: `$61` (left half block = left 4px filled). This creates a 4-pixel-wide filled block at the right edge, mirroring the left edge.
+
+### Header/Footer Bar Border Pattern
+
+A full-width reverse-video bar (40 columns) uses this layout:
+
+```
+col:  0    1-38              39
+byte: $E1  $A0 ... $A0       $61
+```
+
+- Col 0: `$E1` (reversed left half block -- right 4px filled, left 4px empty)
+- Cols 1-38: reversed content (each byte OR'd with `$80`)
+- Col 39: `$61` (left half block -- left 4px filled, right 4px empty)
+
+The borders are **not** OR'd with `$80` -- they are raw screen codes that produce the correct pixel pattern through the character ROM alone. The reversed content between them uses bit 7 set.
+
+```asm
+HB_LEFT   = $61           ; left half block (left 4px filled)
+HB_RLEFT  = $E1           ; reversed left half block (right 4px filled)
+
+; Draw header bar on row 0
+        ldx #0
+        jsr row_addr_sp
+        ldy #0
+        lda #HB_RLEFT
+        sta (sp_lo),y            ; col 0: left border
+        ldy #39
+        lda #HB_LEFT
+        sta (sp_lo),y            ; col 39: right border
+        ; Fill cols 1-38 with reversed space
+        ldy #1
+        lda #$A0                 ; reversed space
+hdr_fill:
+        sta (sp_lo),y
+        iny
+        cpy #39
+        bne hdr_fill
+        ; Write reversed content at specific columns...
+```
+
+## Mixed Reverse Video
+
+Some UI elements need both reversed and normal characters within the same screen row. A common case is a shortcut label where the hotkey letter is in normal video and the rest of the label is reversed (e.g., `T`EXT where T is normal and EXT is reversed).
+
+### Technique: Static Byte Table
+
+The simplest approach for a fixed-content bar is a pre-computed 40-byte table where each byte already has the correct reverse bit:
+
+```asm
+; Footer bar: "T"EXT  "H"EX  "E"XIT
+; T, H, E are normal video; the rest is reversed
+footer_str:
+        byte $E1                       ; col 0: left border (half-block)
+        byte $14                       ; col 1: 'T' normal video
+        byte $85,$98,$94               ; cols 2-4: 'EXT' reversed
+        byte $A0                       ; col 5: reversed space
+        byte $08                       ; col 6: 'H' normal video
+        byte $85,$98                   ; cols 7-8: 'EX' reversed
+        byte $A0                       ; col 9: reversed space
+        byte $A0,$A0,$A0,$A0,$A0       ; cols 10-14: reversed space pad
+        byte $A0,$A0,$A0,$A0,$A0       ; cols 15-19: reversed space pad
+        byte $A0,$A0,$A0,$A0,$A0       ; cols 20-24: reversed space pad
+        byte $A0,$A0,$A0,$A0,$A0       ; cols 25-29: reversed space pad
+        byte $A0,$A0,$A0,$A0,$A0       ; cols 30-34: reversed space pad
+        byte $05                       ; col 35: 'E' normal video
+        byte $98,$89,$94               ; cols 36-38: 'XIT' reversed
+        byte $61                       ; col 39: right border (half-block)
+```
+
+Copy the table to screen RAM or the back buffer with a simple loop:
+
+```asm
+        ldx #24                 ; row 24
+        jsr row_addr_sp
+        ldy #0
+footer_loop:
+        lda footer_str,y
+        sta (sp_lo),y
+        iny
+        cpy #40
+        bne footer_loop
+```
+
+### Technique: Per-Byte Reverse Control
+
+For dynamic content where some characters must be normal and others reversed, build the row byte-by-byte. To make a character reversed, OR its screen code with `$80`. To keep it normal, use the screen code directly:
+
+```asm
+; Write 'T' in normal video, then 'EXT' in reversed video
+        lda #$14                ; 'T' screen code (normal)
+        sta (sp_lo),y
+        iny
+        lda #$05                ; 'E' screen code
+        ora #$80                ; set reverse bit
+        sta (sp_lo),y
+        iny
+        ; ... continue for 'X', 'T'
+```
+
+### Pre-Computing Reversed Screen Codes
+
+When building a reversed string, convert each PETSCII character to its screen code first, then OR with `$80`:
+
+| Character | PETSCII | Screen Code | Reversed Screen Code |
+|-----------|---------|-------------|----------------------|
+| `A`       | `$41`   | `$01`       | `$81`                |
+| `T`       | `$54`   | `$14`       | `$94`                |
+| `V`       | `$56`   | `$16`       | `$96`                |
+| space     | `$20`   | `$20`       | `$A0`                |
+
+The reversed space `$A0` produces a solid 8x8 block -- the standard "filled cell" for reverse-video bars.
+
+## Divided Frame Layout
+
+A divided frame uses T-junctions on the top and bottom borders to connect horizontal lines to internal vertical dividers. This creates a multi-column layout within a single bordered frame.
+
+### T-Junction Placement Rules
+
+On the **top border** (first row of the frame), use `$72` (T-junction down, ┬) at each column where a vertical divider starts. The T-junction connects the horizontal line to the vertical line going downward.
+
+On the **bottom border** (last row of the frame), use `$71` (T-junction up, ┴) at the same columns. The T-junction connects the horizontal line to the vertical line going upward.
+
+On **content rows** (between the borders), use `$5D` (vertical center line) at each divider column. The outer left and right edges also use `$5D`.
+
+### Example: Hex Viewer Frame with 4 Dividers
+
+A 40-column frame with vertical dividers at columns 5, 17, 29, and 34:
+
+**Top border (row 1):**
+```
+col:  0    1-4    5    6-16   17   18-28  29   30-33  34   35-38  39
+byte: $70  $40×4  $72  $40×11 $72  $40×11 $72  $40×4  $71  $40×4  $6E
+```
+
+**Content row (rows 2-22):**
+```
+col:  0    1-4    5    6-16   17   18-28  29   30-33  34   35-38  39
+byte: $5D  data   $5D  data   $5D  data   $5D  data   $5D  data   $5D
+```
+
+**Bottom border (row 23):**
+```
+col:  0    1-4    5    6-16   17   18-28  29   30-33  34   35-38  39
+byte: $6D  $40×4  $71  $40×11 $71  $40×11 $71  $40×4  $71  $40×4  $7D
+```
+
+### Drawing a Divided Frame
+
+Draw the frame in three phases: top border, bottom border, then side borders with dividers. The content area is left empty (filled by the content renderer afterward).
+
+```asm
+; Phase 1: Top border with T-junctions down
+        ldx #1
+        jsr row_addr_sp
+        ldy #0
+        lda #BOX_TL              ; $70
+        sta (sp_lo),y
+        ldy #39
+        lda #BOX_TR              ; $6E
+        sta (sp_lo),y
+        ; Fill horizontal line cols 1-38
+        ldy #1
+        lda #BOX_H               ; $40
+top_fill:
+        sta (sp_lo),y
+        iny
+        cpy #39
+        bne top_fill
+        ; Place T-junctions down at divider columns
+        ldy #5
+        lda #BOX_TJD             ; $72
+        sta (sp_lo),y
+        ldy #17
+        sta (sp_lo),y
+        ldy #29
+        sta (sp_lo),y
+        ; (Add more dividers as needed)
+
+; Phase 2: Bottom border with T-junctions up
+        ; ... same pattern but BOX_BL ($6D), BOX_BR ($7D), BOX_TJU ($71)
+
+; Phase 3: Side borders and dividers on content rows
+        ldx #2
+side_loop:
+        stx row_tmp
+        jsr row_addr_sp
+        ldy #0
+        lda #BOX_V               ; $5D
+        sta (sp_lo),y            ; left border
+        ldy #39
+        sta (sp_lo),y            ; right border
+        ; Internal dividers
+        ldy #5
+        sta (sp_lo),y
+        ldy #17
+        sta (sp_lo),y
+        ldy #29
+        sta (sp_lo),y
+        ; (Add more dividers as needed)
+        ldx row_tmp
+        inx
+        cpx #23                  ; rows 2..22
+        bne side_loop
+```
+
+### Mode-Dependent Frame Layout
+
+When a frame's dividers change based on display mode (e.g., hex mode has dividers, text mode does not), check the mode before placing T-junctions and dividers. The outer corners and horizontal/vertical lines remain the same; only the internal junctions and dividers are conditional.
+
+```asm
+        lda view_mode
+        beq skip_dividers        ; text mode: no internal dividers
+        ; ... place T-junctions and dividers
+skip_dividers:
+```
+
+## Header and Footer Bars
+
+A header or footer bar is a full-width reverse-video row with half-block borders at the edges. Unlike the simple `highlight_row` technique (which reverses an entire row), header/footer bars have distinct borders and may contain dynamic content.
+
+### Header Bar with Dynamic Content
+
+A header bar typically shows a title, a filename, and a mode indicator. The content is dynamic but the borders and reverse-video treatment are fixed.
+
+Layout (40 columns):
+- Col 0: `$E1` (reversed left half block)
+- Cols 1-38: reversed content (label, filename, padding, mode)
+- Col 39: `$61` (left half block)
+
+Build the bar by first filling cols 1-38 with reversed space (`$A0`), then overwriting specific positions with reversed text:
+
+```asm
+; 1. Fill with reversed space
+        ldy #1
+        lda #$A0
+hdr_fill:
+        sta (sp_lo),y
+        iny
+        cpy #39
+        bne hdr_fill
+; 2. Write "VIEW" at cols 3-6 (reversed)
+        ldy #3
+        lda #$96                ; 'V' reversed
+        sta (sp_lo),y
+        iny
+        lda #$89                ; 'I' reversed
+        sta (sp_lo),y
+        iny
+        lda #$85                ; 'E' reversed
+        sta (sp_lo),y
+        iny
+        lda #$97                ; 'W' reversed
+        sta (sp_lo),y
+; 3. Write filename at cols 9+ (reversed)
+        ldy #9
+        ldx #0
+hdr_fn:
+        cpx fname_len
+        bcs hdr_mode
+        lda fname,x
+        jsr petscii_to_screen
+        ora #$80                ; reverse
+        sta (sp_lo),y
+        iny
+        inx
+        jmp hdr_fn
+; 4. Write mode right-aligned (reversed)
+hdr_mode:
+        ; "TEXT" at cols 32-35 or "HEX" at cols 33-35
+        lda mode_flag
+        bne hdr_hex
+        ldy #32
+        lda #$94                ; 'T' reversed
+        sta (sp_lo),y
+        ; ... 'E', 'X', 'T'
+        rts
+hdr_hex:
+        ldy #33
+        lda #$88                ; 'H' reversed
+        sta (sp_lo),y
+        ; ... 'E', 'X'
+        rts
+```
+
+### Footer Bar with Shortcut Labels
+
+A footer bar shows available commands. Shortcut letters (the hotkeys) are in normal video; the rest of each label is reversed. This creates a visual cue for which key to press.
+
+Because the content is fixed, a static 40-byte table is the most efficient approach (see Mixed Reverse Video above). The table encodes each byte with the correct reverse bit pre-set.
+
+### Key Disambiguation Across Modes
+
+When a key serves different purposes in different modes (e.g., `Q` quits the main program but is ignored in the viewer), the footer/header text should reflect the active mode's binding. This prevents user confusion when the same key has different effects depending on context.
+
+Reserve a key for a single global action if possible. If a key must be overloaded, clearly document the active binding in the footer bar for the current mode.

@@ -24,8 +24,8 @@ Follow these rules when writing new `.asm` files or editing existing ones to kee
 | File Structure           | 49   | Top-to-bottom layout for every `.asm` file                          |
 | Directives               | 65   | `processor 6502` and `org $0401` placement                          |
 | Equates                  | 83   | Global hardware equates, grouping and alignment rules               |
-| Zero Page Usage          | 107  | Parameter blocks, borrowing `$FB`-`$FE`, save/restore discipline    |
-| BASIC Stub               | 169  | Standard SYS1038 stub with `nextline:` and `old_pcr:`               |
+| Zero Page Usage          | 107  | Parameter blocks, borrowing `$FB`-`$FE`, save/restore, indirect addressing limitation |
+| BASIC Stub               | 222  | Standard SYS1038 stub with `nextline:` and `old_pcr:`               |
 | Labels                   | 199  | Spacing, naming, colon rules, subroutine boundaries                 |
 | Instruction Formatting   | 256  | Indentation, tab-stop comments, operand rules                       |
 | Comment Placement        | 284  | Block intent comments, label description comments                   |
@@ -166,6 +166,58 @@ src_hi  = $F8
 ```
 
 Only `$FF` and `$A2` are documented unused by PET BASIC 2 and may be used without saving.
+
+### Indirect Indexed Addressing Limitation
+
+The 6502 supports only **one** indirect indexed addressing mode: `(zp),y`. There is no `(zp),x` mode. DASM will reject `(zp),x` with `error: Illegal Addressing mode`.
+
+This constraint matters when a loop needs to index both a source buffer and a destination (e.g., copying data from a file buffer to screen RAM). Since Y is the only register that works with `(zp),y`, you cannot use two indirect pointers simultaneously with independent indices.
+
+**Wrong** (will not assemble):
+
+```asm
+        lda (src_ptr),x          ; ERROR: no (zp),x mode on 6502
+        sta (dst_ptr),y
+```
+
+**Solution 1: Save/restore Y** -- Use Y for one pointer and a temp variable for the other index:
+
+```asm
+        ldy #0
+loop:
+        lda (src_ptr),y          ; read source via (zp),y
+        sty ytmp                 ; save source index
+        ldy dst_col              ; load destination column
+        sta (dst_ptr),y          ; write destination via (zp),y
+        inc dst_col
+        ldy ytmp                 ; restore source index
+        iny
+        cpy #count
+        bne loop
+```
+
+**Solution 2: Advance the pointer** -- Instead of indexing, advance the zero-page pointer itself after each byte:
+
+```asm
+        ldy #0
+loop:
+        lda (src_ptr),y
+        sta (dst_ptr),y
+        inc src_lo               ; advance source pointer
+        bne skip_src_hi
+        inc src_hi
+skip_src_hi:
+        inc dst_lo               ; advance destination pointer
+        bne skip_dst_hi
+        inc dst_hi
+skip_dst_hi:
+        dex
+        bne loop
+```
+
+Solution 1 is preferred when the source and destination indices differ (e.g., source starts at 0, destination starts at column 1). Solution 2 is simpler when both pointers advance in lockstep.
+
+## BASIC Stub
 
 ## BASIC Stub
 
@@ -551,14 +603,14 @@ Two fixes exist. Both are correct:
 ```asm
 ; FIX 1: txa after sta -- bne tests X (counter)
         dex
-        lda BUFFER+$300-1,x
-        sta SCREEN+$300-1,x
+        lda BUFFER+$300,x
+        sta SCREEN+$300,x
         txa
         bne copy_loop
 
 ; FIX 2: dex after sta -- bne tests X (counter)
-        lda BUFFER+$300-1,x
-        sta SCREEN+$300-1,x
+        lda BUFFER+$300,x
+        sta SCREEN+$300,x
         dex
         bne copy_loop
 ```

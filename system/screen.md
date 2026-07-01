@@ -32,6 +32,8 @@ This file covers PET 3032 screen I/O in four progressive layers:
 | PETSCII Control Codes   | 340  | CHROUT control code table                                     |
 | Character Sets          | 364  | Uppercase/graphics vs lowercase/text, PCR switching           |
 | Double Buffering        | 421  | Back buffer, VBLANK sync, copy routine, tail flag hazard, bounded poll, common mistakes |
+| Raw Screen Codes        | 619  | Storing byte values directly as screen codes for hex viewer ASCII columns |
+| Frame Composition       | 650  | Drawing order for bordered frames with header, content, and footer       |
 
 ## Screen RAM Layout
 
@@ -615,4 +617,156 @@ The buffer copy runs inside VBLANK, so the user never sees a partially updated s
 | Writing past `$83E7` in copy tail                    | Overwrites KERNAL vars or I/O registers              | Use the 768 + 232 split, never a 4-page loop                     |
 | Forgetting to clear BUFFER in init                   | First blit shows garbage from uninitialized RAM     | Call `clear_screen` (writing to `BUFFER`) before first redraw    |
 | Calling `present_screen` inside a tight poll loop    | Wastes cycles on redundant blits                     | Call only after a redraw or interactive update                    |
+
+## Raw Screen Codes
+
+When displaying binary data (e.g., a hex viewer's ASCII column), each byte can be written directly to screen RAM as a screen code without PETSCII conversion. The character ROM maps every byte value `$00`-`$FF` to a glyph (or reversed glyph for `$80`-`$FF`).
+
+### Direct Byte-to-Screen Mapping
+
+Store the raw byte value at the screen position. No `petscii_to_screen` conversion, no dot substitution:
+
+```asm
+        lda (data_ptr),y        ; load raw byte from file buffer
+        sta (screen_ptr),y      ; store directly as screen code
+```
+
+| Byte Value | Screen Code | Glyph (uppercase set)     |
+|------------|-------------|---------------------------|
+| `$00`      | `$00`       | `@`                       |
+| `$01`      | `$01`       | `A`                       |
+| `$0B`      | `$0B`       | `K` (graphics glyph)      |
+| `$20`      | `$20`       | space                     |
+| `$41`      | `$41`       | graphics glyph (not 'A')  |
+| `$F8`      | `$F8`       | reversed graphics glyph   |
+| `$FF`      | `$FF`       | reversed `@` (solid block)|
+
+### When to Use Raw Screen Codes vs PETSCII Conversion
+
+| Scenario                          | Approach                | Reason                                     |
+|-----------------------------------|-------------------------|--------------------------------------------|
+| Displaying text from a file       | `petscii_to_screen`     | File data is PETSCII; needs conversion     |
+| Hex viewer ASCII column           | Raw screen code         | Shows exact byte value; no conversion      |
+| Non-printable byte placeholder    | `$2E` (dot)             | User needs a visible "not printable" marker|
+| Reversed text in a title bar      | `petscii_to_screen` + `ora #$80` | Text is PETSCII; reverse for emphasis |
+
+### Why No Dot Substitution for Raw Display
+
+In a hex viewer, the ASCII column is a visual representation of the raw byte value. Substituting dots for "non-printable" bytes hides information that the user might need (e.g., distinguishing `$00` from `$20`). By showing the raw screen code, every byte produces a visible glyph -- the user sees exactly what the byte maps to in the character ROM, including graphics characters and reversed characters for bytes `$80`-`$FF`.
+
+### Indirect Addressing for Dual-Pointer Rendering
+
+When rendering content from a data buffer to screen RAM, two zero-page pointers are needed: one for the source data and one for the destination screen row. The 6502 only supports `(zp),y` indirect indexed addressing -- there is no `(zp),x` mode.
+
+This means Y must be used for the pointer offset. When both source and destination need indexed access in the same loop, save/restore Y via a temp variable:
+
+```asm
+; src_ptr -> data buffer, dst_ptr -> screen row
+        ldy #0                   ; Y indexes source data
+        ldx #1                   ; X tracks screen column (col 1 inside frame)
+data_loop:
+        cpy valid_count
+        bcs pad_loop
+        lda (src_ptr),y          ; load source byte via (zp),y
+        pha                      ; save byte
+        txa                      ; X -> A for screen column
+        tay                      ; screen column -> Y
+        pla                      ; restore byte
+        sta (dst_ptr),y          ; store to screen via (zp),y
+        inx                      ; next screen column
+        txa
+        pha                      ; save screen column
+        ; ... restore Y for next source index
+```
+
+A cleaner approach uses a temp variable for the screen column and keeps Y for the source:
+
+```asm
+        ldy #0                   ; Y indexes source data
+        lda #1
+        sta screen_col           ; screen column starts at 1
+data_loop:
+        cpy valid_count
+        bcs pad_loop
+        lda (src_ptr),y          ; load source byte
+        ; ... convert if needed ...
+        sty ytmp                 ; save source index
+        ldy screen_col
+        sta (dst_ptr),y          ; store to screen
+        inc screen_col
+        ldy ytmp                 ; restore source index
+        iny
+        cpy #COLS_PER_ROW
+        bcc data_loop
+```
+
+## Frame Composition
+
+A full-screen UI with a bordered frame (header, content area, footer) requires a specific drawing order to avoid overwriting borders with content.
+
+### Drawing Order
+
+1. **Clear the back buffer** (`clear_screen` -- fills BUFFER with spaces)
+2. **Draw the header bar** (row 0 -- reverse-video bar with half-block borders)
+3. **Draw the frame borders** (top border, bottom border, side borders, internal dividers)
+4. **Draw the content** (rows 2-22 -- content renderer fills the area inside the frame)
+5. **Draw the footer bar** (row 24 -- reverse-video bar with shortcut labels)
+6. **Present the screen** (`present_screen` -- VBLANK-synced copy from BUFFER to SCREEN)
+
+### Why This Order Matters
+
+- The header and footer are drawn before the frame borders so that the frame's top and bottom borders (rows 1 and 23) do not overlap.
+- The frame borders are drawn before the content so that the content renderer can skip border columns (cols 0 and 39) and internal divider columns, writing only to the inner content area.
+- The content renderer does not need to clear the content area because `clear_screen` already filled it with spaces.
+- All drawing targets the back buffer (BUFFER at `$7C00`), not screen RAM. The final `present_screen` call copies the completed frame to screen RAM during VBLANK.
+
+### Content Area Boundaries
+
+When a frame occupies rows 1-23 with borders at columns 0 and 39, the content area is rows 2-22, columns 1-38 (21 rows x 38 columns = 798 cells). The content renderer must start at column 1 (not 0) and stop at column 38 (not 39):
+
+```asm
+        ldx #2                   ; first content row
+content_row:
+        stx row_tmp
+        jsr row_addr_sp          ; set sp_lo/sp_hi to BUFFER row address
+        ldy #1                   ; start at col 1 (inside left border)
+        ; ... render up to 38 bytes ...
+        ; ... pad with spaces up to col 38 ...
+        ldx row_tmp
+        inx
+        cpx #23                  ; rows 2..22 (21 rows)
+        bne content_row
+```
+
+### Row Address Helper
+
+A `row_addr_sp` routine converts a row number in X to a BUFFER address in `sp_lo`/`sp_hi`:
+
+```asm
+BUFFER  = $7C00
+
+row_addr_sp:
+        lda #<BUFFER
+        sta sp_lo
+        lda #>BUFFER
+        sta sp_hi
+        txa
+        asl                     ; A = row * 2
+        asl                     ; A = row * 4
+        asl                     ; A = row * 8
+        sta tmp
+        asl                     ; A = row * 16
+        asl                     ; A = row * 32
+        clc
+        adc tmp                 ; A = row * 40
+        clc
+        adc sp_lo
+        sta sp_lo
+        lda sp_hi
+        adc #0
+        sta sp_hi
+        rts
+```
+
+This computes `BUFFER + row * 40` using shifts instead of multiplication. The result is a zero-page pointer pair that supports `(sp_lo),y` indirect indexed writes to any column in the row.
 

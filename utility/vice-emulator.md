@@ -21,7 +21,8 @@
 | Running a PRG                       | 132  | Autostart modes, why disk autostart is most reliable                       |
 | Headless Debugging                  | 186  | Remote monitor over TCP, cycle limits, screen dumps, warp timing, Windows  |
 | Decoding Screen Codes               | 413  | Reading dumped `$8000-$83E7` bytes back into characters; row arithmetic    |
-| Signal-Byte Tracing                 | 466  | Writing trace bytes to safe RAM to locate crash points                     |
+| Keyboard Buffer Injection           | 466  | Writing to `$026F`/`$009E` to simulate key presses for automated testing   |
+| Signal-Byte Tracing                 | 514  | Writing trace bytes to safe RAM to locate crash points                     |
 | Memory Landmarks                    | 514  | Addresses worth checking during diagnostics                                |
 | Verifying KERNAL Jump Table Entries | 542  | Disassembling `$FFC0-$FFEA`; PET vs C64 entry differences                  |
 | Diagnosing Crashes                  | 580  | SYNTAX ERROR from bad KERNAL calls, KERNAL hang, SP depth, VIA PCR hazard  |
@@ -462,6 +463,100 @@ Each row is 40 bytes. Row N starts at `$8000 + N * 40` (`$28` per row):
 A `?SYNTAX ERROR IN 10` message at row 1 (`$8028`) but not row 0 means the program ran long enough to clear the screen (moving cursor to row 0), then returned to BASIC which printed the error on the next line. The clear-screen happened; the crash came _after_ init.
 
 A `?SYNTAX ERROR IN 10` at row 0 means the screen was never cleared -- BASIC parsed and rejected the BASIC stub without the program's init ever running.
+
+## Keyboard Buffer Injection
+
+The PET KERNAL keyboard buffer at `$026F` (10 bytes, count at `$009E`) can be written directly via the remote monitor to simulate key presses. This enables automated UI testing without physical keyboard input.
+
+### Basic Injection
+
+Use the monitor's `>` (memory write) command to place a PETSCII code in the buffer and set the count:
+
+```
+> $026F 56
+> $009E 01
+```
+
+This injects PETSCII `$56` ('V') and sets the buffer count to 1. The program's `GETIN` loop will return this key on the next call.
+
+### Python Helper for Sequential Key Injection
+
+When testing interactive programs (file viewers, menus, dialogs), inject keys one at a time with delays to let the program process each key and redraw:
+
+```python
+import socket, time
+
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.connect(('127.0.0.1', 6512))
+s.settimeout(2.0)
+
+def cmd(c):
+    s.sendall((c + "\n").encode())
+    time.sleep(0.3)
+    data = b""
+    try:
+        while True:
+            chunk = s.recv(4096)
+            if not chunk: break
+            data += chunk
+    except socket.timeout:
+        pass
+    return data.decode("ascii", errors="replace")
+
+def inject_key(petscii, delay=3):
+    """Inject a single key into the KERNAL keyboard buffer."""
+    cmd(f"> $026F {petscii:02X}")
+    cmd("> $009E 01")
+    time.sleep(delay)  # let the program process the key and redraw
+
+def dump_row(row):
+    """Dump a 40-byte screen row as hex."""
+    addr = 0x8000 + row * 40
+    return cmd(f"m ${addr:04X} ${addr+39:04X}")
+
+# Example: test a file viewer
+inject_key(0x56)   # 'V' -- open viewer
+print(dump_row(0)) # check header bar
+print(dump_row(2)) # check first content row
+
+inject_key(0x48)   # 'H' -- switch to hex mode
+print(dump_row(2)) # verify hex layout
+
+inject_key(0x1D)   # cursor RIGHT -- page down
+print(dump_row(2)) # verify scrolled content
+
+inject_key(0x45)   # 'E' -- exit viewer
+print(dump_row(0)) # verify returned to main screen
+
+s.close()
+```
+
+### Timing and Warp Mode
+
+In warp mode (`-warp`), the emulator runs much faster than real time. A 3-second wall-clock delay may correspond to many seconds of emulated time -- usually enough for the program to process a key and redraw. If the program has a long redraw cycle (e.g., decompressing a large frame), increase the delay.
+
+If keys are injected faster than the program can process them, the 10-byte buffer may overflow and keys will be lost. Inject one key at a time and wait for the screen to update before injecting the next.
+
+### Verifying Screen Output After Injection
+
+After injecting a key and waiting, dump the relevant screen rows and decode the screen codes (see Decoding Screen Codes above). Compare the decoded output against the expected UI state.
+
+For reverse-video bars (header/footer), remember that bytes with bit 7 set (`$80`-`$FF`) are reversed. Strip bit 7 before decoding to read the underlying character.
+
+### Common Test Key Codes
+
+| Key          | PETSCII | Hex   |
+|--------------|---------|-------|
+| Letters A-Z  | A-Z     | `$41`-`$5A` |
+| Cursor up    |         | `$91` |
+| Cursor down  |         | `$11` |
+| Cursor left  |         | `$9D` |
+| Cursor right |         | `$1D` |
+| HOME         |         | `$13` |
+| RETURN       |         | `$0D` |
+| RUN/STOP     |         | `$03` |
+
+See `system/keyboard.md` "Keyboard Buffer Injection" for the full buffer layout and assembly-level injection techniques.
 
 ## Signal-Byte Tracing
 
