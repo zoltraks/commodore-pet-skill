@@ -149,16 +149,9 @@ Assembly source uses the column positions defined in `code/standard.md`.
 
 ### Equate Style
 
-Define equates using `=` with enough padding to align the `=` at the correct column.
+Code examples in documentation must follow the assembly style conventions described in `code/standard.md`.
 
-Do not use the `equ` keyword in documentation examples.
-
-```asm
-SCREEN  = $8000
-GETIN   = $FFE4
-CHROUT  = $FFD2
-STATUS  = $0096
-```
+Do not use the `equ` keyword in documentation examples; use `=`.
 
 ### Standalone Programs vs. Snippets
 

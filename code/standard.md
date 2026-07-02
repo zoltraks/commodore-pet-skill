@@ -85,23 +85,25 @@ Always `$0401` for PET BASIC stub programs, at column 8:
 
 ### Global Hardware Equates
 
-Declared at the top of the file, before `org`. Names are `UPPER_SNAKE_CASE`. The `=` sign is placed at column 8 (one extra space per name as needed to reach that column). Values are followed by inline comments at column 25 when a description is needed.
+Declared at the top of the file, before `org`. Names are `UPPER_SNAKE_CASE`. Within each contiguous equate group, the `=` sign is aligned in a single column, placed one space after the longest constant name in that group. Shorter names are padded with spaces so their `=` lines up. Inline comments within a group are aligned to the same tab-stop column (see Inline Comment Alignment below).
 
 ```asm
-SCREEN  = $8000
-GETIN   = $FFE4
-CHROUT  = $FFD2         ; KERNAL: Output character
-
-PCR     = $E84C         ; PET Character Set Register
-PCR_U   = $0C           ; uppercase / graphics charset (PCR bits 3:1 = 110)
-PCR_L   = $0E           ; lowercase / text charset (PCR bits 3:1 = 111)
+SCREEN      = $8000
+BUFFER      = $7C00     ; 1000-byte back buffer, page-aligned
+VIA_PORTB   = $E840     ; VIA port B (PB5 = VBLANK signal)
+RETRACE_BIT = $20       ; PB5 mask: LOW during VBLANK
+PCR         = $E84C     ; VIA Peripheral Control Register
+PCR_U       = $0C       ; PCR bits 3:1 = 110 -> uppercase/graphics set
+PCR_L       = $0E       ; PCR bits 3:1 = 111 -> lowercase/text set
 ```
 
 Rules:
 
 - Group logically related equates together (screen, KERNAL, hardware registers).
 - Separate groups with a single blank line.
-- Equates without comments need no alignment padding beyond the column 8 `=`.
+- Within each group, align all `=` signs to one space after the longest name. The alignment column is determined per group, not globally.
+- Equates without comments still pad to the group's `=` column.
+- Inline comments within a group align to the same tab-stop column, determined by the longest content among lines that have comments.
 - Do not describe what a hardware address physically is if the name already encodes it.
 - Always use "KERNAL" (uppercase) when referring to Commodore KERNAL routines.
 
@@ -251,9 +253,9 @@ Do not insert any code or data ahead of the stub. Anything placed before it shif
 
 ## Labels
 
-Labels are declared at column 0, always on their own line. Every label is preceded by exactly one blank line and followed by exactly one blank line before the first instruction or directive. The first label immediately after a section header does not require an additional blank line before it.
+Labels are declared at column 0. A code label (a label on its own line, with no instruction or data after the colon) is always preceded by exactly one blank line and followed by exactly one blank line before the first instruction or directive. One blank line, not zero and not two.
 
-This rule applies to all labels without exception:
+This rule applies to all code labels without exception:
 
 - **Global labels** (`start:`, `decompress_lz4:`)
 - **Local labels** (`@fn_scan:`, `@fd_done:`) -- DASM local labels follow the same spacing rules
@@ -271,24 +273,31 @@ copy_loop_2:
         sta SCREEN+$300,x
 ```
 
-Consecutive data labels in a compact variable declaration block do not require a blank line between them, but each still must be followed by a blank line before the data directive:
+A compact data label has its data directive on the same line as the label (e.g. `byte`, `word`, `ds`). Consecutive compact data labels in a declaration block do not require blank lines between them, since the label and its data form a single logical line:
 
 ```asm
-frame_idx_lo:
+frame_idx_lo:    byte $00
+frame_idx_hi:    byte $00
+```
 
-        byte $00
+A code label (label on its own line, no data after the colon) always gets exactly one blank line before and after, even when consecutive:
 
-frame_idx_hi:
+```asm
+        rts
 
-        byte $00
+copy_loop_2:
+
+        lda screen_data+$300,x
+        sta SCREEN+$300,x
 ```
 
 Rules:
 
 - Names are `snake_case`.
 - No colon on equate names. Colons appear only on labels that represent addresses.
-- Never place an instruction on the same line as a label.
-- Never omit the blank line after a label.
+- Never place an instruction on the same line as a code label.
+- Code labels: exactly one blank line before and one after. Not zero, not two.
+- Compact data labels: no blank line required between consecutive declarations in the same block.
 - Never use two or more consecutive blank lines anywhere in the file.
 - After a subroutine's final `rts`, there must be exactly one blank line before the next subroutine or section header begins.
 
@@ -315,13 +324,14 @@ Instructions are indented 8 spaces (one indent level). There is no use of tabs.
         sta old_pcr
 ```
 
-Inline comments on instructions use tab-stop alignment. The first tab stop is column 33. If the instruction extends to column 32 or beyond, shift the comment to the next tab stop at column 41. Continue shifting by 8-column increments (49, 57, 65, and so on) as needed. There must always be at least two spaces between the end of the instruction and the semicolon.
+Inline comments on instructions use tab-stop alignment. Within a contiguous code block (a run of instructions between blank lines, labels, or comment blocks), all inline comments align to the same tab-stop column. The minimum tab stop for instruction comments is column 33. If any instruction in the block that has a comment extends past column 31, the comment column shifts to the next tab stop (41, 49, 57, 65, and so on). There must be at least one space between the end of the instruction and the semicolon. See Inline Comment Alignment below for the full rule.
 
 ```asm
-        lda #$93                ; PETSCII CLR/HOME
-        lda ($FB),y             ; Check compression flag
-        sta $FD                 ; Stash token
-        lda #<animation_sequence        ; Restart from beginning
+        ldy #2                  ; type at record offset 2 (already screen code)
+        lda (sp_lo),y
+        ora #$80                ; reverse video
+        ldy #38
+        sta (dp_lo),y
 ```
 
 Rules:
@@ -336,9 +346,36 @@ Rules:
 
 ## Comment Placement
 
+### Full-Line Comments
+
+A full-line comment is a line whose first non-whitespace character is `;` and that carries no instruction or data. Section banners, descriptive blocks, and standalone annotations are all full-line comments.
+
+When a full-line comment (or a block of consecutive full-line comment lines) appears in the file, it must be surrounded by exactly one blank line before and after. One blank line, not zero and not two.
+
+```asm
+PET_FNLEN       = $D1        ; filename length
+PET_FNADR_LO    = $DA        ; filename address low
+PET_FNADR_HI    = $DB        ; filename address high
+
+; ---- KERNAL zero-page mirrors -------------------------
+
+STATUS = $0096
+BLNSW  = $00A7
+```
+
+Rules:
+
+- Exactly one blank line before the first comment line of the block.
+- Exactly one blank line after the last comment line of the block.
+- No blank lines between consecutive comment lines within the same block.
+- Never use two or more consecutive blank lines anywhere in the file.
+- The first line of the file and the line after `org` are exempt: a comment block at the very top of the file needs no blank line before it.
+
 ### Block Intent Comments
 
-A comment that describes what a block of code does must be placed as an inline comment on the first instruction of that block. It must never appear as a standalone `;` comment line above the block.
+A comment that describes what a single block of code does should be placed as an inline comment on the first instruction of that block. Prefer inline comments over standalone `;` lines for brief block-intent notes.
+
+When a standalone full-line comment is used for a longer explanation that does not fit inline, it follows the full-line comment spacing rule above.
 
 ```asm
 ; BAD -- standalone comment line
@@ -369,7 +406,7 @@ frame_0:                ; frame 0 compressed data
         byte $00,$00,$66,$00
 ```
 
-Label description comments start at column 25, with the same tab-stop fallback rule as instruction comments if the label name is unusually long.
+Label description comments start at column 25, with the same tab-stop fallback rule as inline comments (33, 41, 49, ...) if the label name is unusually long.
 
 ### Inline Comment Guidelines
 
@@ -385,6 +422,47 @@ Do not comment what the mnemonic already says. Do not leave commented-out code.
 ### File-Level Comments
 
 Major section banners serve as the file-level structural comments. No file header block or author line is used.
+
+## Inline Comment Alignment
+
+Within a group of related lines (a contiguous equate group, a compact data declaration block, or a code block between blank lines, labels, or comment blocks), all inline comments start at the same column. The column is a tab stop: a multiple of 8 plus 1 (1, 9, 17, 25, 33, 41, 49, 57, 65, ...). There must be at least one space between the end of the content and the semicolon.
+
+The comment column is determined per group:
+
+- Find the longest content (everything before the `;`) among lines in the group that have inline comments. Lines without comments do not push the column.
+- The comment column is the smallest tab stop that is greater than the longest content end, with a minimum tab stop depending on the group type:
+  - **Equate groups and compact data label groups** (lines at column 0): minimum tab stop is 25.
+  - **Code blocks** (lines indented 8 spaces): minimum tab stop is 33.
+
+A continuation comment is a standalone comment line indented to more than 8 spaces (aligned to the group's inline comment column). It is part of the group, not a block-level comment. Continuation comments do not have content before the `;` and do not count toward the longest content. They align to the group's comment column and have no blank line between them and adjacent group lines.
+
+```asm
+PANEL_ROWS  = 18        ; visible directory rows in each panel (rows 4..21)
+PANEL_WIDTH = 20        ; columns per panel including frame borders
+PANEL_INNER = 18        ; inner content columns (excluding frame borders)
+MAX_ENTRY   = 64        ; entries per panel
+ENT_SIZE    = 20        ; bytes per entry record
+                        ; layout: blo, bhi, type, name[16], pad
+```
+
+A block comment is a standalone comment indented to exactly 8 spaces (the code indent level). It is a structural comment, not part of the inline comment group. Block comments keep blank lines around them and are not aligned to the inline comment column.
+
+```asm
+        ; ---- Type char at col 38 (reversed) ----
+
+        ldy #2                  ; type at record offset 2 (already screen code)
+        lda (sp_lo),y
+        ora #$80                ; reverse video
+```
+
+Rules:
+
+- Tab stops are at columns 1, 9, 17, 25, 33, 41, 49, 57, 65, ... (8k+1 for k = 0, 1, 2, ...).
+- At least one space between the end of the content and the `;`.
+- All inline comments in a group share the same column.
+- Lines without comments do not affect the column calculation.
+- Continuation comments (> 8-space indent) are part of the group: no blank lines around them, aligned to the group's comment column.
+- Block comments (8-space indent) are structural: blank lines around them, not aligned to the inline comment column.
 
 ## Routine Conventions
 
@@ -550,11 +628,10 @@ Column numbers are 1-indexed: the first character of a line is column 1.
 | Labels                           | 0                                           |
 | `processor`, `org` directives    | 8                                           |
 | Instructions and data directives | 8                                           |
-| `=` in global equates            | 8                                           |
-| `=` in zero page equate group    | 16                                          |
-| Inline comments on equates       | 25                                          |
-| Inline comments on labels        | 25                                          |
-| Inline comments on instructions  | 33, 41, 49, 57, 65, ... (tab stops every 8) |
+| `=` in equate groups             | one space after longest name in group       |
+| Inline comments (equates/data)   | min 25, then 33, 41, ... (per group)        |
+| Inline comments (instructions)   | min 33, then 41, 49, ... (per group)        |
+| Inline comments on labels        | 25, then 33, 41, ... (tab stops every 8)    |
 
 ## 6502 Flag Semantics
 
