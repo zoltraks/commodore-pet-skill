@@ -129,6 +129,10 @@ Use this table to pick the right file without reading every option above.
 | Load a PRG or data file from tape or disk      | `system/load.md`            |                             |
 | Scan the keyboard or detect keypresses         | `system/keyboard.md`        |                             |
 | Identify a physical key or its keycap label    | `system/keyboard.md`        |                             |
+| Debounce a toggle key (menu open/close)        | `system/keyboard.md`        | `system/irq.md`             |
+| Drain the keyboard buffer                      | `system/keyboard.md`        |                             |
+| Display inverse-video text from PETSCII        | `system/screen.md`          |                             |
+| Debug keyboard logic under VICE warp mode      | `utility/vice-emulator.md`  | `system/keyboard.md`        |
 | Open, read, or write a sequential file         | `system/file.md`            | `example/file.md`           |
 | Read a file in chunks (partial load)           | `system/file.md`            |                             |
 | Save and restore zero-page around KERNAL       | `system/file.md`            |                             |

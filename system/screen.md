@@ -25,15 +25,15 @@ This file covers PET 3032 screen I/O in four progressive layers:
 | Section                 | Line | What it covers                                                |
 |-------------------------|------|---------------------------------------------------------------|
 | Screen RAM Layout       | 35   | Base address, 40x25 layout, row address table, 1000-byte rule |
-| PETSCII vs Screen Codes | 115  | Conversion table, CHROUT vs direct write                      |
-| Cursor Control          | 144  | KERNAL cursor routines, PLOT, TAB                             |
-| Clear and Home          | 170  | CLR/HOME PETSCII, clear screen routine                        |
-| Reverse Video           | 207  | Bit 7, RVS on/off, highlight_row routine                      |
-| PETSCII Control Codes   | 340  | CHROUT control code table                                     |
-| Character Sets          | 364  | Uppercase/graphics vs lowercase/text, PCR switching, charset-aware label rendering |
-| Double Buffering        | 446  | Back buffer, VBLANK sync, copy routine, tail flag hazard, bounded poll, deferred charset flush, common mistakes |
-| Raw Screen Codes        | 704  | Storing byte values directly as screen codes for hex viewer ASCII columns |
-| Frame Composition       | 786  | Drawing order for bordered frames with header, content, and footer       |
+| PETSCII vs Screen Codes | 118  | Conversion table, working converter, inverse video from PETSCII |
+| Cursor Control          | 180  | KERNAL cursor routines, PLOT, TAB                             |
+| Clear and Home          | 206  | CLR/HOME PETSCII, clear screen routine                        |
+| Reverse Video           | 243  | Bit 7, RVS on/off, highlight_row routine                      |
+| PETSCII Control Codes   | 376  | CHROUT control code table                                     |
+| Character Sets          | 400  | Uppercase/graphics vs lowercase/text, PCR switching, charset-aware label rendering |
+| Double Buffering        | 482  | Back buffer, VBLANK sync, copy routine, tail flag hazard, bounded poll, deferred charset flush, common mistakes |
+| Raw Screen Codes        | 740  | Storing byte values directly as screen codes for hex viewer ASCII columns |
+| Frame Composition       | 822  | Drawing order for bordered frames with header, content, and footer       |
 
 ## Screen RAM Layout
 
@@ -125,10 +125,45 @@ PETSCII (the character codes used in BASIC strings and CHROUT) differ from scree
 |---------------------------|---------------------|-------------------|
 | $00-$1F (control)         | undefined           | undefined         |
 | $20-$3F (symbols/numbers) | subtract $00 (same) | add $00 (same)    |
-| $40-$5F (@, A-O)          | subtract $40        | add $40           |
-| $60-$7F (P-Z, etc.)       | subtract $20        | add $20           |
-| $C0-$DF (graphics)        | subtract $80        | add $80           |
-| $A0-$BF                   | subtract $40        | add $40           |
+| $40-$5F (@, A-Z, brackets) | subtract $40       | add $40           |
+| $60-$7F (graphics)        | subtract $20        | add $20           |
+| $A0-$BF (shifted graphics)| subtract $40        | add $40           |
+| $C0-$FF (reversed @, A-Z) | subtract $80        | add $80           |
+
+On the PET, `$60-$7F` are graphics characters (not lowercase letters as on the C64). Programs that only display ASCII-range text (letters, digits, punctuation) can simplify the converter by passing `$60-$7F` through unchanged, since those values are never produced by normal text input.
+
+### Working Converter
+
+A compact `petscii_to_screen` routine that handles all ranges needed for UI text:
+
+```asm
+petscii_to_screen:
+
+        cmp #$20
+        bcc p2s_done            ; control codes pass through
+        cmp #$40
+        bcc p2s_done            ; $20-$3F unchanged
+        cmp #$60
+        bcc p2s_sub40           ; $40-$5F: subtract $40
+        cmp #$80
+        bcc p2s_done            ; $60-$7F unchanged (rare in text)
+        cmp #$C0
+        bcc p2s_sub40           ; $80-$BF: subtract $40
+        ; $C0-$FF: subtract $80
+        sec
+        sbc #$80
+        rts
+
+p2s_sub40:
+
+        sec
+        sbc #$40
+        rts
+
+p2s_done:
+
+        rts
+```
 
 ### Common Characters
 
@@ -142,7 +177,20 @@ PETSCII (the character codes used in BASIC strings and CHROUT) differ from scree
 | ]     | $5D     | $1D         |
 | _     | $A4     | $64         |
 
-**Reverse video:** OR with `$80` to set bit 7. `AND #$7F` to clear.
+### Inverse Video from PETSCII
+
+Inverse video does not require a separate PETSCII-to-ASCII conversion. Convert PETSCII to screen code first, then set bit 7 with `ORA #$80`. The conversion and the reverse-bit setting are independent operations:
+
+```asm
+        lda #$41                ; PETSCII 'A'
+        jsr petscii_to_screen   ; A = $01 (screen code for 'A')
+        ora #$80                ; A = $81 (reversed 'A')
+        sta (screen_ptr),y      ; store to screen RAM
+```
+
+This works for all printable characters. Do not OR `$80` before calling `petscii_to_screen` -- the conversion routine treats `$80-$BF` as a different PETSCII range (shifted graphics), which would produce the wrong screen code. Always convert first, then set the reverse bit.
+
+To clear reverse video: `and #$7F`.
 
 ## Cursor Control
 

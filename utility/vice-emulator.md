@@ -22,12 +22,12 @@
 | c1541 Disk Image Building           | 171  | Building D64s, "readme" hang bug, interactive mode, filename case folding  |
 | Headless Debugging                  | 186  | Remote monitor over TCP, cycle limits, screen dumps, warp timing, Windows  |
 | Decoding Screen Codes               | 413  | Reading dumped `$8000-$83E7` bytes back into characters; row arithmetic    |
-| Keyboard Buffer Injection           | 466  | Writing to `$026F`/`$009E` to simulate key presses for automated testing   |
+| Keyboard Buffer Injection           | 466  | Writing to `$026F`/`$009E` to simulate key presses; warp mode and auto-repeat hazards |
 | Signal-Byte Tracing                 | 514  | Writing trace bytes to safe RAM to locate crash points                     |
 | Memory Landmarks                    | 514  | Addresses worth checking during diagnostics                                |
 | Verifying KERNAL Jump Table Entries | 542  | Disassembling `$FFC0-$FFEA`; PET vs C64 entry differences                  |
 | Diagnosing Crashes                  | 580  | SYNTAX ERROR from bad KERNAL calls, KERNAL hang, SP depth, VIA PCR hazard  |
-| Debugging Workflow                  | 638  | Step-by-step recipe: check if program ran, breakpoint, step, watch, trace  |
+| Debugging Workflow                  | 638  | Step-by-step recipe: check if program ran, breakpoint, step, watch, trace, keyboard input logic |
 | Built-in Monitor                    | 737  | Opening the monitor, full command reference, register modification, memory |
 | Breakpoints                         | 888  | initbreak, break, watch, trace, conditional, warp-mode timing              |
 | Monitor Scripts                     | 937  | moncommands file for automated debug sessions                              |
@@ -567,6 +567,30 @@ In warp mode (`-warp`), the emulator runs much faster than real time. A 3-second
 
 If keys are injected faster than the program can process them, the 10-byte buffer may overflow and keys will be lost. Inject one key at a time and wait for the screen to update before injecting the next.
 
+### Warp Mode and Keyboard Auto-Repeat
+
+The KERNAL 60 Hz IRQ keyboard scan auto-repeats held keys into the keyboard buffer (see `system/keyboard.md` "Auto-Repeat"). Under warp mode, the IRQ runs orders of magnitude faster than real time, so auto-repeat fills the buffer in milliseconds of wall-clock time. This causes three debugging problems:
+
+1. **Toggle key bugs reproduce more aggressively under warp.** A menu that opens and closes on the same key will appear to open and instantly close, because the auto-repeated key is already in the buffer by the time the menu's input loop calls `GETIN`. On real hardware the user releases the key within ~100 ms; under warp the repeat fires before the user can react.
+
+2. **Injected keys can be overwritten by the IRQ scan.** When you inject a key via `> $026F XX` followed by `> $009E 01`, the 60 Hz IRQ scan may fire between your two monitor commands and overwrite `$026F` with an auto-repeated key from the (simulated) held key. The injected key never reaches `GETIN`. If `GETIN` returns an unexpected value after injection, check `$026F` and `$009E` immediately before the `GETIN` call to see whether the injection survived.
+
+3. **Buffer drain loops can hang.** A `flush_keys` routine that loops `GETIN` until `$00` may never terminate under warp if a key is auto-repeating: the IRQ refills the buffer faster than the drain loop empties it. This is not a bug in the drain logic -- it is an artifact of warp mode. Test buffer drain logic with warp off.
+
+**Recommendation**: when debugging keyboard input logic, toggle keys, menu open/close behavior, or any code that calls `GETIN` in a loop, run xpet **without `-warp`**. Use warp only for boot-to-crash tests and screen capture verification. For keyboard logic debugging, connect the remote monitor, set breakpoints, and step through `GETIN` calls in real time.
+
+To toggle warp during a monitor session:
+
+```
+warp off
+```
+
+Step through the key handling code, then re-enable warp if needed:
+
+```
+warp on
+```
+
 ### Verifying Screen Output After Injection
 
 After injecting a key and waiting, dump the relevant screen rows and decode the screen codes (see Decoding Screen Codes above). Compare the decoded output against the expected UI state.
@@ -585,6 +609,8 @@ For reverse-video bars (header/footer), remember that bytes with bit 7 set (`$80
 | HOME         |         | `$13` |
 | RETURN       |         | `$0D` |
 | RUN/STOP     |         | `$03` |
+| RVS ON (Tab) |         | `$12` |
+| RVS OFF (Shift+Tab) | | `$92` |
 
 See `system/keyboard.md` "Keyboard Buffer Injection" for the full buffer layout and assembly-level injection techniques.
 
@@ -858,6 +884,77 @@ bt
 ```
 
 Output shows stack offsets relative to SP+1, most recent call first. This helps identify unexpected recursion or a subroutine called from the wrong place.
+
+### Step 7: Debug Keyboard Input Logic
+
+When a program's key handling behaves wrong (a key does nothing, or a toggle key opens and immediately closes an element), use the remote monitor to inject keys and trace the dispatch path. This is more reliable than pressing keys in the emulator window, because the monitor gives exact control over timing and lets you inspect the keyboard buffer between key presses.
+
+**Run without warp.** Keyboard auto-repeat runs at the 60 Hz IRQ rate; under warp the buffer fills in milliseconds of wall-clock time, which makes toggle-key bugs reproduce differently than on real hardware. See "Warp Mode and Keyboard Auto-Repeat" above.
+
+```bash
+xpet -model 3032 -drive8type 2031 \
+     -remotemonitor -remotemonitoraddress 127.0.0.1:6502 \
+     -moncommands debug.mon \
+     -autostart work.d64 > /tmp/xpet.log 2>&1 &
+```
+
+**Set breakpoints at the key dispatch points.** Identify the addresses of the `GETIN` call site, the key comparison chain, and the open/close routines. Put them in a monitor script:
+
+```bash
+cat > debug.mon << 'EOF'
+break $0440
+break $0490
+break $0548
+x
+EOF
+```
+
+In this example, `$0440` is the `GETIN` call in `main_loop`, `$0490` is the `GETIN` call in `ml_wait` (the menu input loop), and `$0548` is `do_menu_close`. If both `$0490` and `$0548` fire from a single key injection, the menu is opening and closing on the same key press -- an auto-repeat problem.
+
+**Inject a key and let the breakpoint fire.** Connect to the monitor, inject the key, and wait for the breakpoint:
+
+```
+> $026F 4D
+> $009E 01
+x
+```
+
+This injects PETSCII `$4D` ('M') and lets the CPU run. When the breakpoint at the `GETIN` call site fires, check what `GETIN` returned:
+
+```
+r
+```
+
+The accumulator (A) holds the PETSCII code returned by `GETIN`. If A is `$00`, the buffer was already drained (the IRQ scan may have cleared it, or a previous `GETIN` consumed it). If A matches the injected key, step forward to see which dispatch branch is taken.
+
+**Inspect the keyboard buffer.** After a `GETIN` call, dump the buffer to see whether auto-repeat has already queued another copy of the same key:
+
+```
+m $009E
+m $026F $0278
+```
+
+`$009E` is the buffer count. If it is nonzero after `GETIN` returned the toggle key, the 60 Hz IRQ has already auto-repeated the key into the buffer. The next `GETIN` in the menu's input loop will return the same key and close the menu immediately. This is the definitive diagnosis of the toggle-key auto-repeat bug.
+
+**Trace the dispatch path.** Step through the key comparison chain to confirm which branch fires:
+
+```
+z
+```
+
+After each `cmp`/`beq` pair, check whether the branch was taken. If the "close menu" branch fires immediately after the "open menu" branch, the auto-repeated key is the cause. The fix is the toggle-key debounce pattern in `system/keyboard.md` "Toggle Key Debounce".
+
+**Compare warp on vs off.** If the bug reproduces under warp but not with warp off, it is likely a timing-dependent auto-repeat or buffer-overflow artifact, not a logic bug. Always confirm keyboard logic fixes with warp off before re-enabling warp for other tests.
+
+**Inject key sequences with delays.** For multi-step interactions (open menu, move selection, close menu), inject one key at a time with a delay between each, re-setting breakpoints as needed:
+
+```
+> $026F 4D
+> $009E 01
+x
+```
+
+Wait for the breakpoint, inspect state, then inject the next key. Do not fill the buffer with multiple keys at once -- the 10-byte limit and auto-repeat interaction make the result unpredictable.
 
 ## Built-in Monitor
 

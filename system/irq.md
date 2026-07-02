@@ -145,6 +145,16 @@ If you replace CINV entirely and do not chain, you must:
 
 Most programs should chain rather than replace, unless they have very tight timing requirements.
 
+### 60 Hz IRQ and Keyboard Auto-Repeat
+
+The KERNAL keyboard scan that runs in the 60 Hz IRQ handler does more than just detect keypresses -- it also **auto-repeats** held keys into the keyboard buffer. Each scan cycle that finds a key still pressed appends its PETSCII code to the buffer (up to the 10-byte limit).
+
+This means:
+
+- If you replace CINV and do not chain to the KERNAL handler, `GETIN` will return nothing -- the keyboard buffer is never filled. You must implement your own keyboard scan, including repeat logic if you want it.
+- If you chain to the KERNAL handler (the normal case), auto-repeat is always active. Programs that use `GETIN` to toggle UI elements on a single key must debounce the toggle key themselves. See `system/keyboard.md` "Toggle Key Debounce".
+- Under VICE warp mode, the 60 Hz IRQ runs much faster than real time, so auto-repeat fills the buffer in milliseconds of wall-clock time. See `utility/vice-emulator.md` "Warp Mode and Keyboard Auto-Repeat".
+
 ## VBLANK Polling (No IRQ)
 
 To synchronize to VBLANK without enabling interrupts, poll VIA PORT B bit 5. The signal is LOW during VBLANK (vertical retrace) and HIGH during active display.
@@ -232,3 +242,4 @@ A 256-iteration bound per phase is approximately 2 ms at 1 MHz. See `system/scre
 | Don't restore CINV on exit       | KERNAL broken after program exits     | Save `old_cinv`, restore in cleanup                 |
 | Use `JSR` to chain               | `RTI` returns to wrong address        | Use `JMP` to chain to KERNAL handler                |
 | Unbounded PB5 poll under VICE    | Program hangs -- bit never toggles    | Bound each phase to 256 iterations                  |
+| No debounce on a GETIN toggle key | Auto-repeat closes UI element immediately | Store toggle key + set countdown timer; see `system/keyboard.md` "Toggle Key Debounce" |

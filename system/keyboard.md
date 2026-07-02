@@ -20,16 +20,18 @@ This file covers PET 3032 keyboard input in four progressive layers:
 
 ## Quick-Lookup
 
-| Need                                 | Section                  |
-|--------------------------------------|--------------------------|
-| Read a key via KERNAL                | KERNAL GETIN             |
-| Check STOP key                       | STOP Key                 |
-| Physical layout of keys and segments | Physical Key Layout      |
-| Scan a specific key directly         | Direct Matrix Scan       |
-| Detect simultaneous key presses      | Multi-Key Detection      |
-| Full matrix layout                   | Keyboard Matrix Map      |
-| PETSCII code for a key               | Common PETSCII Key Codes |
-| Keyboard buffer structure and injection | Keyboard Buffer Injection |
+| Need                                 | Section                       |
+|--------------------------------------|-------------------------------|
+| Read a key via KERNAL                | KERNAL GETIN                  |
+| Check STOP key                       | STOP Key                      |
+| Physical layout of keys and segments | Physical Key Layout           |
+| Scan a specific key directly         | Direct Matrix Scan            |
+| Detect simultaneous key presses      | Multi-Key Detection           |
+| Full matrix layout                   | Keyboard Matrix Map           |
+| PETSCII code for a key               | Common PETSCII Key Codes      |
+| Stop auto-repeat from closing a menu | Toggle Key Debounce           |
+| Discard all pending keys             | Draining the Keyboard Buffer  |
+| Keyboard buffer structure and injection | Keyboard Buffer Injection   |
 
 ## Physical Key Layout
 
@@ -70,6 +72,8 @@ Several keys send different PETSCII codes depending on SHIFT state, following th
 | INST DEL        | DELETE (`$14`)       | INSERT (`$94`)      |
 
 RVS ON/OFF codes are documented in `system/screen.md`. The remaining codes appear in Common PETSCII Key Codes below.
+
+The OFF RVS key is the physical Tab key on the PET 3032 graphics keyboard. Unshifted it sends RVS OFF (`$92`), shifted it sends RVS ON (`$12`). These codes can be used as application-defined toggle keys (e.g. menu open/close) since they are rarely needed for their original reverse-video purpose in machine-code programs that write directly to screen RAM.
 
 SHIFT LOCK mechanically latches the keyboard in the shifted state; it is a separate physical key from the two SHIFT keys in row 4 of the main segment.
 
@@ -246,6 +250,8 @@ These are the PETSCII values returned by GETIN for commonly used keys.
 | Home            | 19      | $13     |
 | CLR/HOME        | 147     | $93     |
 | RUN/STOP        | 3       | $03     |
+| RVS ON (Tab)    | 18      | $12     |
+| RVS OFF (Shift+Tab) | 146 | $92     |
 | F1              | 133     | $85     |
 | F3              | 134     | $86     |
 | F5              | 135     | $87     |
@@ -270,11 +276,70 @@ If the buffer is full, additional keystrokes are discarded.
 
 ### Debounce
 
-The KERNAL keyboard scan debounces keys automatically.
+The KERNAL keyboard scan debounces the initial keypress automatically -- a single tap produces one character, not a burst.
 
 Direct matrix scanning has no debounce.
 
 Add a delay or counter-based debounce in your scan loop if needed.
+
+### Auto-Repeat
+
+The KERNAL IRQ keyboard scan **auto-repeats** any key that is held down. The 60 Hz scan detects that the key is still pressed and appends the same PETSCII code to the keyboard buffer on each subsequent scan cycle, up to the 10-byte buffer limit.
+
+This is distinct from debounce: debounce prevents duplicate entries on the initial press, while auto-repeat deliberately generates duplicates while the key remains held.
+
+Auto-repeat is the default KERNAL behavior. There is no KERNAL call to disable it. Programs that use GETIN must handle repeated keys themselves.
+
+### Toggle Key Debounce
+
+When a single key toggles a UI element (e.g. `M` opens and closes a menu), auto-repeat causes the element to open and immediately close: the repeated key is read by the element's own input loop and interpreted as a "close" action before the user releases the key.
+
+**Pattern**: store the toggle key's PETSCII code and set a countdown timer when the element opens or closes. While the timer is nonzero, ignore any `GETIN` result matching the stored key. Decrement the timer each loop iteration.
+
+```asm
+GETIN        = $FFE4
+menu_active  = $0444           ; 0 = closed, 1 = open
+menu_debounce = $0445          ; countdown timer (frames)
+menu_open_key = $0446          ; PETSCII code of the toggle key
+
+        ; --- opening the menu ---
+do_menu_open:
+
+        lda #1
+        sta menu_active
+        lda key_val
+        sta menu_open_key       ; remember which key opened it
+        lda #30                 ; ~0.5 s at 60 Hz
+        sta menu_debounce
+        rts
+
+        ; --- menu input loop ---
+ml_wait:
+
+        ldx menu_debounce       ; decrement timer
+        beq ml_no_db
+        dex
+        stx menu_debounce
+ml_no_db:
+
+        jsr GETIN
+        beq ml_wait
+        sta key_val
+        lda menu_debounce       ; during debounce, ignore toggle key
+        beq ml_check_keys
+        lda key_val
+        cmp menu_open_key
+        beq ml_wait             ; swallow auto-repeated toggle key
+ml_check_keys:
+
+        ; ... handle arrow keys, Return, etc. ...
+        ; ... if toggle key pressed again (after debounce), close menu ...
+        rts
+```
+
+Apply the same debounce after closing: store the close key in `menu_open_key`, set `menu_debounce`, and ignore that key in `main_loop` until the timer expires. This prevents the close key's auto-repeat from immediately re-opening the element.
+
+A timer value of 30 (half a second at 60 Hz) is a practical minimum. Too short and the user has not released the key yet; too long and the toggle feels sluggish.
 
 ### PIA 1 DDR and Initial State
 
@@ -291,6 +356,24 @@ The PET keyboard matrix has no diodes.
 With three or more keys pressed simultaneously, a phantom keypress may be detected on unintended rows.
 
 This is normal hardware behavior.
+
+### Draining the Keyboard Buffer
+
+To discard all pending keys (e.g. after a UI state transition where auto-repeated keys should not carry over), loop `GETIN` until it returns `$00`:
+
+```asm
+flush_keys:
+
+        jsr GETIN
+        bne flush_keys          ; loop until buffer empty
+        rts
+```
+
+**Pitfalls**:
+
+- Do not call `flush_keys` before the key that triggered the current action has been processed by `GETIN`. If the triggering key is still in the buffer, the drain will consume it and the action's own logic will never see it.
+- Under VICE warp mode, the 60 Hz IRQ can refill the buffer with auto-repeated keys faster than the drain loop empties it, causing an infinite loop. See `utility/vice-emulator.md` "Warp Mode and Keyboard Auto-Repeat".
+- Use `flush_keys` as a one-shot cleanup after a state transition is complete, not as a busy-wait.
 
 ## Keyboard Buffer Injection
 
