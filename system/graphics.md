@@ -21,21 +21,21 @@ This file covers PET 3032 semigraphics and UI drawing techniques in four progres
 
 ## Contents
 
-| Section                 | Line | What it covers                                                      |
-|-------------------------|------|---------------------------------------------------------------------|
-| Semigraphics Characters | 36   | Block, fill, quarter-block, center-line, edge-line character tables |
-| Box Drawing Styles      | 100  | Four styles: center-line, thick, medium, thin; choosing a style     |
-| Center-Line Connectors  | 186  | Full connector set: corners, T-junctions, cross, grid frame example |
-| Drawing Routines        | 240  | draw_box_xy, horizontal/vertical dividers, fill_rect, progress bar  |
-| Double-Density Plotting | 743  | 80x50 pixel grid via 2x2 quadrant chars; quadrant map; plot_point   |
-| Title Bar               | 859  | Reverse-video full-width title/status bar                           |
-| Option Markers          | 870  | Checkbox markers for both character sets, toggle routine            |
-| Vertical Bar Graphs     | 950  | 4-bit value bars, 2-cell fill characters, lookup table, draw_bar    |
-| Screen Scrolling        | 1061 | Software scroll-up by copying screen RAM                            |
-| Half-Block Borders      | 1095 | Half-block characters for header/footer bar edges                   |
-| Mixed Reverse Video     | 1130 | Mixing reversed and normal characters within one row                |
-| Divided Frame Layout    | 1175 | T-junctions on top/bottom borders, vertical dividers on content rows|
-| Header and Footer Bars  | 1220 | Bordered reverse-video bars with dynamic content and shortcut labels|
+| Section                 | Line | What it covers                                                       |
+|-------------------------|------|----------------------------------------------------------------------|
+| Semigraphics Characters | 36   | Block, fill, quarter-block, center-line, edge-line character tables  |
+| Box Drawing Styles      | 100  | Four styles: center-line, thick, medium, thin; choosing a style      |
+| Center-Line Connectors  | 186  | Full connector set: corners, T-junctions, cross, grid frame example  |
+| Drawing Routines        | 240  | draw_box_xy, horizontal/vertical dividers, fill_rect, progress bar   |
+| Double-Density Plotting | 743  | 80x50 pixel grid via 2x2 quadrant chars; quadrant map; plot_point    |
+| Title Bar               | 859  | Reverse-video full-width title/status bar                            |
+| Option Markers          | 870  | Checkbox markers for both character sets, toggle routine             |
+| Vertical Bar Graphs     | 950  | 4-bit value bars, 2-cell fill characters, lookup table, draw_bar     |
+| Screen Scrolling        | 1061 | Software scroll-up by copying screen RAM                             |
+| Half-Block Borders      | 1095 | Half-block characters for header/footer bar edges                    |
+| Mixed Reverse Video     | 1130 | Mixing reversed and normal characters within one row                 |
+| Divided Frame Layout    | 1175 | T-junctions on top/bottom borders, vertical dividers on content rows |
+| Header and Footer Bars  | 1220 | Bordered reverse-video bars with dynamic content and shortcut labels |
 
 ## Semigraphics Characters
 
@@ -1103,10 +1103,10 @@ The half-block characters produce clean vertical edges for reverse-video bars. W
 
 ### Half-Block Characters for Bar Edges
 
-| Screen Code | Reversed | Pixel Pattern     | Description                     |
-|-------------|----------|-------------------|---------------------------------|
+| Screen Code | Reversed | Pixel Pattern       | Description                       |
+|-------------|----------|---------------------|-----------------------------------|
 | `$61`       | `$E1`    | `####....` all rows | Left half block (left 4px filled) |
-| `$62`       | `$E2`    | rows 4-7 solid    | Lower half block                 |
+| `$62`       | `$E2`    | rows 4-7 solid      | Lower half block                  |
 
 `$61` is the left half block: the left 4 columns of the 8x8 cell are filled. `$E1` is `$61` with bit 7 set (reversed), which inverts to the **right** 4 columns filled. Together they form a matched pair for bar edges:
 

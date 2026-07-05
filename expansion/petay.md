@@ -21,11 +21,11 @@ The AY-8910 chips run at a 1 MHz internal clock. This clock frequency determines
 
 The PetAY can be installed in one of three expansion ROM sockets on the PET motherboard. The socket determines the base address:
 
-| Socket | Base     | High byte |
-|--------|----------|-----------|
-| $9xxx  | `$9000`  | `$90`     |
-| $Axxx  | `$A000`  | `$A0`     |
-| $Bxxx  | `$B000`  | `$B0`     |
+| Socket | Base    | High byte |
+|--------|---------|-----------|
+| $9xxx  | `$9000` | `$90`     |
+| $Axxx  | `$A000` | `$A0`     |
+| $Bxxx  | `$B000` | `$B0`     |
 
 The default installation is `$A000`. The board decodes only the first 4 bytes of the selected page.
 
@@ -129,16 +129,16 @@ Divider values for equal-temperament notes, calculated for 1 MHz clock:
 
 The mixer register controls which channels produce tone and which produce noise. A bit value of 0 enables the function, 1 disables it.
 
-| Bit | 0 = Enable      | 1 = Disable         |
-|-----|-----------------|---------------------|
-| 0   | Channel A tone  | Channel A tone off  |
-| 1   | Channel B tone  | Channel B tone off  |
-| 2   | Channel C tone  | Channel C tone off  |
-| 3   | Channel A noise | Channel A noise off |
-| 4   | Channel B noise | Channel B noise off |
-| 5   | Channel C noise | Channel C noise off |
-| 6   | I/O port A: input  | I/O port A: output  |
-| 7   | I/O port B: input  | I/O port B: output  |
+| Bit | 0 = Enable        | 1 = Disable         |
+|-----|-------------------|---------------------|
+| 0   | Channel A tone    | Channel A tone off  |
+| 1   | Channel B tone    | Channel B tone off  |
+| 2   | Channel C tone    | Channel C tone off  |
+| 3   | Channel A noise   | Channel A noise off |
+| 4   | Channel B noise   | Channel B noise off |
+| 5   | Channel C noise   | Channel C noise off |
+| 6   | I/O port A: input | I/O port A: output  |
+| 7   | I/O port B: input | I/O port B: output  |
 
 PetAY does not connect the I/O ports; always write 0 to bits 6-7 to leave them as inputs.
 

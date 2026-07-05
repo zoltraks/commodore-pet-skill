@@ -22,18 +22,18 @@ This file covers PET 3032 screen I/O in four progressive layers:
 
 ## Contents
 
-| Section                 | Line | What it covers                                                |
-|-------------------------|------|---------------------------------------------------------------|
-| Screen RAM Layout       | 35   | Base address, 40x25 layout, row address table, 1000-byte rule |
-| PETSCII vs Screen Codes | 118  | Conversion table, working converter, inverse video from PETSCII |
-| Cursor Control          | 180  | KERNAL cursor routines, PLOT, TAB                             |
-| Clear and Home          | 206  | CLR/HOME PETSCII, clear screen routine                        |
-| Reverse Video           | 243  | Bit 7, RVS on/off, highlight_row routine                      |
-| PETSCII Control Codes   | 376  | CHROUT control code table                                     |
-| Character Sets          | 400  | Uppercase/graphics vs lowercase/text, PCR switching, charset-aware label rendering |
+| Section                 | Line | What it covers                                                                                                  |
+|-------------------------|------|-----------------------------------------------------------------------------------------------------------------|
+| Screen RAM Layout       | 35   | Base address, 40x25 layout, row address table, 1000-byte rule                                                   |
+| PETSCII vs Screen Codes | 118  | Conversion table, working converter, inverse video from PETSCII                                                 |
+| Cursor Control          | 180  | KERNAL cursor routines, PLOT, TAB                                                                               |
+| Clear and Home          | 206  | CLR/HOME PETSCII, clear screen routine                                                                          |
+| Reverse Video           | 243  | Bit 7, RVS on/off, highlight_row routine                                                                        |
+| PETSCII Control Codes   | 376  | CHROUT control code table                                                                                       |
+| Character Sets          | 400  | Uppercase/graphics vs lowercase/text, PCR switching, charset-aware label rendering                              |
 | Double Buffering        | 482  | Back buffer, VBLANK sync, copy routine, tail flag hazard, bounded poll, deferred charset flush, common mistakes |
-| Raw Screen Codes        | 740  | Storing byte values directly as screen codes for hex viewer ASCII columns |
-| Frame Composition       | 822  | Drawing order for bordered frames with header, content, and footer       |
+| Raw Screen Codes        | 740  | Storing byte values directly as screen codes for hex viewer ASCII columns                                       |
+| Frame Composition       | 822  | Drawing order for bordered frames with header, content, and footer                                              |
 
 ## Screen RAM Layout
 
@@ -121,14 +121,14 @@ PETSCII (the character codes used in BASIC strings and CHROUT) differ from scree
 
 ### Conversion Rules
 
-| Range                     | PETSCII to Screen   | Screen to PETSCII |
-|---------------------------|---------------------|-------------------|
-| $00-$1F (control)         | undefined           | undefined         |
-| $20-$3F (symbols/numbers) | subtract $00 (same) | add $00 (same)    |
-| $40-$5F (@, A-Z, brackets) | subtract $40       | add $40           |
-| $60-$7F (graphics)        | subtract $20        | add $20           |
-| $A0-$BF (shifted graphics)| subtract $40        | add $40           |
-| $C0-$FF (reversed @, A-Z) | subtract $80        | add $80           |
+| Range                      | PETSCII to Screen   | Screen to PETSCII |
+|----------------------------|---------------------|-------------------|
+| $00-$1F (control)          | undefined           | undefined         |
+| $20-$3F (symbols/numbers)  | subtract $00 (same) | add $00 (same)    |
+| $40-$5F (@, A-Z, brackets) | subtract $40        | add $40           |
+| $60-$7F (graphics)         | subtract $20        | add $20           |
+| $A0-$BF (shifted graphics) | subtract $40        | add $40           |
+| $C0-$FF (reversed @, A-Z)  | subtract $80        | add $80           |
 
 On the PET, `$60-$7F` are graphics characters (not lowercase letters as on the C64). Programs that only display ASCII-range text (letters, digits, punctuation) can simplify the converter by passing `$60-$7F` through unchanged, since those values are never produced by normal text input.
 
@@ -739,15 +739,15 @@ The buffer copy runs inside VBLANK, so the user never sees a partially updated s
 
 ### Common Mistakes
 
-| Mistake                                                            | Consequence                                          | Fix                                                                  |
-|--------------------------------------------------------------------|------------------------------------------------------|----------------------------------------------------------------------|
-| `bne copy_tail` after `lda` in copy tail                           | Loop tests loaded byte, not counter; X wraps past 0 | Insert `txa` before `bne`, or move `dex` after `sta`                 |
-| `BUFFER+$300-1,x` in copy tail (off-by-one)                        | Last screen byte (row 24 col 39) never copied        | Use `BUFFER+$300,x` without the `-1` offset                          |
-| Unbounded VBLANK poll under VICE                                   | Program hangs -- PB5 never toggles                   | Bound each phase to 256 iterations                                   |
-| Writing past `$83E7` in copy tail                                  | Overwrites KERNAL vars or I/O registers              | Use the 768 + 232 split, never a 4-page loop                         |
-| Forgetting to clear BUFFER in init                                 | First blit shows garbage from uninitialized RAM     | Call `clear_screen` (writing to `BUFFER`) before first redraw        |
-| Calling `present_screen` inside a tight poll loop                  | Wastes cycles on redundant blits                     | Call only after a redraw or interactive update                        |
-| Writing PCR charset immediately in a double-buffered program       | Old frame flashes under new charset for one frame    | Stage the PCR write and flush it during VBLANK alongside the blit    |
+| Mistake                                                      | Consequence                                         | Fix                                                               |
+|--------------------------------------------------------------|-----------------------------------------------------|-------------------------------------------------------------------|
+| `bne copy_tail` after `lda` in copy tail                     | Loop tests loaded byte, not counter; X wraps past 0 | Insert `txa` before `bne`, or move `dex` after `sta`              |
+| `BUFFER+$300-1,x` in copy tail (off-by-one)                  | Last screen byte (row 24 col 39) never copied       | Use `BUFFER+$300,x` without the `-1` offset                       |
+| Unbounded VBLANK poll under VICE                             | Program hangs -- PB5 never toggles                  | Bound each phase to 256 iterations                                |
+| Writing past `$83E7` in copy tail                            | Overwrites KERNAL vars or I/O registers             | Use the 768 + 232 split, never a 4-page loop                      |
+| Forgetting to clear BUFFER in init                           | First blit shows garbage from uninitialized RAM     | Call `clear_screen` (writing to `BUFFER`) before first redraw     |
+| Calling `present_screen` inside a tight poll loop            | Wastes cycles on redundant blits                    | Call only after a redraw or interactive update                    |
+| Writing PCR charset immediately in a double-buffered program | Old frame flashes under new charset for one frame   | Stage the PCR write and flush it during VBLANK alongside the blit |
 
 ## Raw Screen Codes
 
@@ -762,24 +762,24 @@ Store the raw byte value at the screen position. No `petscii_to_screen` conversi
         sta (screen_ptr),y      ; store directly as screen code
 ```
 
-| Byte Value | Screen Code | Glyph (uppercase set)     |
-|------------|-------------|---------------------------|
-| `$00`      | `$00`       | `@`                       |
-| `$01`      | `$01`       | `A`                       |
-| `$0B`      | `$0B`       | `K` (graphics glyph)      |
-| `$20`      | `$20`       | space                     |
-| `$41`      | `$41`       | graphics glyph (not 'A')  |
-| `$F8`      | `$F8`       | reversed graphics glyph   |
-| `$FF`      | `$FF`       | reversed `@` (solid block)|
+| Byte Value | Screen Code | Glyph (uppercase set)      |
+|------------|-------------|----------------------------|
+| `$00`      | `$00`       | `@`                        |
+| `$01`      | `$01`       | `A`                        |
+| `$0B`      | `$0B`       | `K` (graphics glyph)       |
+| `$20`      | `$20`       | space                      |
+| `$41`      | `$41`       | graphics glyph (not 'A')   |
+| `$F8`      | `$F8`       | reversed graphics glyph    |
+| `$FF`      | `$FF`       | reversed `@` (solid block) |
 
 ### When to Use Raw Screen Codes vs PETSCII Conversion
 
-| Scenario                          | Approach                | Reason                                     |
-|-----------------------------------|-------------------------|--------------------------------------------|
-| Displaying text from a file       | `petscii_to_screen`     | File data is PETSCII; needs conversion     |
-| Hex viewer ASCII column           | Raw screen code         | Shows exact byte value; no conversion      |
-| Non-printable byte placeholder    | `$2E` (dot)             | User needs a visible "not printable" marker|
-| Reversed text in a title bar      | `petscii_to_screen` + `ora #$80` | Text is PETSCII; reverse for emphasis |
+| Scenario                       | Approach                         | Reason                                      |
+|--------------------------------|----------------------------------|---------------------------------------------|
+| Displaying text from a file    | `petscii_to_screen`              | File data is PETSCII; needs conversion      |
+| Hex viewer ASCII column        | Raw screen code                  | Shows exact byte value; no conversion       |
+| Non-printable byte placeholder | `$2E` (dot)                      | User needs a visible "not printable" marker |
+| Reversed text in a title bar   | `petscii_to_screen` + `ora #$80` | Text is PETSCII; reverse for emphasis       |
 
 ### Why No Dot Substitution for Raw Display
 

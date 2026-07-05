@@ -18,25 +18,25 @@ Follow these rules when writing new `.asm` files or editing existing ones to kee
 
 ## Contents
 
-| Section                  | Line | What it covers                                                      |
-|--------------------------|------|---------------------------------------------------------------------|
-| Toolchain                | 40   | DASM invocation, target CPU, hardware, load address                 |
-| File Structure           | 49   | Top-to-bottom layout for every `.asm` file                          |
-| Directives               | 65   | `processor 6502` and `org $0401` placement                          |
-| Equates                  | 83   | Global hardware equates, grouping and alignment rules               |
+| Section                  | Line | What it covers                                                                        |
+|--------------------------|------|---------------------------------------------------------------------------------------|
+| Toolchain                | 40   | DASM invocation, target CPU, hardware, load address                                   |
+| File Structure           | 49   | Top-to-bottom layout for every `.asm` file                                            |
+| Directives               | 65   | `processor 6502` and `org $0401` placement                                            |
+| Equates                  | 83   | Global hardware equates, grouping and alignment rules                                 |
 | Zero Page Usage          | 107  | Parameter blocks, borrowing `$FB`-`$FE`, save/restore, indirect addressing limitation |
-| BASIC Stub               | 222  | Standard SYS1038 stub with `nextline:` and `old_pcr:`               |
-| Labels                   | 199  | Spacing, naming, colon rules, subroutine boundaries                 |
-| Instruction Formatting   | 256  | Indentation, tab-stop comments, operand rules                       |
-| Comment Placement        | 284  | Block intent comments, label description comments                   |
-| Routine Conventions      | 336  | Contracts, scratch registers, error signalling, self-modifying code |
-| Section Headers          | 371  | Major and minor banner format                                       |
-| Data Directives          | 397  | `byte`, `word`, string bytes, screen row layout                     |
-| Screen RAM Operations    | 442  | 1000-byte screen invariant, 768+232 clear/fill/copy pattern         |
-| End-of-File Format       | 472  | Trailing blank line rule                                            |
-| Naming Conventions       | 476  | Convention table for all identifier kinds, abbreviations            |
-| Column Alignment Summary | 491  | Column position table for every source element                      |
-| 6502 Flag Semantics      | 506  | Flag-affecting instructions, branch-after-load bug, BIT A-AND-operand hazard |
+| BASIC Stub               | 222  | Standard SYS1038 stub with `nextline:` and `old_pcr:`                                 |
+| Labels                   | 199  | Spacing, naming, colon rules, subroutine boundaries                                   |
+| Instruction Formatting   | 256  | Indentation, tab-stop comments, operand rules                                         |
+| Comment Placement        | 284  | Block intent comments, label description comments                                     |
+| Routine Conventions      | 336  | Contracts, scratch registers, error signalling, self-modifying code                   |
+| Section Headers          | 371  | Major and minor banner format                                                         |
+| Data Directives          | 397  | `byte`, `word`, string bytes, screen row layout                                       |
+| Screen RAM Operations    | 442  | 1000-byte screen invariant, 768+232 clear/fill/copy pattern                           |
+| End-of-File Format       | 472  | Trailing blank line rule                                                              |
+| Naming Conventions       | 476  | Convention table for all identifier kinds, abbreviations                              |
+| Column Alignment Summary | 491  | Column position table for every source element                                        |
+| 6502 Flag Semantics      | 506  | Flag-affecting instructions, branch-after-load bug, BIT A-AND-operand hazard          |
 
 ## Toolchain
 
@@ -623,15 +623,15 @@ Abbreviations are allowed when they are conventional for the platform: `lo`, `hi
 
 Column numbers are 1-indexed: the first character of a line is column 1.
 
-| Element                          | Column                                      |
-|----------------------------------|---------------------------------------------|
-| Labels                           | 0                                           |
-| `processor`, `org` directives    | 8                                           |
-| Instructions and data directives | 8                                           |
-| `=` in equate groups             | one space after longest name in group       |
-| Inline comments (equates/data)   | min 25, then 33, 41, ... (per group)        |
-| Inline comments (instructions)   | min 33, then 41, 49, ... (per group)        |
-| Inline comments on labels        | 25, then 33, 41, ... (tab stops every 8)    |
+| Element                          | Column                                   |
+|----------------------------------|------------------------------------------|
+| Labels                           | 0                                        |
+| `processor`, `org` directives    | 8                                        |
+| Instructions and data directives | 8                                        |
+| `=` in equate groups             | one space after longest name in group    |
+| Inline comments (equates/data)   | min 25, then 33, 41, ... (per group)     |
+| Inline comments (instructions)   | min 33, then 41, 49, ... (per group)     |
+| Inline comments on labels        | 25, then 33, 41, ... (tab stops every 8) |
 
 ## 6502 Flag Semantics
 

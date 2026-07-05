@@ -234,12 +234,12 @@ A 256-iteration bound per phase is approximately 2 ms at 1 MHz. See `system/scre
 
 ## Common Mistakes
 
-| Mistake                          | Consequence                           | Fix                                                 |
-|----------------------------------|---------------------------------------|-----------------------------------------------------|
-| Skip `$E812` read                | IRQ re-fires, CPU locked              | Always read `$E812` (PIA1 Port B) in VBLANK handler |
-| Skip `CLD`                       | Wrong ADC/SBC results in handler      | Add `CLD` after register saves                      |
-| No `SEI`/`CLI` around CINV write | IRQ fires during partial vector write | Always bracket CINV update with SEI/CLI             |
-| Don't restore CINV on exit       | KERNAL broken after program exits     | Save `old_cinv`, restore in cleanup                 |
-| Use `JSR` to chain               | `RTI` returns to wrong address        | Use `JMP` to chain to KERNAL handler                |
-| Unbounded PB5 poll under VICE    | Program hangs -- bit never toggles    | Bound each phase to 256 iterations                  |
+| Mistake                           | Consequence                               | Fix                                                                                    |
+|-----------------------------------|-------------------------------------------|----------------------------------------------------------------------------------------|
+| Skip `$E812` read                 | IRQ re-fires, CPU locked                  | Always read `$E812` (PIA1 Port B) in VBLANK handler                                    |
+| Skip `CLD`                        | Wrong ADC/SBC results in handler          | Add `CLD` after register saves                                                         |
+| No `SEI`/`CLI` around CINV write  | IRQ fires during partial vector write     | Always bracket CINV update with SEI/CLI                                                |
+| Don't restore CINV on exit        | KERNAL broken after program exits         | Save `old_cinv`, restore in cleanup                                                    |
+| Use `JSR` to chain                | `RTI` returns to wrong address            | Use `JMP` to chain to KERNAL handler                                                   |
+| Unbounded PB5 poll under VICE     | Program hangs -- bit never toggles        | Bound each phase to 256 iterations                                                     |
 | No debounce on a GETIN toggle key | Auto-repeat closes UI element immediately | Store toggle key + set countdown timer; see `system/keyboard.md` "Toggle Key Debounce" |

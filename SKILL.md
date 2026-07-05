@@ -48,8 +48,8 @@ Read these files for chip register behavior, timing, and hardware-level facts.
 
 Read these files for add-on cards and peripherals not part of the stock PET 3032.
 
-| File                 | Read when the task involves                                                           |
-|----------------------|---------------------------------------------------------------------------------------|
+| File                 | Read when the task involves                                                                                                                     |
+|----------------------|-------------------------------------------------------------------------------------------------------------------------------------------------|
 | `expansion/petay.md` | PetAY dual AY-8910 sound board, stereo I/O at $9000/$A000/$B000 (configurable base), register map, frequency dividers, read-is-write limitation |
 
 ### System Software

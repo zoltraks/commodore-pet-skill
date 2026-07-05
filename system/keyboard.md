@@ -20,18 +20,18 @@ This file covers PET 3032 keyboard input in four progressive layers:
 
 ## Quick-Lookup
 
-| Need                                 | Section                       |
-|--------------------------------------|-------------------------------|
-| Read a key via KERNAL                | KERNAL GETIN                  |
-| Check STOP key                       | STOP Key                      |
-| Physical layout of keys and segments | Physical Key Layout           |
-| Scan a specific key directly         | Direct Matrix Scan            |
-| Detect simultaneous key presses      | Multi-Key Detection           |
-| Full matrix layout                   | Keyboard Matrix Map           |
-| PETSCII code for a key               | Common PETSCII Key Codes      |
-| Stop auto-repeat from closing a menu | Toggle Key Debounce           |
-| Discard all pending keys             | Draining the Keyboard Buffer  |
-| Keyboard buffer structure and injection | Keyboard Buffer Injection   |
+| Need                                    | Section                      |
+|-----------------------------------------|------------------------------|
+| Read a key via KERNAL                   | KERNAL GETIN                 |
+| Check STOP key                          | STOP Key                     |
+| Physical layout of keys and segments    | Physical Key Layout          |
+| Scan a specific key directly            | Direct Matrix Scan           |
+| Detect simultaneous key presses         | Multi-Key Detection          |
+| Full matrix layout                      | Keyboard Matrix Map          |
+| PETSCII code for a key                  | Common PETSCII Key Codes     |
+| Stop auto-repeat from closing a menu    | Toggle Key Debounce          |
+| Discard all pending keys                | Draining the Keyboard Buffer |
+| Keyboard buffer structure and injection | Keyboard Buffer Injection    |
 
 ## Physical Key Layout
 
@@ -237,28 +237,28 @@ left_shift_only:
 
 These are the PETSCII values returned by GETIN for commonly used keys.
 
-| Key             | PETSCII | Hex     |
-|-----------------|---------|---------|
-| Space           | 32      | $20     |
-| Return          | 13      | $0D     |
-| Delete/Back     | 20      | $14     |
-| Insert          | 148     | $94     |
-| Cursor up       | 145     | $91     |
-| Cursor down     | 17      | $11     |
-| Cursor left     | 157     | $9D     |
-| Cursor right    | 29      | $1D     |
-| Home            | 19      | $13     |
-| CLR/HOME        | 147     | $93     |
-| RUN/STOP        | 3       | $03     |
-| RVS ON (Tab)    | 18      | $12     |
-| RVS OFF (Shift+Tab) | 146 | $92     |
-| F1              | 133     | $85     |
-| F3              | 134     | $86     |
-| F5              | 135     | $87     |
-| F7              | 136     | $88     |
-| A-Z (shifted)   | 65-90   | $41-$5A |
-| A-Z (unshifted) | 65-90   | $41-$5A |
-| 0-9             | 48-57   | $30-$39 |
+| Key                 | PETSCII | Hex     |
+|---------------------|---------|---------|
+| Space               | 32      | $20     |
+| Return              | 13      | $0D     |
+| Delete/Back         | 20      | $14     |
+| Insert              | 148     | $94     |
+| Cursor up           | 145     | $91     |
+| Cursor down         | 17      | $11     |
+| Cursor left         | 157     | $9D     |
+| Cursor right        | 29      | $1D     |
+| Home                | 19      | $13     |
+| CLR/HOME            | 147     | $93     |
+| RUN/STOP            | 3       | $03     |
+| RVS ON (Tab)        | 18      | $12     |
+| RVS OFF (Shift+Tab) | 146     | $92     |
+| F1                  | 133     | $85     |
+| F3                  | 134     | $86     |
+| F5                  | 135     | $87     |
+| F7                  | 136     | $88     |
+| A-Z (shifted)       | 65-90   | $41-$5A |
+| A-Z (unshifted)     | 65-90   | $41-$5A |
+| 0-9                 | 48-57   | $30-$39 |
 
 **Note:** On the PET, upper and lower case letters are returned as the same PETSCII code regardless of SHIFT when using GETIN.
 
@@ -381,10 +381,10 @@ The KERNAL keyboard buffer can be written directly to simulate key presses. This
 
 ### Buffer Layout
 
-| Address    | Size  | Purpose                                      |
-|------------|-------|----------------------------------------------|
-| `$026F`    | 10 bytes | Keyboard buffer (circular, holds up to 10 PETSCII codes) |
-| `$009E`    | 1 byte | Number of characters currently in the buffer |
+| Address | Size     | Purpose                                                  |
+|---------|----------|----------------------------------------------------------|
+| `$026F` | 10 bytes | Keyboard buffer (circular, holds up to 10 PETSCII codes) |
+| `$009E` | 1 byte   | Number of characters currently in the buffer             |
 
 The buffer is a FIFO: `GETIN` reads from the front and decrements the count. The 60 Hz IRQ scan appends to the buffer and increments the count.
 
@@ -460,20 +460,20 @@ print(dump_row(2))  # first content row
 
 ### Key Codes for Common Test Actions
 
-| Action              | PETSCII | Hex   |
-|---------------------|---------|-------|
-| Open viewer         | `V`     | `$56` |
-| Switch to hex       | `H`     | `$48` |
-| Switch to text      | `T`     | `$54` |
-| Exit viewer         | `E`     | `$45` |
-| Quit program        | `Q`     | `$51` |
-| Cursor up           | (special) | `$91` |
-| Cursor down         | (special) | `$11` |
-| Cursor left         | (special) | `$9D` |
-| Cursor right        | (special) | `$1D` |
-| HOME                | (special) | `$13` |
-| RUN/STOP            | (special) | `$03` |
-| RETURN              | (special) | `$0D` |
+| Action         | PETSCII   | Hex   |
+|----------------|-----------|-------|
+| Open viewer    | `V`       | `$56` |
+| Switch to hex  | `H`       | `$48` |
+| Switch to text | `T`       | `$54` |
+| Exit viewer    | `E`       | `$45` |
+| Quit program   | `Q`       | `$51` |
+| Cursor up      | (special) | `$91` |
+| Cursor down    | (special) | `$11` |
+| Cursor left    | (special) | `$9D` |
+| Cursor right   | (special) | `$1D` |
+| HOME           | (special) | `$13` |
+| RUN/STOP       | (special) | `$03` |
+| RETURN         | (special) | `$0D` |
 
 ### Timing Considerations
 
