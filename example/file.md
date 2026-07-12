@@ -60,8 +60,9 @@ CHKOUT  = $FFC9         ; set output channel
 CLRCHN  = $FFCC         ; restore default I/O channels
 CHRIN   = $FFCF         ; read one byte from input channel
 CHROUT  = $FFD2         ; write one byte to output channel
-LOAD    = $FFD5         ; load PRG file
-SAVE    = $FFD8         ; save PRG file
+LOAD    = $F3C9         ; low-level LOAD past BASIC parse (NOT $FFD5; see system/load.md)
+VERCK   = $9D           ; 0 = load, 1 = verify
+SAVE    = $FFD8         ; PET: BASIC-command entry; not usable for arbitrary ML range (see system/file.md)
 
 STATUS  = $0096         ; I/O status byte (read directly, no READST)
 
@@ -115,7 +116,8 @@ LOAD with SA=1 ignores the file's load address and loads to the address in X/Y.
 
 ; PET does not have SETNAM - use pet_setnam wrapper (see system/file.md)
 ; PET does not have SETLFS - use pet_setlfs wrapper (see system/file.md)
-LOAD    = $FFD5
+LOAD    = $F3C9         ; low-level LOAD past BASIC parse (NOT the $FFD5 jump entry)
+VERCK   = $9D           ; 0 = load, 1 = verify
 CHROUT  = $FFD2
 
         org $0401
@@ -146,8 +148,9 @@ load_prg:
         ldy #0
         jsr pet_setlfs
 
-        lda #0                  ; LOAD: A=0 means load, A=1 would mean verify
-        jsr LOAD
+        lda #0                  ; VERCK = 0 -> load (1 = verify)
+        sta VERCK
+        jsr LOAD                ; enter past BASIC parse (hard errors abort to BASIC)
         bcs load_error          ; carry set = error, A = error code
 
         stx end_lo              ; success: X/Y = address of last byte loaded + 1
@@ -187,10 +190,11 @@ To load a file at a fixed address regardless of its embedded load address, use S
         ldy #1                  ; SA=1 = override load address
         jsr pet_setlfs
 
-        lda #0                  ; load (not verify)
+        lda #0                  ; VERCK = 0 -> load
+        sta VERCK
         ldx #<$8000             ; override address low
         ldy #>$8000             ; override address high
-        jsr LOAD
+        jsr LOAD                ; enter past BASIC parse (X/Y = fixed address)
         bcs load_err
 
 scrname:
@@ -201,7 +205,9 @@ scrname_end:
 
 ## Save a PRG File
 
-This example saves the memory range `$040F`-`$07FF` as `MYFILE` on device 8.
+> **PET caveat:** the code below uses the **C64** SAVE convention (start pointer in A, end+1 in X/Y). It does **not** work from ML on the PET: `$FFD8` re-parses BASIC and the underlying routine saves the BASIC-program range (`$28-$2B`), not an arbitrary A/X/Y range. To save arbitrary ML data on the PET, write the file yourself with OPEN + CHKOUT + CHROUT (see `system/file.md`). This block is kept only to show the familiar C64 interface.
+
+This example (C64 convention) saves the memory range `$040F`-`$07FF` as `MYFILE` on device 8.
 
 SAVE takes the start address from a zero-page pointer and the end+1 address in X/Y.
 
@@ -210,6 +216,7 @@ SAVE takes the start address from a zero-page pointer and the end+1 address in X
 
 ; PET does not have SETNAM - use pet_setnam wrapper (see system/file.md)
 ; PET does not have SETLFS - use pet_setlfs wrapper (see system/file.md)
+; WARNING (PET): $FFD8 re-parses BASIC; this C64-style range save does not work from PET ML.
 SAVE    = $FFD8
 
 SAVE_PTR = $FB              ; zero-page pointer for SAVE start address
@@ -795,8 +802,9 @@ CLRCHN  = $FFCC
 CHRIN   = $FFCF
 CHROUT  = $FFD2
 ; PET does not have READST - read STATUS ($0096) directly
-LOAD    = $FFD5
-SAVE    = $FFD8
+LOAD    = $F3C9         ; low-level LOAD past BASIC parse (NOT $FFD5; see system/load.md)
+VERCK   = $9D           ; 0 = load, 1 = verify
+SAVE    = $FFD8         ; PET: BASIC-command entry; not usable for arbitrary ML range
 STATUS  = $0096
 SAVE_PTR = $FB
 

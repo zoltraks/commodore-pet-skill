@@ -3,7 +3,7 @@
 ## Purpose
 
 > **Scope:** Loading PRG and binary data files from cassette tape and IEEE-488 disk via the LOAD KERNAL call
-> **Key items:** LOAD=$FFD5, pet_setlfs, pet_setnam, SA=0 (header addr), SA=1 (fixed addr), device 1=tape, device 8=disk
+> **Key items:** LOAD from ML = $F3C9 (NOT the $FFD5 jump entry, which re-parses BASIC and wipes params), VERCK=$9D, pet_setlfs, pet_setnam, SA=0 (header addr), SA=1 (fixed addr), device 1=tape, device 8=disk
 
 | Out of scope             | See instead        |
 |--------------------------|--------------------|
@@ -11,7 +11,9 @@
 | Sequential file I/O      | `system/file.md`   |
 | Safe memory zones        | `system/memory.md` |
 
-> **Verify before relying on this (ML caveat):** On the PET, the `LOAD` (`$FFD5`) and `SAVE` (`$FFD8`) jump-table entries are BASIC-command implementations. Both begin with `JSR $F43E`, which **unconditionally resets `$D1` (filename length), `$D3` (SA), and `$D4` (device) and then reads the real parameters from the BASIC text pointer** (`$77/$78`) — exactly like `OPEN`/`CLOSE` (see `system/kernal.md`). This was confirmed by disassembling `kernal-2.901465-03`. Consequently the "call `pet_setnam`/`pet_setlfs`, then `jsr $FFD5`" pattern shown below does **not** carry the filename through from pure machine code: `$F43E` wipes it before the load runs. To LOAD/SAVE a named file from ML you must either (a) run with the BASIC text pointer aimed at a valid `LOAD`-statement argument string, or (b) enter the routine past the parse (LOAD continues at `$F3C9`, SAVE at `$F6A1`, with `$D1/$DA/$DB` and the load/verify flag `$9D` pre-set). Test the exact sequence under VICE before depending on it.
+> **Critical ML caveat — do not `jsr $FFD5`/`$FFD8` from machine code.** On the PET, the `LOAD` (`$FFD5`) and `SAVE` (`$FFD8`) jump-table entries are BASIC-command implementations. Both begin with `JSR $F43E`, which **unconditionally zeroes `$D1` (filename length), `$D3` (SA), and `$D4` (device) and then re-reads the real parameters from the BASIC text pointer** (`$77/$78`) — exactly like `OPEN`/`CLOSE` (see `system/kernal.md`). So the `pet_setnam`/`pet_setlfs` values are wiped before the load runs. This is verified two ways: disassembling `kernal-2.901465-03` (`$F442: STX $D1` with X=0, unconditional), and a live xpet run in which `$D1` was set to `$05` and read back `$00` after executing `$F43E`.
+>
+> **The fix:** enter the routine **past** the parse. For BASIC 2 (new ROM), LOAD continues at **`$F3C9`** and SAVE at **`$F6A1`/`$F6A4`** — the instructions after `JSR $F43E`. Set the zero-page parameters yourself (via `pet_setnam`/`pet_setlfs`), set the load/verify flag `$9D` (0=load, 1=verify), then `jsr $F3C9`. This was confirmed end-to-end under xpet: with a `DAT` file on device 8, the sequence below loaded its payload to the header address correctly. (On BASIC 4 the equivalent LOAD entry is `$F356`.)
 
 ## Loading a Binary File (LOAD)
 
@@ -26,7 +28,8 @@ After `LOAD` returns, X = low byte and Y = high byte of the byte after the last 
 ```asm
 ; PET does not have SETLFS - use pet_setlfs wrapper
 ; PET does not have SETNAM - use pet_setnam wrapper
-LOAD    = $FFD5
+LOAD_ML = $F3C9         ; LOAD past the BASIC-text parse (NOT the $FFD5 jump entry)
+VERCK   = $9D           ; 0 = load, 1 = verify
 STATUS  = $0096
 
 fname:
@@ -47,8 +50,9 @@ load_frames:
         ldy #0                  ; SA=0: use address from file header
         jsr pet_setlfs
 
-        lda #0                  ; 0 = LOAD (not VERIFY)
-        jsr LOAD                ; X/Y = end+1 on return
+        lda #0                  ; VERCK = 0 -> load (not verify)
+        sta VERCK
+        jsr LOAD_ML             ; enter past parse; X/Y = end+1 on return
 
         lda STATUS              ; non-zero = error
         bne load_error
@@ -72,9 +76,10 @@ To force loading to a specific address regardless of the file header, use SA=1 a
         jsr pet_setlfs
 
         lda #0
+        sta VERCK               ; 0 = load
         ldx #<$4000             ; destination low byte
         ldy #>$4000             ; destination high byte
-        jsr LOAD
+        jsr LOAD_ML             ; enter past parse (X/Y = fixed load address)
 ```
 
 ## Loading from IEEE-488 Disk (Device 8)
@@ -95,7 +100,8 @@ load_from_disk:
         jsr pet_setlfs
 
         lda #0
-        jsr LOAD
+        sta VERCK               ; 0 = load
+        jsr LOAD_ML
 
         lda STATUS
         bne load_error
@@ -165,7 +171,8 @@ A complete program that immediately loads animation frame data on RUN:
 
 ; PET does not have SETLFS - use pet_setlfs wrapper
 ; PET does not have SETNAM - use pet_setnam wrapper
-LOAD    = $FFD5
+LOAD_ML = $F3C9         ; LOAD past the BASIC-text parse (NOT $FFD5)
+VERCK   = $9D           ; 0 = load, 1 = verify
 CHROUT  = $FFD2
 STATUS  = $0096
 
@@ -197,9 +204,10 @@ start:
         jsr pet_setlfs
 
         lda #0
+        sta VERCK               ; 0 = load
         ldx #<$4000             ; animation data destination
         ldy #>$4000
-        jsr LOAD
+        jsr LOAD_ML
 
         lda STATUS
         bne load_error

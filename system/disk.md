@@ -654,8 +654,9 @@ The emulator transparently handles the IEEE-488 protocol simulation.
         ldy #0
         jsr pet_setlfs
 
-        lda #0
-        jsr LOAD
+        lda #0                  ; VERCK ($9D) = 0 -> load
+        sta $9D
+        jsr LOAD                ; LOAD = $F3C9 (low-level, past BASIC parse) -- NOT $FFD5
         bcs error
 ```
 
@@ -705,9 +706,7 @@ All KERNAL calls are documented in `system/file.md`.
 
 ### Direct IEEE-488 Bus Access
 
-The KERNAL also exposes low-level IEEE-488 calls (TALK, LISTEN, TKSA, SECOND, ACPTR, CIOUT, UNTALK, UNLSN).
-
-These are primarily used by the KERNAL itself to implement the higher-level routines.
+The KERNAL implements the IEEE-488 handshake internally to build the higher-level file routines.
 
 Direct bus access is rarely needed from application code.
 
@@ -717,16 +716,18 @@ Use it only for:
 - Debugging bus timing issues.
 - Implementing non-standard file protocols.
 
-| Call   | Address | Description                             |
-|--------|---------|-----------------------------------------|
-| TALK   | $FFB4   | Command device to become a talker       |
-| LISTEN | $FFB1   | Command device to become a listener     |
-| TKSA   | $FF96   | Send talk secondary address             |
-| SECOND | $FF93   | Send listen secondary address           |
-| ACPTR  | $FFA5   | Receive one byte from the bus (ATN off) |
-| CIOUT  | $FFA8   | Send one byte to the bus (ATN off)      |
-| UNTALK | $FFAB   | Command current talker to stop          |
-| UNLSN  | $FFAE   | Command current listener to stop        |
+> **Not the C64 addresses.** The C64/serial-IEC entries `TALK` ($FFB4), `LISTEN` ($FFB1), `TKSA` ($FF96), `SECOND` ($FF93), `ACPTR` ($FFA5), `CIOUT` ($FFA8), `UNTALK` ($FFAB), `UNLSN` ($FFAE) **do not exist on the PET**. On the PET jump table (which only spans `$FFC0-$FFEA`) those addresses fall in the machine-language monitor and the copyright string — the bytes at `$FFB1-$FFBF` are the ASCII text `"C. 0978 CBM "`, not a JMP. Verified against `kernal-2.901465-03`.
+
+The PET's IEEE-488 primitives live in the KERNAL body at these **new-ROM-specific** addresses (not a stable jump table — wrong on BASIC 1 and BASIC 4 machines; reach them only when the standard file routines cannot do the job):
+
+| PET routine                                    | Address | Description                                       |
+|------------------------------------------------|---------|---------------------------------------------------|
+| Set up IEEE for Talk/Listen                    | $F0B6   | Address the bus and assert ATN                    |
+| Send byte to IEEE (deferred)                   | $F0EE   | Output a data byte on the bus                     |
+| Send byte to IEEE (immediate)                  | $F128   | Output a command byte with ATN                    |
+| Send Listen + secondary address (immediate)    | $F164   | Address a listener and its SA                     |
+| Drop IEEE channel (Unlisten / Untalk)          | $F17F   | Release the current talker/listener               |
+| Receive byte from IEEE                          | $F18C   | Input one data byte from the bus                  |
 
 ## Best Practices
 
@@ -754,7 +755,7 @@ A flashing drive LED means an error occurred and the command channel must be rea
 
 **Never leave more than 9 files open.**
 
-The KERNAL table holds 10 entries (at $0251-$0260).
+The KERNAL logical-file table holds 10 entries (at $0251-$025A).
 
 Reserve one entry for the command channel.
 

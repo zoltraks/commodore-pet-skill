@@ -223,13 +223,14 @@ Use a hyphen for multi-word names: `dasm-assembler.md`.
 
 ### Folder Assignment
 
-| Folder      | Contents                                                          |
-|-------------|-------------------------------------------------------------------|
-| `hardware/` | Chip registers, timing, hardware-level facts                      |
-| `system/`   | OS routines, memory layout, I/O protocols                         |
-| `code/`     | Implementation techniques, algorithmic patterns, coding standards |
-| `utility/`  | Tools, assembler, build system                                    |
-| `example/`  | Complete runnable programs and templates                          |
+| Folder       | Contents                                                          |
+|--------------|-------------------------------------------------------------------|
+| `hardware/`  | Chip registers, timing, hardware-level facts                      |
+| `system/`    | OS routines, memory layout, I/O protocols                         |
+| `expansion/` | Add-on cards and peripherals not part of the stock PET 3032       |
+| `code/`      | Implementation techniques, algorithmic patterns, coding standards |
+| `utility/`   | Tools, assembler, build system                                    |
+| `example/`   | Complete runnable programs and templates                          |
 
 ### Required Sections
 

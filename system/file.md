@@ -57,7 +57,7 @@ Choose any number from 1 to 127.
 
 Numbers 128-255 are reserved.
 
-Up to 10 logical files may be open simultaneously (limited by KERNAL internal tables at $0251-$0270).
+Up to 10 logical files may be open simultaneously (limited by KERNAL internal tables at $0251-$026E).
 
 You use the same LFN in CHKIN, CHKOUT, and CLOSE calls.
 
@@ -649,10 +649,13 @@ Must call pet_setnam and pet_setlfs first.
 - Do not call OPEN before LOAD - LOAD handles the file open internally.
 - After LOAD returns, X/Y point to the first byte after the loaded data.
 
+> **ML caveat:** The `$FFD5` jump entry re-parses BASIC and wipes the zero-page parameters (see `system/load.md` — verified by disassembly and a live xpet run). From machine code, enter the low-level LOAD at **`$F3C9`** (past `JSR $F43E`), with `$9D` (VERCK) = 0 for load / 1 for verify. Note that on hard errors (file-not-found, device-not-present) the PET LOAD prints the error and returns to BASIC READY rather than returning to your caller — so unlike the C64 you cannot always trap the error via the carry flag; check `STATUS` after a load that returns.
+
 ```asm
 ; PET does not have SETLFS - use pet_setlfs wrapper (see above)
 ; PET does not have SETNAM - use pet_setnam wrapper (see above)
-LOAD    = $FFD5
+LOAD    = $F3C9         ; low-level LOAD past BASIC parse (NOT the $FFD5 jump entry)
+VERCK   = $9D           ; 0 = load, 1 = verify
 STATUS  = $0096
 
         lda #6                  ; Step 1: set filename (length 6)
@@ -665,9 +668,11 @@ STATUS  = $0096
         ldy #0                  ; SA=0: relocating load (use address from file)
         jsr pet_setlfs
 
-        lda #0                  ; Step 3: load (0 = LOAD, not VERIFY)
-        jsr LOAD
-        bcs load_error          ; C=1 = error
+        lda #0                  ; Step 3: VERCK = 0 -> load (not verify)
+        sta VERCK
+        jsr LOAD                ; enter past parse
+        lda STATUS              ; non-zero = error (on hard errors LOAD aborts to BASIC)
+        bne load_error
         rts                     ; X/Y now = first byte past end of loaded data
 
 load_error:
@@ -708,19 +713,18 @@ Must call pet_setnam and pet_setlfs first.
 
 **Side effects:** Writes file to device. Sets STATUS.
 
-**Notes:**
-
-- A must contain a zero-page address, not the start address itself.
-- Store the start address as two bytes in zero page, then pass that zero-page address in A.
-- The file is written in PRG format: first two bytes are the start address (little-endian), followed by the data.
-- End address is exclusive: the byte at address (X/Y) is not written.
-- Do not call OPEN before SAVE.
-- SA=1 is used automatically for PRG save.
+> **Critical ML caveat — the A/X/Y convention below is C64, not PET.** On the PET, `$FFD8` SAVE is a BASIC-command entry: it begins with `JSR $F43E` (re-parses BASIC, wipes `$D1`/`$D3`/`$D4`), and the underlying routine is wired to save the **BASIC-program range** — it takes the start/end from the BASIC pointers (`$28/$29` start, `$2A/$2B` end, via `$F68D`/`$FB76`), *not* from `A`/`X`/`Y`. There is no clean single-register PET entry that saves an arbitrary memory range. Verified against `kernal-2.901465-03`.
+>
+> **To save arbitrary ML data on the PET, use one of:**
+> 1. **Recommended — write the file yourself with OPEN + CHKOUT + CHROUT** (see the sequential-file write pattern earlier in this file). This gives full control over the bytes and works from pure ML.
+> 2. Temporarily set the BASIC pointers `$28/$29` (start) and `$2A/$2B` (end) to your range, call the low-level SAVE past the parse (`$F6A1`), then restore them — fiddly and clobbers BASIC state; test under VICE before relying on it.
+>
+> The C64-style block below (`A` = ZP start pointer, `X`/`Y` = end+1) is retained only to show the interface people expect from the C64 — **it does not work as-is from ML on the PET.**
 
 ```asm
-; PET does not have SETLFS - use pet_setlfs wrapper (see above)
-; PET does not have SETNAM - use pet_setnam wrapper (see above)
-SAVE    = $FFD8
+; NOTE: C64 convention shown for reference -- does NOT work from PET ML.
+; For PET, write data with OPEN + CHROUT (see sequential write above).
+SAVE    = $FFD8         ; PET: BASIC-command entry, re-parses BASIC text
 STATUS  = $0096
 
 save_start = $FB             ; zero page: two bytes for start address
@@ -740,7 +744,7 @@ save_start = $FB             ; zero page: two bytes for start address
         ldy #1                  ; SA=1 for save
         jsr pet_setlfs
 
-        lda #save_start         ; Save: A = ZP ptr, X/Y = end+1
+        lda #save_start         ; (C64 convention) A = ZP ptr, X/Y = end+1
         ldx #<$5000             ; end address + 1 (low)
         ldy #>$5000             ; end address + 1 (high)
         jsr SAVE
@@ -972,14 +976,17 @@ LOAD handles the file open/close internally.
         ldy #0
         jsr pet_setlfs
 
-        lda #0                  ; 0=load, 1=verify
-        jsr LOAD
+        lda #0                  ; VERCK ($9D) = 0 -> load, 1 = verify
+        sta $9D
+        jsr LOAD                ; LOAD = $F3C9 (low-level, past BASIC parse) -- NOT $FFD5
         bcs load_err            ; loaded successfully; X/Y = end+1
 ```
 
 ### Save a Program File
 
 Do not call OPEN before SAVE.
+
+> **PET:** this is the C64 SAVE convention and does **not** work from PET ML — `$FFD8` re-parses BASIC and saves the BASIC-program range, not an arbitrary A/X/Y range. To save arbitrary data on the PET, write it yourself with OPEN + CHKOUT + CHROUT (see the sequential-file write above). Block kept for C64 reference only.
 
 ```asm
 save_ptr = $FB                  ; ZP: store start address here
@@ -999,10 +1006,10 @@ save_ptr = $FB                  ; ZP: store start address here
         ldy #1                  ; SA=1 for save
         jsr pet_setlfs
 
-        lda #save_ptr           ; ZP address (not the value)
+        lda #save_ptr           ; (C64 convention) ZP address (not the value)
         ldx #<end_addr
         ldy #>end_addr
-        jsr SAVE
+        jsr SAVE                ; PET: $FFD8 re-parses BASIC -- does not save this range
         bcs save_err
 ```
 

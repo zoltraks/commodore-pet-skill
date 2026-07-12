@@ -171,8 +171,9 @@ nextline:
 
         word 0
 
-source  = $8400         ; Copy 1000 bytes from source to destination -- source screen buffer
-dest    = SCREEN        ; Both must be page-aligned for this simple version -- destination screen
+source  = $7000         ; Copy 1000 bytes from an off-screen RAM buffer to the screen
+dest    = SCREEN        ; Both must be page-aligned. NOTE: do not use $8400 as a "second screen"
+                        ; -- only 1 KB is decoded at $8000, so $8400-$8FFF mirror the screen.
 
 copy_screen:
 
@@ -526,7 +527,7 @@ exit:
 ; IRQ HANDLER
 ; =========================================================
 
-irq_handler:             ; KERNAL IRQ entry at $E442 saves A/X/Y then dispatches to CINV ($0090)
+irq_handler:             ; KERNAL IRQ entry at $E61B saves A/X/Y then dispatches to CINV ($0090)
 
         bit PIA1_PORTB          ; acknowledge VBLANK IRQ: read PIA1 Port B - mandatory
         lda #1
@@ -593,7 +594,7 @@ frame_data:
 
 **Notes:**
 
-- The KERNAL IRQ entry at `$E442` saves A/X/Y before dispatching to CINV, so the custom handler does not need to preserve registers.
+- The KERNAL IRQ entry at `$E61B` saves A/X/Y before dispatching to CINV, so the custom handler does not need to preserve registers.
 - Chaining via `jmp (old_cinv)` is portable across ROM versions; the original CINV value points to the KERNAL keyboard scan and clock update handler.
 - Reading `PIA1_PORTB` ($E812) is mandatory in any custom IRQ handler that replaces CINV completely. On the 6520 PIA, the CB1 interrupt flag clears only on a Port B read — reading CRB ($E813) does not clear it.
 

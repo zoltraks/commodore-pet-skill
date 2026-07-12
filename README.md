@@ -161,6 +161,8 @@ commodore-pet-skill/
 │   ├── keyboard.md                # Keyboard matrix, PIA 1 scan, GETIN, multi-key detection
 │   ├── file.md                    # KERNAL file I/O: SETNAM/SETLFS/OPEN/CLOSE/CHKIN/CHKOUT/CHRIN/CHROUT/LOAD/SAVE
 │   └── disk.md                    # DOS commands, command channel, directory, error codes, disk images, emulators
+├── expansion/
+│   └── petay.md                   # PetAY dual AY-8910 stereo sound board, register map, frequency dividers
 ├── code/
 │   ├── standard.md                # Assembly engineering standards: file structure, formatting, labels, comments, naming, flag semantics
 │   ├── bit.md                     # Bit ops, masks, pointers, stack tricks

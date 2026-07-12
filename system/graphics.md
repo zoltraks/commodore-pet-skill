@@ -873,7 +873,7 @@ To write text into the title bar, OR each character's screen code with `$80` bef
 
 ## Option Markers
 
-The PET character sets provide markers for checkable options -- checkboxes, radio buttons, and toggle states. -- checkboxes, radio buttons, and toggle states. The available marker characters depend on which character set is active, because the `$41`-`$5A` range contains graphics glyphs in the uppercase set but letters in the lowercase set.
+The PET character sets provide markers for checkable options -- checkboxes, radio buttons, and toggle states. The available marker characters depend on which character set is active, because the `$41`-`$5A` range contains graphics glyphs in the uppercase set but letters in the lowercase set.
 
 ### Marker Characters
 
