@@ -448,7 +448,7 @@ Uses self-modifying pointers for source reads and destination writes. A shared w
 ```asm
 decompress_lz4:
 
-        lda $FE                 ; ZP borrowed: $FB = temp token      $FC = match offset lo $FD = match offset hi  $FE = working counter $FF = literal count hi (unused by BASIC, no save needed)
+        lda $FE                 ; ZP borrowed: $FB = temp token      $FC = match offset lo $FD = match offset hi  $FE = working counter lo $FF = working counter hi (literal/match length; unused by BASIC, no save needed)
         pha
         lda $FD
         pha
@@ -545,25 +545,40 @@ lz4_read_match:
         ora $FD
         beq lz4_done
 
-        lda $FB                 ; retrieve original token
-        and #$0F                ; low nibble = match count
-        clc
-        adc #4                  ; minimum match = 4 bytes
-        sta $FE                 ; match length
-        lda $FB
+        lda $FB                 ; low nibble of token = match count
         and #$0F
-        cmp #$0F
-        bne lz4_copy_match
+        sta $FE                 ; match length lo (16-bit; +4 added below)
+        lda #0
+        sta $FF                 ; match length hi
+        lda $FE
+        cmp #$0F                ; nibble == 15 -> length extension follows
+        bne lz4_match_add4
 
 lz4_match_ext:
 
         jsr lz4_src             ; read extension byte
         jsr lz4_inc_src
+        sta $FB                 ; save ext byte (token no longer needed here)
         clc
-        adc $FE
+        adc $FE                 ; add to 16-bit match length
         sta $FE
-        cmp #$FF
+        bcc lz4_match_ext_nc
+        inc $FF
+
+lz4_match_ext_nc:
+
+        lda $FB                 ; reload ext byte
+        cmp #$FF                ; continue while the EXTENSION BYTE is $FF (not the sum)
         beq lz4_match_ext
+
+lz4_match_add4:
+
+        lda $FE                 ; add minimum-match length 4 (16-bit)
+        clc
+        adc #4
+        sta $FE
+        bcc lz4_copy_match
+        inc $FF
 
 lz4_copy_match:
 
@@ -587,7 +602,15 @@ lz4_mread:
 
 lz4_mread_skip:
 
-        dec $FE                 ; decrement match length
+        lda $FE                 ; 16-bit decrement of match length
+        bne lz4_match_dec_lo
+        dec $FF
+
+lz4_match_dec_lo:
+
+        dec $FE
+        lda $FE                 ; loop until match length reaches 0
+        ora $FF
         bne lz4_match_loop
 
         jmp lz4_token           ; next token
@@ -652,7 +675,7 @@ Do not use `sta $FB` / `lda $FB` in the extension loop -- this destroys the toke
 
 This bug only fires on tokens with literal count 15 or higher (high nibble `$F`). Tokens below that threshold never enter the extension loop, so the token reaches the match-length decode intact.
 
-The `lz4_match_ext` loop may use `$FB` as scratch because it runs after the match-length nibble has already been decoded.
+The `lz4_match_ext` loop may use `$FB` as scratch because it runs after the match-length nibble has already been decoded. It saves each extension byte in `$FB` and tests **that byte** (not the running sum) against `$FF` to decide whether to continue, and accumulates the match length as a 16-bit value in `$FE`/`$FF` -- exactly like the literal extension. This matters: matches on full-screen data routinely exceed 255 bytes, so an 8-bit match counter or a "test the sum" continue condition silently truncates them. (Cross-checked against the generated depacker in the `pet-lab` LZ4 exporter, which uses the same 16-bit counters and per-extension-byte `$FF` test.)
 
 ### Usage Example
 
