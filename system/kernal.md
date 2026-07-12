@@ -38,10 +38,14 @@ Each entry is a 3-byte `JMP` instruction.
 | $FFD2   | CHROUT | Output character to current output   | A = PETSCII char                              | -                      |
 | $FFD5   | LOAD   | Load file to memory (BASIC parsing!) | A = 0 (load) / 1 (verify), X/Y = addr if SA=1 | X/Y = end+1            |
 | $FFD8   | SAVE   | Save memory range (BASIC parsing!)   | A = ZP ptr to start, X/Y = end+1              | -                      |
+| $FFDB   | VERIFY | Verify file vs memory (BASIC parsing!)| (params via BASIC text)                      | jumps to error on fail |
+| $FFDE   | SYS    | Call ML from BASIC (BASIC parsing!)  | (address via BASIC text)                      | -                      |
 | $FFE1   | STOP   | Check STOP key                       | -                                             | Z = 1 if pressed       |
 | $FFE4   | GETIN  | Read keyboard buffer                 | -                                             | A = char (0 = empty)   |
 | $FFE7   | CLALL  | Close all files/channels             | -                                             | -                      |
 | $FFEA   | UDTIM  | Update jiffy clock                   | -                                             | -                      |
+
+**PET-specific slots:** `$FFDB` and `$FFDE` are **VERIFY** and **SYS** on the PET — *not* the C64's `SETTIM`/`RDTIM`. Like `OPEN`/`CLOSE`/`LOAD`/`SAVE`, these six entries (`$FFC0`, `$FFC3`, `$FFD5`, `$FFD8`, `$FFDB`, `$FFDE`) are BASIC-command extensions: they read their arguments from the BASIC text pointer, so they are not directly callable from machine code. The device/channel routines (`CHKIN`/`CHKOUT`/`CLRCHN`/`BASIN`/`CHROUT`/`STOP`/`GETIN`/`CLALL`/`UDTIM`) take register/zero-page parameters and are ML-safe.
 
 ### Routines that do NOT exist on PET KERNAL
 
@@ -59,8 +63,10 @@ To call OPEN or CLOSE from machine code, use the **low-level ROM entry points** 
 
 | Routine | Jump table | Low-level (ML-safe) | What the low-level entry skips |
 |---------|------------|---------------------|--------------------------------|
-| OPEN    | $FFC0      | $F560               | BASIC param parse at $F4CE     |
-| CLOSE   | $FFC3      | $F2DD               | BASIC param parse at $F4CE     |
+| OPEN    | $FFC0      | $F524               | BASIC param parse at $F4CE     |
+| CLOSE   | $FFC3      | $F2AC               | BASIC param parse at $F4CE     |
+
+These low-level entries are the instruction immediately **after** the `JSR $F4CE` (BASIC parameter parse) at the top of each routine: `$FFC0` jumps to `$F521` where `$F521: JSR $F4CE` / `$F524: LDA $D2` — so `$F524` runs the open logic against the zero-page parameters you set yourself. Likewise `$FFC3` jumps to `$F2A9` where `$F2A9: JSR $F4CE` / `$F2AC: LDA $D2`. (These were verified by disassembling `kernal-2.901465-03`; do not use `$F560`/`$F2DD` — those land in the middle of an instruction and crash.)
 
 CHKIN, CHKOUT, CLRCHN, CHRIN, CHROUT, GETIN, CLALL, and STOP work correctly from the jump table — they do NOT include BASIC parsing.
 
@@ -91,8 +97,8 @@ PET_SA          = $D3
 PET_DEV         = $D4
 PET_FNADR_LO    = $DA
 PET_FNADR_HI    = $DB
-PET_OPEN_LOGIC  = $F560       ; OPEN past BASIC parsing
-PET_CLOSE_LOGIC = $F2DD       ; CLOSE past BASIC parsing
+PET_OPEN_LOGIC  = $F524       ; OPEN past BASIC parsing (after JSR $F4CE)
+PET_CLOSE_LOGIC = $F2AC       ; CLOSE past BASIC parsing (after JSR $F4CE)
 
 ; pet_setnam: A=length, X=addr_lo, Y=addr_hi
 pet_setnam:
@@ -243,7 +249,7 @@ On the PET, there is no SETLFS or SETNAM KERNAL call. Set the zero-page location
         ldy #0                  ; secondary address
         jsr pet_setlfs          ; sets $D2, $D3, $D4
 
-        jsr pet_open            ; calls $F560, checks $AE for success
+        jsr pet_open            ; calls $F524, checks $AE for success
         bcc open_ok
         jmp open_error
 

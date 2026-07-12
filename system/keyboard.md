@@ -125,81 +125,74 @@ The STOP key is also returned by GETIN as PETSCII `$03` (ETX / RUN/STOP).
 
 The PET keyboard is a 10-row by 8-column matrix.
 
-PIA 1 PORT A (bits 3-0) drives a 4-to-10 line decoder to select one row at a time.
+PIA 1 PORT A bits 3-0 hold a **row number (0-9)**, which an external 74145 BCD-to-decimal decoder turns into ten row-select lines (only the selected row is pulled low). This is the key difference from the C64: the C64 drives one-hot select lines directly, so C64 scan code writes patterns like `$FE`/`$FD`; the PET writes the plain binary row number `0`-`9`. Writing a one-hot pattern to the PET selects the wrong row (or a nonexistent one).
 
-PIA 1 PORT B reads back the 8 column states.
+PIA 1 PORT B reads back the 8 column bits for the selected row. A bit value of `0` means the key is pressed; `1` means not pressed. PORT A bits 7-4 are inputs (cassette sense, IEEE EOI, diagnostic), so writing a row number `0`-`9` to `$E810` leaves them undisturbed.
 
-A bit value of `0` means the key is pressed; `1` means not pressed.
+This is the graphics keyboard of the PET 3008/3016/3032. Columns are labelled by their PORT B bit (bit 7 down to bit 0):
 
-| Row | PORT A value | Keys (column 7 to 0)                                                       |
-|-----|--------------|----------------------------------------------------------------------------|
-| 0   | $FE          | ! , @ , # , $ , % , ' , & , (space STOP)                                   |
-| 1   | $FD          | Q , W , E , R , T , Y , U , I                                              |
-| 2   | $FB          | O , P , [ , ] , RETURN , DELETE , PI , *                                   |
-| 3   | $F7          | A , S , D , F , G , H , J , K                                              |
-| 4   | $EF          | L , : , ; , @ , (cursor up) , (cursor right) , (cursor down) , =           |
-| 5   | $DF          | Z , X , C , V , B , N , M , ,                                              |
-| 6   | $BF          | . , / , (shift right) , RUN/STOP , (shift left) , HOME , BACK , (del/inst) |
-| 7   | $7F          | 1 , 2 , 3 , 4 , 5 , 6 , 7 , 8                                              |
-| 8   | $FE (2nd)    | 9 , 0 , + , - , (cursor left) , (cursor down rev) , CLR/HOME , =           |
-| 9   | $FD (2nd)    | (not used on 3032)                                                         |
+| Row (PA) | Bit 7    | Bit 6    | Bit 5   | Bit 4 | Bit 3 | Bit 2 | Bit 1 | Bit 0   |
+|----------|----------|----------|---------|-------|-------|-------|-------|---------|
+| 0        | CRSR RGT | HOME     | `←`     | `(`   | `&`   | `%`   | `#`   | `!`     |
+| 1        | DELETE   | CRSR DWN | —       | `)`   | `\`   | `'`   | `$`   | `"`     |
+| 2        | `9`      | `7`      | `^`     | `O`   | `U`   | `T`   | `E`   | `Q`     |
+| 3        | `/`      | `8`      | —       | `P`   | `I`   | `Y`   | `R`   | `W`     |
+| 4        | `6`      | `4`      | —       | `L`   | `J`   | `G`   | `D`   | `A`     |
+| 5        | `*`      | `5`      | —       | `:`   | `K`   | `H`   | `F`   | `S`     |
+| 6        | `3`      | `1`      | RETURN  | `;`   | `M`   | `B`   | `C`   | `Z`     |
+| 7        | `+`      | `2`      | —       | `?`   | `,`   | `N`   | `V`   | `X`     |
+| 8        | `-`      | `0`      | R SHIFT | `>`   | —     | `]`   | `@`   | L SHIFT |
+| 9        | `=`      | `.`      | —       | `<`   | STOP  | SPACE | `[`   | RVS ON  |
 
-**Note:** The exact key assignments vary between PET keyboard models (business keyboard vs. graphics keyboard).
-
-The table above is for the PET 3032 graphics keyboard.
+**Note:** This is the PET 3032 graphics keyboard; the business keyboard (4032B/8032) has a different matrix. Left SHIFT is row 8 bit 0, right SHIFT is row 8 bit 5, RETURN is row 6 bit 5, RUN/STOP is row 9 bit 4. (Matrix verified against VICE's `gtk3_grus_sym.vkm` PET graphics keymap.)
 
 ## Direct Matrix Scan
 
-Direct scanning reads PORT A and PORT B directly, bypassing KERNAL buffering.
-
-This allows detection of multiple simultaneous keys.
+Direct scanning writes a **row number (0-9)** to PORT A and reads the column bits from PORT B, bypassing KERNAL buffering. This allows detection of multiple simultaneous keys.
 
 ```asm
-PIA1_PA = $E810         ; PIA 1 PORT A: row select
-PIA1_PB = $E812         ; PIA 1 PORT B: column data
+PIA1_PA = $E810         ; PIA 1 PORT A: row select (write 0-9 to bits 3-0)
+PIA1_PB = $E812         ; PIA 1 PORT B: column data (0 = pressed)
 
-        lda #$FD                ; select row 1 (Q W E R T Y U I)
+        lda #2                  ; select row 2 (Q E T U O ^ 7 9)
         sta PIA1_PA
-        lda PIA1_PB             ; read columns: bit 7=Q, bit 6=W, ..., bit 0=I; 0 = pressed
+        lda PIA1_PB             ; columns: bit 0=Q, bit 1=E, ... bit 7=9; 0 = pressed
 ```
 
 ### Check a Specific Key
 
-To test whether 'Q' (row 1, column 7) is pressed:
+To test whether 'Q' (row 2, column bit 0) is pressed:
 
 ```asm
-        lda #$FD                ; row 1
+        lda #2                  ; row 2
         sta PIA1_PA
         lda PIA1_PB
-        and #$80                ; mask column 7
+        and #$01                ; mask bit 0 (Q)
         beq q_pressed           ; 0 = pressed
 ```
 
 ### Scan All Rows
 
+Write each row number 0-9 in turn; no lookup table is needed since the row select is just the loop index:
+
 ```asm
-key_table:              ; 8 rows
-
-        byte $FE,$FD,$FB,$F7,$EF,$DF,$BF,$7F
-
 scan_all:
 
         ldx #$00
 
 scan_loop:
 
-        lda key_table,x
-        sta PIA1_PA
+        stx PIA1_PA             ; select row X (0-9)
         lda PIA1_PB             ; column data for this row
         sta key_state,x         ; store result
         inx
-        cpx #8
+        cpx #10
         bne scan_loop
         rts
 
-key_state:              ; 8 bytes: one per row
+key_state:              ; 10 bytes: one per row
 
-        byte 0,0,0,0,0,0,0,0
+        byte 0,0,0,0,0,0,0,0,0,0
 ```
 
 After `scan_all`, each byte in `key_state` holds the column bitmap for that row.
@@ -215,20 +208,20 @@ GETIN returns only one key at a time and cannot detect chords.
 ```asm
 check_shift:
 
-        lda #$BF                ; select row 6 (check both SHIFT keys pressed)
+        lda #8                  ; select row 8 (both SHIFT keys live here)
         sta PIA1_PA
         lda PIA1_PB
-        and #$22                ; mask bits 5 and 1 (left shift=bit 1, right shift=bit 5)
+        and #$21                ; mask bit 0 (left shift) and bit 5 (right shift)
         beq both_shifts         ; both 0 = both pressed
-        cmp #$20
-        beq right_shift_only
-        cmp #$02
+        cmp #$20                ; only bit 5 set -> left shift alone (bit 0 = 0)
         beq left_shift_only
-        rts                     ; no shift
+        cmp #$01                ; only bit 0 set -> right shift alone (bit 5 = 0)
+        beq right_shift_only
+        rts                     ; $21 = no shift
 
 both_shifts:
-right_shift_only:
 left_shift_only:
+right_shift_only:
 
         rts
 ```

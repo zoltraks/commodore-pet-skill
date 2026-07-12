@@ -20,14 +20,15 @@ This file covers the PET 3032 hardware chips in four progressive layers:
 
 ## Memory Map Overview
 
-| Region     | Address Range | Size   | Description                  |
-|------------|---------------|--------|------------------------------|
-| RAM        | $0000 - $7FFF | 32 KB  | Main system RAM              |
-| Screen RAM | $8000 - $83E7 | 1000 B | 40 columns by 25 rows        |
-| I/O Area   | $E800 - $EFFF | 2 KB   | Memory-mapped I/O devices    |
-| ROM        | $F000 - $FFFF | 4 KB   | System ROM (BASIC, KERNAL)   |
-| BASIC ROM  | $B000 - $DFFF | 12 KB  | BASIC keywords and operators |
-| Editor ROM | $E000 - $E7FF | 2 KB   | Screen editor functions      |
+| Region            | Address Range | Size   | Description                              |
+|-------------------|---------------|--------|------------------------------------------|
+| RAM               | $0000 - $7FFF | 32 KB  | Main system RAM                          |
+| Screen RAM        | $8000 - $83E7 | 1000 B | 40 columns by 25 rows ($8400-$8FFF mirror)|
+| Expansion sockets | $9000 - $BFFF | 12 KB  | Unused on stock 3032 (ROM/expansion)     |
+| BASIC ROM         | $C000 - $E0F8 | ~8 KB  | Microsoft BASIC interpreter              |
+| Editor ROM        | $E0F9 - $E7FF | ~1.8 KB| Screen editor, keyboard, IRQ service     |
+| I/O Area          | $E800 - $E8FF | 256 B  | PIA1/PIA2/VIA/CRTC registers             |
+| KERNAL ROM        | $F000 - $FFFF | 4 KB   | Reset, tape, IEEE-488, monitor, vectors  |
 
 ### Screen Memory Layout
 

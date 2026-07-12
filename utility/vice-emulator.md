@@ -715,6 +715,8 @@ PET jump table entries that DO exist:
 | `$FFD2` | CHROUT         |
 | `$FFD5` | LOAD           |
 | `$FFD8` | SAVE           |
+| `$FFDB` | VERIFY         |
+| `$FFDE` | SYS            |
 | `$FFE1` | STOP           |
 | `$FFE4` | GETIN          |
 | `$FFE7` | CLALL          |
@@ -742,7 +744,7 @@ The bytes at `$FFBD` are `$AA` (the `TAX` instruction), so `jsr $FFBD` executes 
 | `?SYNTAX ERROR IN 10` after `jsr $FFBA` | `$FFBA` is not SETLFS on PET; same fall-through into OPEN |
 | OPEN hangs or returns garbage           | OPEN received uninitialised filename/length pointers      |
 
-**Fix**: use PET-specific wrappers that set the zero-page locations directly instead of calling non-existent KERNAL entries. On the PET, the filename length goes to `$D1`, the filename address to `$DA/$DB`, the logical file number to `$D2`, the secondary address to `$D3`, and the device number to `$D4`. Set those locations directly in your code before calling the low-level OPEN logic at `$F560` (not the jump table entry at `$FFC0`, which includes BASIC parameter parsing). See `system/kernal.md` for the complete wrapper routines.
+**Fix**: use PET-specific wrappers that set the zero-page locations directly instead of calling non-existent KERNAL entries. On the PET, the filename length goes to `$D1`, the filename address to `$DA/$DB`, the logical file number to `$D2`, the secondary address to `$D3`, and the device number to `$D4`. Set those locations directly in your code before calling the low-level OPEN logic at `$F524` (not the jump table entry at `$FFC0`, which includes BASIC parameter parsing). See `system/kernal.md` for the complete wrapper routines.
 
 ### No Breakpoint Ever Fires
 

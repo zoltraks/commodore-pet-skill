@@ -11,6 +11,8 @@
 | Sequential file I/O      | `system/file.md`   |
 | Safe memory zones        | `system/memory.md` |
 
+> **Verify before relying on this (ML caveat):** On the PET, the `LOAD` (`$FFD5`) and `SAVE` (`$FFD8`) jump-table entries are BASIC-command implementations. Both begin with `JSR $F43E`, which **unconditionally resets `$D1` (filename length), `$D3` (SA), and `$D4` (device) and then reads the real parameters from the BASIC text pointer** (`$77/$78`) — exactly like `OPEN`/`CLOSE` (see `system/kernal.md`). This was confirmed by disassembling `kernal-2.901465-03`. Consequently the "call `pet_setnam`/`pet_setlfs`, then `jsr $FFD5`" pattern shown below does **not** carry the filename through from pure machine code: `$F43E` wipes it before the load runs. To LOAD/SAVE a named file from ML you must either (a) run with the BASIC text pointer aimed at a valid `LOAD`-statement argument string, or (b) enter the routine past the parse (LOAD continues at `$F3C9`, SAVE at `$F6A1`, with `$D1/$DA/$DB` and the load/verify flag `$9D` pre-set). Test the exact sequence under VICE before depending on it.
+
 ## Loading a Binary File (LOAD)
 
 `LOAD` reads a PRG file and places it into RAM.
