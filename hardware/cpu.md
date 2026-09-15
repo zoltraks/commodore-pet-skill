@@ -3,11 +3,11 @@
 ## Purpose
 
 > **Scope:** MOS 6502: registers, flags, instruction set, addressing modes, cycle timing, stack, interrupts
-> **Key items:** A/X/Y/SP/PC/P registers; N/V/C/D/I/Z/B flags; immediate/ZP/absolute/indexed/indirect modes; 7-cycle BRK/IRQ; 60 Hz PET VBLANK IRQ via PIA1 CB1
+> **Key items:** A/X/Y/SP/PC/P registers, N/V/C/D/I/Z/B flags, immediate/ZP/absolute/indexed/indirect modes, 7-cycle BRK/IRQ, 60 Hz PET VBLANK IRQ via PIA1 CB1
 
 This file covers the 6502 CPU as used in the Commodore PET 3032 in four progressive layers:
 
-- **Quick-lookup table** - scan or search for the fact you need; jump to the section directly
+- **Quick-lookup table** - scan or search for the fact you need, jump to the section directly
 - **Reference tables & register maps** - the dense lookup layer most frequently referenced
 - **Working code examples** - verified ASM snippets for PET
 - **Deep reference notes** - edge cases, caveats, implementation rules
@@ -192,7 +192,7 @@ The most common bug from misunderstanding flag updates is the branch-after-load 
 **NMOS 6502 page-cross penalty:**
 
 - Read ops (`LDA abs,X`, `AND abs,Y`, `(zp),Y`) speculate fetch: +1 cycle if page crossed.
-- Write ops (`STA abs,X`, `STA abs,Y`) always 5 cycles; no speculative write.
+- Write ops (`STA abs,X`, `STA abs,Y`) always 5 cycles, no speculative write.
 - `JMP ($xxFF)` bug: high byte fetched from `$xx00` instead of `$xx+1`.
 
 ## Interrupts
@@ -214,7 +214,7 @@ The most common bug from misunderstanding flag updates is the branch-after-load 
 ### BRK
 
 - 7 cycles. B=1 on stacked P.
-- PC+2 is stacked; vector fetched from `$FFFE/$FFFF`.
+- PC+2 is stacked, vector fetched from `$FFFE/$FFFF`.
 - Often used as software breakpoint or system call mechanism.
 
 **PET interrupt hook example:**

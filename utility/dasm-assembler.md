@@ -222,7 +222,7 @@ The 6502 shift and rotate instructions (`asl`, `lsr`, `rol`, `ror`) have an accu
 
 **Do not write `lsr a`** -- DASM treats the trailing `a` as an unresolved symbol, producing:
 
-```
+```yaml
 --- Unresolved Symbol List
 a                        0000 ????         (R )
 --- 1 Unresolved Symbol
@@ -244,7 +244,7 @@ Each quoted character emits its PETSCII value. This works for letters, digits, a
 
 **Pitfall: `#'x'` immediate character literals are not reliable.** DASM does not consistently support the `#'x'` syntax for immediate-mode character constants. Attempting `lda #'['` or `lda #']'` can produce:
 
-```
+```asm
 error: Syntax Error '#'[' '.
 error: Syntax Error '#']' '.
 ```
@@ -494,7 +494,7 @@ Generates 10 space bytes. Labels inside REPEAT should be temporary labels inside
 
 **Unresolved Symbol (single letter)**
 
-```
+```yaml
 --- Unresolved Symbol List
 a                        0000 ????         (R )
 --- 1 Unresolved Symbol
@@ -505,7 +505,7 @@ Cause: using `lsr a`, `asl a`, `rol a`, or `ror a` instead of the bare accumulat
 
 **Syntax Error on immediate values**
 
-```
+```asm
 error: Syntax Error '#'[' '.
 error: Syntax Error '#']' '.
 ```
@@ -523,7 +523,7 @@ Cause: a `bne`, `beq`, `bcc`, `bcs`, `bmi`, `bpl`, `bvc`, or `bvs` target is mor
 
 **Unresolved Symbol List with count**
 
-```
+```yaml
 --- Unresolved Symbol List
 vrh_ascii_pad            0000 ????         (R )
 --- 2 Unresolved Symbols

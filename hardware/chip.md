@@ -192,9 +192,9 @@ PCR_L   = $0E           ; lowercase / text charset (PCR bits 3:1 = 111)
 
 ### IFR and IER ($E84D / $E84E) - Interrupt Flags and Enables
 
-The interrupt flag register (IFR) and interrupt enable register (IER) share the same bit assignments. In the IFR a `1` bit means that source has triggered; in the IER a `1` bit means that source is allowed to assert IRQ.
+The interrupt flag register (IFR) and interrupt enable register (IER) share the same bit assignments. In the IFR a `1` bit means that source has triggered, in the IER a `1` bit means that source is allowed to assert IRQ.
 
-Writing the IER is special: bit 7 selects the operation. Write with bit 7 = `1` to **enable** every other bit that is set; write with bit 7 = `0` to **disable** every other bit that is set. The bits you leave clear are untouched either way.
+Writing the IER is special: bit 7 selects the operation. Write with bit 7 = `1` to **enable** every other bit that is set, write with bit 7 = `0` to **disable** every other bit that is set. The bits you leave clear are untouched either way.
 
 | Bit | Source                                |
 |-----|---------------------------------------|
@@ -280,7 +280,7 @@ The PET 3032 uses board #3.
 
 ### Character Set Switching
 
-Always use read-modify-write to preserve VIA CB2 bits (CB2 drives the IEEE-488 NDAC line; overwriting it breaks disk I/O):
+Always use read-modify-write to preserve VIA CB2 bits (CB2 drives the IEEE-488 NDAC line, overwriting it breaks disk I/O):
 
 ```asm
         lda PCR

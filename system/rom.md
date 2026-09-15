@@ -7,7 +7,7 @@
 
 This file lists ROM routines that have **no KERNAL jump-table equivalent** but are useful from machine code on the PET 3032.
 
-Every address here is **version-specific** and applies only to **BASIC 2 ("new ROM")** machines: the 3008, 3016, and 3032. They are not stable like the `$FFC0-$FFEA` jump table. On a BASIC 1 or BASIC 4 machine they are wrong. Use the jump table (`system/kernal.md`) whenever a routine exists there; reach into raw ROM only for things the jump table does not expose (floating point, scrolling, number formatting).
+Every address here is **version-specific** and applies only to **BASIC 2 ("new ROM")** machines: the 3008, 3016, and 3032. They are not stable like the `$FFC0-$FFEA` jump table. On a BASIC 1 or BASIC 4 machine they are wrong. Use the jump table (`system/kernal.md`) whenever a routine exists there, reach into raw ROM only for things the jump table does not expose (floating point, scrolling, number formatting).
 
 Every address in this file was verified by disassembling the `basic-2.901465-01-02`, `edit-2-n.901447-24`, and `kernal-2.901465-03` ROMs in VICE (`xpet -model 3032`). To confirm on your own ROM set, see `utility/vice-emulator.md`.
 
@@ -39,7 +39,7 @@ Before any program calls these addresses, confirm it is running on a new-ROM mac
         beq wrong_rom           ; 0 = old ROM (BASIC 1) -> addresses here are invalid
 ```
 
-There is no in-ROM flag that distinguishes BASIC 2 from BASIC 4; a program that must run on both should call the jump table only, or carry its own per-ROM address table.
+There is no in-ROM flag that distinguishes BASIC 2 from BASIC 4, a program that must run on both should call the jump table only, or carry its own per-ROM address table.
 
 ## ROM Memory Regions
 
@@ -57,7 +57,7 @@ The upper 16 KB splits into these regions on a new-ROM machine.
 
 ## Screen and Editor
 
-These editor-ROM routines drive the screen directly. Most take no parameters; the screen cursor state lives in zero page (`$C6` = cursor column, `$D8` = cursor line, `$C4-$C5` = pointer to current screen line).
+These editor-ROM routines drive the screen directly. Most take no parameters, the screen cursor state lives in zero page (`$C6` = cursor column, `$D8` = cursor line, `$C4-$C5` = pointer to current screen line).
 
 | Address | Routine                | Notes                                                       |
 |---------|------------------------|-------------------------------------------------------------|
@@ -87,7 +87,7 @@ The hardware IRQ vector (`$FFFE`) points to `$E61B`. This is the routine that ru
 
 `$E61B` saves the registers, then does `JMP ($0092)` for a BRK or `JMP ($0090)` (CINV) for a normal IRQ. Because the entry dispatches through the RAM vector CINV, the correct and stable way to hook the interrupt is to chain through CINV, not to JSR `$E62E` directly. See `system/irq.md` for the full hook-and-chain pattern.
 
-The default contents of CINV (`$0090`) are `$E62E`; the default BRK vector (`$0092`) points into the machine-language monitor.
+The default contents of CINV (`$0090`) are `$E62E`, the default BRK vector (`$0092`) points into the machine-language monitor.
 
 ## Floating-Point Routines
 
@@ -125,7 +125,7 @@ Arithmetic operates on FAC1 and FAC2 and leaves the result in FAC1.
 | `$E028` | TAN                    |
 | `$E08C` | ATN                    |
 
-Exact register and pointer conventions differ per entry point (some assume an operand pointer in `A`/`Y`, some assume FAC2 is already loaded). Disassemble the specific routine before depending on a calling sequence; this table is a verified map of where each function lives, not a full ABI.
+Exact register and pointer conventions differ per entry point (some assume an operand pointer in `A`/`Y`, some assume FAC2 is already loaded). Disassemble the specific routine before depending on a calling sequence, this table is a verified map of where each function lives, not a full ABI.
 
 ## Number and String
 

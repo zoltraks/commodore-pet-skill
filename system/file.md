@@ -216,7 +216,7 @@ Must be called before pet_open, LOAD, or SAVE.
 **Notes:**
 
 - The filename must be in PETSCII uppercase.
-- For cassette files with no name, call with A=0; X and Y are ignored.
+- For cassette files with no name, call with A=0, X and Y are ignored.
 - For disk files the filename must always be provided.
 - The filename string does not need a null terminator.
 - This is a wrapper routine, not a KERNAL jump table entry. The PET does not have SETNAM.
@@ -259,7 +259,7 @@ Must be called after pet_setnam and before pet_open, LOAD, or SAVE.
 **Notes:**
 
 - The logical file number must be unique among all currently open files.
-- For LOAD and SAVE the LFN is ignored by some KERNAL versions; still provide a valid value.
+- For LOAD and SAVE the LFN is ignored by some KERNAL versions, still provide a valid value.
 - SA 255 ($FF) is sometimes used as "no secondary address" for certain devices.
 - This is a wrapper routine, not a KERNAL jump table entry. The PET does not have SETLFS.
 
@@ -339,7 +339,7 @@ open_ok:
 - Always close every logical file you open.
 - Failing to close files leaves them in the KERNAL table and may cause "too many files" errors.
 - If a file is the current input or output channel, call CLRCHN before CLOSE.
-- CLALL closes all files; use CLOSE for targeted cleanup.
+- CLALL closes all files, use CLOSE for targeted cleanup.
 
 ```asm
 ; PET CLOSE includes BASIC parsing - use pet_close wrapper (see above)
@@ -379,7 +379,7 @@ Must be called after OPEN.
 - Only one input channel is active at a time.
 - Calling CHKIN again redirects input to the new file.
 - Always call CLRCHN to restore keyboard input when done reading.
-- CHKIN does not clear STATUS ($0096); check it after each CHRIN.
+- CHKIN does not clear STATUS ($0096), check it after each CHRIN.
 
 ```asm
 CHKIN   = $FFC6
@@ -488,11 +488,11 @@ CLRCHN  = $FFCC
 
 **Notes:**
 
-- Call CHKIN first to select a file; otherwise reads from keyboard.
+- Call CHKIN first to select a file, otherwise reads from keyboard.
 - For keyboard input, CHRIN waits for a full line and returns one character per call.
 - For disk/cassette, CHRIN returns the next byte in the stream.
 - After each CHRIN call, read STATUS to check for EOF or errors.
-- STATUS bit 6 = EOF on tape; STATUS bit 7 = EOI (EOF) on IEEE-488.
+- STATUS bit 6 = EOF on tape, STATUS bit 7 = EOI (EOF) on IEEE-488.
 - When STATUS bit 4 is set, an unrecoverable read error occurred.
 
 ```asm
@@ -649,7 +649,7 @@ Must call pet_setnam and pet_setlfs first.
 - Do not call OPEN before LOAD - LOAD handles the file open internally.
 - After LOAD returns, X/Y point to the first byte after the loaded data.
 
-> **ML caveat:** The `$FFD5` jump entry re-parses BASIC and wipes the zero-page parameters (see `system/load.md` — verified by disassembly and a live xpet run). From machine code, enter the low-level LOAD at **`$F3C9`** (past `JSR $F43E`), with `$9D` (VERCK) = 0 for load / 1 for verify. Note that on hard errors (file-not-found, device-not-present) the PET LOAD prints the error and returns to BASIC READY rather than returning to your caller — so unlike the C64 you cannot always trap the error via the carry flag; check `STATUS` after a load that returns.
+> **ML caveat:** The `$FFD5` jump entry re-parses BASIC and wipes the zero-page parameters (see `system/load.md` — verified by disassembly and a live xpet run). From machine code, enter the low-level LOAD at **`$F3C9`** (past `JSR $F43E`), with `$9D` (VERCK) = 0 for load / 1 for verify. Note that on hard errors (file-not-found, device-not-present) the PET LOAD prints the error and returns to BASIC READY rather than returning to your caller — so unlike the C64 you cannot always trap the error via the carry flag, check `STATUS` after a load that returns.
 
 ```asm
 ; PET does not have SETLFS - use pet_setlfs wrapper (see above)
@@ -717,7 +717,7 @@ Must call pet_setnam and pet_setlfs first.
 >
 > **To save arbitrary ML data on the PET, use one of:**
 > 1. **Recommended — write the file yourself with OPEN + CHKOUT + CHROUT** (see the sequential-file write pattern earlier in this file). This gives full control over the bytes and works from pure ML.
-> 2. Temporarily set the BASIC pointers `$28/$29` (start) and `$2A/$2B` (end) to your range, call the low-level SAVE past the parse (`$F6A1`), then restore them — fiddly and clobbers BASIC state; test under VICE before relying on it.
+> 2. Temporarily set the BASIC pointers `$28/$29` (start) and `$2A/$2B` (end) to your range, call the low-level SAVE past the parse (`$F6A1`), then restore them — fiddly and clobbers BASIC state, test under VICE before relying on it.
 >
 > The C64-style block below (`A` = ZP start pointer, `X`/`Y` = end+1) is retained only to show the interface people expect from the C64 — **it does not work as-is from ML on the PET.**
 
@@ -1134,8 +1134,8 @@ Filenames on Commodore disk drives follow these rules:
 - Maximum 16 characters.
 - Characters must be PETSCII uppercase (the default character set).
 - Spaces are allowed but may cause issues with some DOS versions.
-- Wildcards: `*` matches any sequence of characters; `?` matches one character.
-- Drive prefix: `0:` selects drive 0 on a dual-drive unit; `1:` selects drive 1.
+- Wildcards: `*` matches any sequence of characters, `?` matches one character.
+- Drive prefix: `0:` selects drive 0 on a dual-drive unit, `1:` selects drive 1.
 - File type suffix for OPEN: `,S` for sequential, `,P` for program, `,R` for relative.
 - File mode suffix for OPEN: `,R` for read, `,W` for write.
 
@@ -1149,7 +1149,7 @@ Examples:
 
 - `"0:MYFILE,S,R"` - read sequential file MYFILE from drive 0
 - `"0:OUTPUT,S,W"` - write new sequential file OUTPUT on drive 0
-- `"0:PROG,P,R"` - read program file (rarely needed; use LOAD instead)
+- `"0:PROG,P,R"` - read program file (rarely needed, use LOAD instead)
 
 For LOAD and SAVE, the filename is just the name without type or mode.
 
@@ -1163,7 +1163,7 @@ If no name is given (A=0 in pet_setnam), the KERNAL loads the next file regardle
 
 Cassette write (SA=1) always appends at the current tape position.
 
-There is no way to overwrite an existing tape file; the old data remains on tape.
+There is no way to overwrite an existing tape file, the old data remains on tape.
 
 ## Multiple Open Files
 
@@ -1308,7 +1308,7 @@ lc_err:
 Key points:
 
 - The file is opened and closed for each chunk. No channel stays open between chunks.
-- `STATUS` is checked after every `CHRIN`. A non-zero `STATUS` means EOF or error; stop reading.
+- `STATUS` is checked after every `CHRIN`. A non-zero `STATUS` means EOF or error, stop reading.
 - `view_chunk_len` records how many bytes were actually read, which may be less than `CHUNK_SIZE` at EOF.
 - The skip loop reads and discards bytes one at a time. This is slow for large offsets but is the only way to reach an arbitrary position in a CBM-DOS sequential file.
 

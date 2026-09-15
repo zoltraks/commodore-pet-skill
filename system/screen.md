@@ -284,7 +284,7 @@ Set the RVS flag before calling CHROUT:
 
 Set bit 7 on a row's screen codes to highlight the current menu selection. Clear bit 7 to deselect.
 
-`highlight_row` and `unhighlight_row` borrow $FB-$FC as a screen pointer; they save and restore both bytes. `get_row_ptr` is an internal helper and does not save/restore.
+`highlight_row` and `unhighlight_row` borrow $FB-$FC as a screen pointer, they save and restore both bytes. `get_row_ptr` is an internal helper and does not save/restore.
 
 ```asm
 SCREEN      = $8000
@@ -446,7 +446,7 @@ This means UI elements drawn with the box-drawing codes below work in **both** c
 
 ### Switching Character Sets
 
-Always use read-modify-write on PCR to preserve CB2 bits (CB2 drives the IEEE-488 NDAC line; overwriting it breaks disk I/O):
+Always use read-modify-write on PCR to preserve CB2 bits (CB2 drives the IEEE-488 NDAC line, overwriting it breaks disk I/O):
 
 ```asm
 PCR     = $E84C
@@ -568,7 +568,7 @@ The `copy_tail` section above contains a subtle flag hazard that does not affect
 
 If the back buffer tail region contains no `$00` bytes (common with uninitialized RAM filled with `$AA` or other garbage), the loop never exits when X reaches zero. Instead, X wraps from `$00` to `$FF`, and the loop continues writing past `$83E7` into `$83E8-$83FF` and beyond -- overwriting KERNAL variables, I/O registers, or VIA/PIA hardware. This corrupts the keyboard interrupt and freezes input.
 
-Two fixes exist. Both are correct; pick either based on register availability:
+Two fixes exist. Both are correct, pick either based on register availability:
 
 ```asm
 ; FIX 1: txa after sta -- bne tests X (counter)
@@ -648,7 +648,7 @@ present_screen:
         rts
 ```
 
-For event-driven programs, call `present_screen` at the end of every redraw routine (`full_redraw`, `redraw_panels`, `redraw_active`, `view_render`) and after each interactive row-24 update (prompt label, prompt buffer, status message). The program's main loop is a `GETIN` poll; between keypresses, no redraw or present occurs.
+For event-driven programs, call `present_screen` at the end of every redraw routine (`full_redraw`, `redraw_panels`, `redraw_active`, `view_render`) and after each interactive row-24 update (prompt label, prompt buffer, status message). The program's main loop is a `GETIN` poll, between keypresses, no redraw or present occurs.
 
 ### Synchronizing Character-Set Switches With VBLANK
 

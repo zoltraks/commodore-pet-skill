@@ -336,7 +336,7 @@ The drive sends the directory as a tokenized BASIC program in memory-image forma
 
 Each line follows this structure:
 
-```
+```asm
 [2 bytes: next-line pointer (LE)] [2 bytes: line number (LE)] [text bytes] [00: end of line]
 ```
 
@@ -718,7 +718,7 @@ Use it only for:
 
 > **Not the C64 addresses.** The C64/serial-IEC entries `TALK` ($FFB4), `LISTEN` ($FFB1), `TKSA` ($FF96), `SECOND` ($FF93), `ACPTR` ($FFA5), `CIOUT` ($FFA8), `UNTALK` ($FFAB), `UNLSN` ($FFAE) **do not exist on the PET**. On the PET jump table (which only spans `$FFC0-$FFEA`) those addresses fall in the machine-language monitor and the copyright string — the bytes at `$FFB1-$FFBF` are the ASCII text `"C. 0978 CBM "`, not a JMP. Verified against `kernal-2.901465-03`.
 
-The PET's IEEE-488 primitives live in the KERNAL body at these **new-ROM-specific** addresses (not a stable jump table — wrong on BASIC 1 and BASIC 4 machines; reach them only when the standard file routines cannot do the job):
+The PET's IEEE-488 primitives live in the KERNAL body at these **new-ROM-specific** addresses (not a stable jump table — wrong on BASIC 1 and BASIC 4 machines, reach them only when the standard file routines cannot do the job):
 
 | PET routine                                    | Address | Description                                       |
 |------------------------------------------------|---------|---------------------------------------------------|

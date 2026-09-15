@@ -285,7 +285,7 @@ Stop-Process -Id $proc.Id -Force
 
 When using Git Bash (`sh`) on Windows, the Linux recipe works with minor adjustments: replace `/tmp/` with a Windows-compatible temp path, and use `kill %1` instead of `kill $XPETPID`.
 
-`-limitcycles N` caps total CPU cycles, killing xpet if the test script forgets to. At PET's 1 MHz, 500,000,000 cycles is 500 emulated seconds; warp lets the host burn through that as fast as it can.
+`-limitcycles N` caps total CPU cycles, killing xpet if the test script forgets to. At PET's 1 MHz, 500,000,000 cycles is 500 emulated seconds, warp lets the host burn through that as fast as it can.
 
 `-warp` runs the CPU at maximum host speed. The autostart key-buffer stuffing still uses real wall-clock pacing, so the `sleep` step is required no matter how fast the CPU runs.
 
@@ -471,7 +471,7 @@ Key bytes to recognise quickly during diagnostics:
 
 Example: the bytes at the start of a SYNTAX-error row decode as
 
-```
+```asm
 3f 13 19 0e 14 01 18 20 05 12 12 0f 12 20 09 0e 20 20 31 30
 ?  S  Y  N  T  A  X     E  R  R  O  R     I  N        1  0
 ```
@@ -490,7 +490,7 @@ Each row is 40 bytes. Row N starts at `$8000 + N * 40` (`$28` per row):
 | 3   | `$8078` |
 | 24  | `$83C0` |
 
-A `?SYNTAX ERROR IN 10` message at row 1 (`$8028`) but not row 0 means the program ran long enough to clear the screen (moving cursor to row 0), then returned to BASIC which printed the error on the next line. The clear-screen happened; the crash came _after_ init.
+A `?SYNTAX ERROR IN 10` message at row 1 (`$8028`) but not row 0 means the program ran long enough to clear the screen (moving cursor to row 0), then returned to BASIC which printed the error on the next line. The clear-screen happened, the crash came _after_ init.
 
 A `?SYNTAX ERROR IN 10` at row 0 means the screen was never cleared -- BASIC parsed and rejected the BASIC stub without the program's init ever running.
 
@@ -502,7 +502,7 @@ The PET KERNAL keyboard buffer at `$026F` (10 bytes, count at `$009E`) can be wr
 
 Use the monitor's `>` (memory write) command to place a PETSCII code in the buffer and set the count:
 
-```
+```asm
 > $026F 56
 > $009E 01
 ```
@@ -571,7 +571,7 @@ If keys are injected faster than the program can process them, the 10-byte buffe
 
 The KERNAL 60 Hz IRQ keyboard scan auto-repeats held keys into the keyboard buffer (see `system/keyboard.md` "Auto-Repeat"). Under warp mode, the IRQ runs orders of magnitude faster than real time, so auto-repeat fills the buffer in milliseconds of wall-clock time. This causes three debugging problems:
 
-1. **Toggle key bugs reproduce more aggressively under warp.** A menu that opens and closes on the same key will appear to open and instantly close, because the auto-repeated key is already in the buffer by the time the menu's input loop calls `GETIN`. On real hardware the user releases the key within ~100 ms; under warp the repeat fires before the user can react.
+1. **Toggle key bugs reproduce more aggressively under warp.** A menu that opens and closes on the same key will appear to open and instantly close, because the auto-repeated key is already in the buffer by the time the menu's input loop calls `GETIN`. On real hardware the user releases the key within ~100 ms, under warp the repeat fires before the user can react.
 
 2. **Injected keys can be overwritten by the IRQ scan.** When you inject a key via `> $026F XX` followed by `> $009E 01`, the 60 Hz IRQ scan may fire between your two monitor commands and overwrite `$026F` with an auto-repeated key from the (simulated) held key. The injected key never reaches `GETIN`. If `GETIN` returns an unexpected value after injection, check `$026F` and `$009E` immediately before the `GETIN` call to see whether the injection survived.
 
@@ -587,7 +587,7 @@ warp off
 
 Step through the key handling code, then re-enable warp if needed:
 
-```
+```asm
 warp on
 ```
 
@@ -638,7 +638,7 @@ sta $7f00       ; trace: load_panel done
 
 Read the trace byte via the remote monitor:
 
-```
+```asm
 m $7f00 $7f00
 ```
 
@@ -694,7 +694,7 @@ Useful checks:
 
 This was critical for diagnosing the root cause of `?SYNTAX ERROR` crashes. Disassemble the KERNAL jump table to verify which entries actually exist:
 
-```
+```asm
 d $ffc0 $ffea
 ```
 
@@ -750,7 +750,7 @@ The bytes at `$FFBD` are `$AA` (the `TAX` instruction), so `jsr $FFBD` executes 
 
 If you set breakpoints across a range of addresses and none fires in 30+ seconds of warp-mode execution, the crash occurs _before_ the earliest breakpoint. Connect the remote monitor, send `r`, and read the PC:
 
-```
+```asm
 r
   PC   AC XR YR SP  NV-BDIZC
 ; E698 00 08 00 EC  00100101
@@ -769,7 +769,7 @@ Use the PC to locate the crash site:
 When `r` shows PC in the KERNAL ROM (`$E000-$FFFF`) and the `I` flag = 1 (interrupt disable), the CPU is stuck inside a KERNAL critical section. The most common cause on PET 3032 is an IEEE-488 bus deadlock in the byte-transfer handshake loop (around `$E698`).
 
 What to check:
-1. SP: `SP=$FF` is an empty stack; `SP=$EF` = 16 bytes pushed (8 JSR frames); `SP=$EC` = 19 bytes (≈9 JSR frames). A depth of 9 is consistent with the KERNAL `OPEN`→`LISTEN`→byte-receive chain.
+1. SP: `SP=$FF` is an empty stack, `SP=$EF` = 16 bytes pushed (8 JSR frames), `SP=$EC` = 19 bytes (≈9 JSR frames). A depth of 9 is consistent with the KERNAL `OPEN`→`LISTEN`→byte-receive chain.
 2. `STATUS` at `$0096`: non-zero value means the KERNAL already logged an I/O error flag but is still looping.
 3. VIA PCR (see below).
 
@@ -782,7 +782,7 @@ The VIA 6522 at `$E840` controls the IEEE-488 handshake lines through its Periph
 | 7:5      | CB2 mode         | `000` = CB2 as **input**; on PET 3032, CB2 **is NDAC**                 |
 | 3:1      | CA2 mode         | `110` = manual output low; selects uppercase/graphics charset ROM half |
 
-Writing `$0C` to PCR sets bits 7:5 = `000` → CB2 in **input** mode. With NDAC in input mode, the PET can never signal "Not Data Accepted" to the drive. The drive keeps waiting; the KERNAL loops forever; interrupts are disabled. Every subsequent `OPEN`, `CHKIN`, or `CHRIN` call hangs permanently.
+Writing `$0C` to PCR sets bits 7:5 = `000` → CB2 in **input** mode. With NDAC in input mode, the PET can never signal "Not Data Accepted" to the drive. The drive keeps waiting, the KERNAL loops forever, interrupts are disabled. Every subsequent `OPEN`, `CHKIN`, or `CHRIN` call hangs permanently.
 
 **Hazard**: if your program saves and restores PCR to switch character sets (a common technique), verify the value you write. `$0C` looks like "set bit 3 and 2" but puts CB2 into input mode. Use `$4C` (CB2 output high) or `$08` (CA2 low only, CB2 default output) instead, depending on which charset the PET was in at startup.
 
@@ -859,7 +859,7 @@ After each step, check registers with `r` and relevant memory with `m`.
 
 If a screen location or zero-page variable gets corrupted, set a watchpoint to catch the write:
 
-```
+```asm
 watch store $8050
 x
 ```
@@ -870,7 +870,7 @@ The monitor stops and shows the instruction that wrote to the address, along wit
 
 If a bug only appears on a specific loop iteration, use a condition:
 
-```
+```asm
 break $0420 if X==$0A
 x
 ```
@@ -891,7 +891,7 @@ Output shows stack offsets relative to SP+1, most recent call first. This helps 
 
 When a program's key handling behaves wrong (a key does nothing, or a toggle key opens and immediately closes an element), use the remote monitor to inject keys and trace the dispatch path. This is more reliable than pressing keys in the emulator window, because the monitor gives exact control over timing and lets you inspect the keyboard buffer between key presses.
 
-**Run without warp.** Keyboard auto-repeat runs at the 60 Hz IRQ rate; under warp the buffer fills in milliseconds of wall-clock time, which makes toggle-key bugs reproduce differently than on real hardware. See "Warp Mode and Keyboard Auto-Repeat" above.
+**Run without warp.** Keyboard auto-repeat runs at the 60 Hz IRQ rate, under warp the buffer fills in milliseconds of wall-clock time, which makes toggle-key bugs reproduce differently than on real hardware. See "Warp Mode and Keyboard Auto-Repeat" above.
 
 ```bash
 xpet -model 3032 -drive8type 2031 \
@@ -915,7 +915,7 @@ In this example, `$0440` is the `GETIN` call in `main_loop`, `$0490` is the `GET
 
 **Inject a key and let the breakpoint fire.** Connect to the monitor, inject the key, and wait for the breakpoint:
 
-```
+```asm
 > $026F 4D
 > $009E 01
 x
@@ -923,7 +923,7 @@ x
 
 This injects PETSCII `$4D` ('M') and lets the CPU run. When the breakpoint at the `GETIN` call site fires, check what `GETIN` returned:
 
-```
+```asm
 r
 ```
 
@@ -931,7 +931,7 @@ The accumulator (A) holds the PETSCII code returned by `GETIN`. If A is `$00`, t
 
 **Inspect the keyboard buffer.** After a `GETIN` call, dump the buffer to see whether auto-repeat has already queued another copy of the same key:
 
-```
+```asm
 m $009E
 m $026F $0278
 ```
@@ -950,7 +950,7 @@ After each `cmp`/`beq` pair, check whether the branch was taken. If the "close m
 
 **Inject key sequences with delays.** For multi-step interactions (open menu, move selection, close menu), inject one key at a time with a delay between each, re-setting breakpoints as needed:
 
-```
+```asm
 > $026F 4D
 > $009E 01
 x
@@ -974,7 +974,7 @@ xpet -model 3032 -nativemonitor -autostart program.prg
 
 These are the essential commands for debugging PET programs.
 
-#### Machine State
+### Machine State
 
 | Command            | Action                                                 |
 |--------------------|--------------------------------------------------------|
@@ -994,7 +994,7 @@ These are the essential commands for debugging PET programs.
 | `stopwatch`        | Print CPU cycle counter                                |
 | `stopwatch reset`  | Reset cycle counter to zero                            |
 
-#### Execution Control
+### Execution Control
 
 | Command     | Action                                                         |
 |-------------|----------------------------------------------------------------|
@@ -1009,7 +1009,7 @@ These are the essential commands for debugging PET programs.
 | `warp on`   | Enable warp mode (max speed)                                   |
 | `warp off`  | Disable warp mode                                              |
 
-#### Checkpoints (Breakpoints, Watchpoints, Tracepoints)
+### Checkpoints (Breakpoints, Watchpoints, Tracepoints)
 
 | Command                | Action                                             |
 |------------------------|----------------------------------------------------|
@@ -1027,7 +1027,7 @@ These are the essential commands for debugging PET programs.
 | `en <num>`             | Enable checkpoint by number                        |
 | `bk`                   | List all checkpoints                               |
 
-#### Memory Manipulation
+### Memory Manipulation
 
 | Command            | Action                                                   |
 |--------------------|----------------------------------------------------------|
@@ -1037,7 +1037,7 @@ These are the essential commands for debugging PET programs.
 | `c <range> <dest>` | Compare memory range with destination, show mismatches   |
 | `h <range> <data>` | Hunt (search) for byte pattern in range; `xx` = wildcard |
 
-#### Monitor State
+### Monitor State
 
 | Command           | Action                                                  |
 |-------------------|---------------------------------------------------------|
@@ -1050,19 +1050,19 @@ Address notation in the monitor uses `$` prefix: `d $0410`, `m $8000 $805F`.
 
 Disassemble the BASIC stub area:
 
-```
+```asm
 d $0401
 ```
 
 Dump the screen RAM:
 
-```
+```asm
 m $8000 $83E7
 ```
 
 Write a byte directly into RAM (useful for patching without reassembling):
 
-```
+```asm
 > $0410 ea
 ```
 
@@ -1070,14 +1070,14 @@ The `>` command writes bytes: `> <addr> <hex bytes...>`.
 
 Set the PC to the program entry point and resume:
 
-```
+```asm
 r PC=$040E
 g
 ```
 
 Search screen RAM for the letter sequence "HI" (screen codes `$08` `$09`):
 
-```
+```asm
 h $8000 $83E7 08 09
 ```
 
@@ -1085,7 +1085,7 @@ h $8000 $83E7 08 09
 
 A breakpoint can include a condition so it only fires when the condition is true. This is useful for catching a specific iteration of a loop or a specific register value:
 
-```
+```asm
 break $0420 if A==$00
 break $0420 if X==Y
 break $8000 if @io:$E84C==$0C
@@ -1097,13 +1097,13 @@ The condition expression supports registers (A, X, Y, PC, SP, FL), comparison op
 
 A tracepoint prints the current PC and register state without stopping execution. Use it to log execution flow without interrupting the program:
 
-```
+```asm
 trace $0420
 ```
 
 Output appears as:
 
-```
+```asm
 #1 (Trace  exec 0420)  .C:0420  A9 20       LDA #$20        - A:00 X:00 Y:00 SP:FF ..-..IZC
 ```
 
@@ -1137,7 +1137,7 @@ xpet -model 3032 -nativemonitor -initbreak 0x040E -autostart program.prg
 
 From inside the monitor:
 
-```
+```asm
 break $0450
 x
 ```
@@ -1166,7 +1166,7 @@ This is useful for setting a fixed set of breakpoints and watchpoints without ty
 
 Example `debug.mon`:
 
-```
+```asm
 break $0450
 watch store $8000
 x

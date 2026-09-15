@@ -1,40 +1,39 @@
-# Style Guide
+# Document Style
 
 ## Purpose
 
-> **Scope:** Formatting rules for all Commodore PET skill documents
-> **Key items:** File structure, table alignment, code blocks, address notation, cross-references, adding new files
+This document defines the formatting and prose style for every Markdown document that is part of this Agent Skill.
 
-This document defines the formatting conventions for all files in the commodore-pet-skill.
+It compiles rules from the [Agent Skills specification](https://agentskills.io/specification), the `skill-creator` skill, and general Markdown formatting best practices.
 
-Follow these rules when adding new files or editing existing ones to keep style uniform across the skill.
+Every document created or modified as part of this skill must follow the rules below.
 
-This guide covers documentation style only. For assembly coding conventions -- file structure, labels, comments, section headers, naming, column alignment, and zero-page usage -- see `code/standard.md`.
+## Document Structure
 
-## File Header Structure
+Use a consistent top-to-bottom layout for every document.
 
-Every topic file follows this top-to-bottom layout:
+1. **H1 title** - plain, descriptive title, no subtitle or suffix.
+2. **Purpose** - one paragraph or blockquote stating what the document covers.
+3. **Main sections** - H2 (`##`) for major topics, H3 (`###`) for subtopics.
 
-1. H1 title -- plain topic name, no subtitle or suffix
-2. `## Purpose` section with Purpose blockquote
-3. Out-of-scope table -- directly after the blockquote, no heading
-4. `## Contents` table -- only for files longer than roughly 200 lines
-5. Main content sections (H2 and H3)
+Do not use H4 or deeper headings.
 
-### Purpose Section
+### Purpose Section Format
 
-The Purpose section uses a two-line blockquote:
+The Purpose section may use a blockquote format to summarize scope and key items:
 
 ```markdown
 ## Purpose
 
 > **Scope:** one-line description of what this file covers
-> **Key items:** comma-separated list of key addresses, registers, or concepts
+> **Key items:** comma-separated list of key concepts or references
 ```
+
+This format is recommended for reference files and topic documents.
 
 ### Out-of-Scope Table
 
-Every topic file includes a table directing readers to related files for topics outside its scope.
+When a document covers a focused topic within a larger skill, include an out-of-scope table directing readers to related files.
 
 ```markdown
 | Out of scope   | See instead        |
@@ -45,13 +44,13 @@ Every topic file includes a table directing readers to related files for topics 
 
 The table has exactly two columns named `Out of scope` and `See instead`.
 
-Put it directly below the Purpose blockquote with no heading between them.
+Put it directly below the Purpose section with no heading between them.
 
 Use backtick code spans around the file path in the `See instead` column.
 
 ### Contents Table
 
-Include a Contents table in files longer than roughly 200 lines.
+Include a Contents table in files longer than 300 lines.
 
 ```markdown
 ## Contents
@@ -68,177 +67,346 @@ The table has exactly three columns: `Section`, `Line`, and `What it covers`.
 
 Update line numbers when sections move significantly.
 
-## Section Headings
-
-Use Title Case for all headings.
-
-Use H2 (`##`) for top-level sections within a file.
-
-Use H3 (`###`) for subsections.
-
-Do not use H4 or deeper.
-
-Parenthetical content in headings is allowed for compact technical identifiers only.
-
-Acceptable uses:
-
-- Address ranges or specific addresses: `PIA 1 ($E810-$E813)`, `KERNAL Jump Table ($FFC0-$FFEA)`
-- Register or chip numbers: `Mixer Register ($07)`, `CRTC 6545 ($E880-$E88F)`
-- Alternative names or aliases: `byte (DC.B)`, `Loading a Binary File (LOAD)`, `Using KERNAL (CHROUT)`
-- Short parameter values: `Loading to a Fixed Address (SA=1)`, `Hex Offset (4-Digit)`
-- Standard disambiguators: `IRQ (Maskable)`, `NMI (Non-Maskable)`, `Scratch (Delete) File`
-
-Do not put descriptive qualifiers or usage notes in parentheses inside headings.
-
-Write those as plain sentences in the section body instead.
-
-Examples of what to avoid: `(Reference Only)`, `(fastest, largest)`, `(recommended for PET)`, `(Fallback When Docker Is Unavailable)`.
-
-## Tables
-
-### Cell Structure
-
-Every cell in a column occupies the same fixed width between its pipes: the column's content width `W` plus two.
-
-- `W` = the length of the longest stripped cell content in the column, counting the header and every data row. Count every character including backticks and asterisks.
-- A data cell is `| ` + content + trailing spaces to width `W` + ` |`. Exactly one leading space and one trailing space; content is left-aligned and padded on the right only.
-- A separator cell is `|` + `W+2` hyphens + `|`. Hyphens are flush against the pipes, no spaces.
-- Minimum `W` is three characters.
-
-### Worked Example
-
-`Name` (4) and `CHROUT` (6) give `W = 6`, so the separator cell is 8 hyphens and `Name` is padded with two trailing spaces.
-
-```markdown
-| Name   | Address | Description            |
-|--------|---------|------------------------|
-| CHROUT | `$FFD2` | Output byte to channel |
-```
-
-Column widths here are 6, 7, 22 -- separator cells are 8, 9, 24 hyphens.
-
-### Reformat After Editing
-
-Editing any cell can change a column's `W`, so reformat the whole table after every edit: recompute each column's `W`, re-pad every data cell, and replace every separator cell with `W+2` hyphens.
-
-A table is only correctly edited when every cell in a column has the same width and every separator cell matches that width plus two.
-
-### Addresses and Values in Tables
-
-Wrap hex addresses and byte values in single backticks: `` `$E840` ``, `` `$FF` ``.
-
-Always use the `$` prefix for hex values.
-
-## Code Blocks
-
-### Language Tag
-
-Use the `asm` language tag on all assembly code blocks.
-
-````markdown
-```asm
-        lda #$00
-```
-````
-
-Do not leave a blank line as the first or last line inside a code block.
-
-### Column Layout
-
-Assembly source uses the column positions defined in `code/standard.md`.
-
-### Equate Style
-
-Code examples in documentation must follow the assembly style conventions described in `code/standard.md`.
-
-Do not use the `equ` keyword in documentation examples; use `=`.
-
-### Standalone Programs vs. Snippets
-
-Complete standalone programs include `processor 6502` and `org $0401` at the top and the full BASIC stub.
-
-Subroutine snippets omit these and show only the relevant code.
-
-Always define all equates used in a snippet at the top of the same code block.
-
-## Inline Formatting
-
-### Addresses and Values
-
-Wrap all hex addresses and byte values in single backticks in prose and table cells.
-
-Examples: `` `$E840` ``, `` `$0096` ``, `` `$FF` ``
-
-Always use the `$` prefix for hex.
-
-### File Cross-References
-
-Reference other skill files with backtick code spans that include the folder prefix.
-
-Examples: `` `system/file.md` ``, `` `hardware/chip.md` ``, `` `example/general.md` ``
-
-Use this format consistently in both prose and table cells.
-
-### Register and Signal Names
-
-Chip registers in prose: `PCR`, `ACR`, `IFR`, `PORT B`, `CRB`
-
-6502 registers: `A`, `X`, `Y`, `SP`, `PC`
-
-Bit positions: bit 7, bit 6 (not Bit7, BIT7, b7, or bit#7)
-
-STATUS flag masks in prose: `$80`, `$40` (not 0x80 or %10000000)
-
-## Prose Style
+## Paragraph and Sentence Structure
 
 Write short sentences.
 
-Use a single sentence per paragraph for technical descriptions.
+Use one sentence per paragraph for technical descriptions.
 
-Put one empty line before and after bullet lists.
+This keeps the text readable in plain text editors, terminal viewers, and diff output.
 
-Do not put blank lines between items in a short bullet list.
+Separate every sentence with an empty line.
+
+A sentence may contain multiple related clauses if they express a single thought.
+
+Do not pack unrelated ideas into one long paragraph.
+
+## Word Wrap and Line Breaks
+
+Do not hard-wrap text at a fixed column width.
+
+Let each sentence occupy one logical line.
+
+A sentence may be long when the thought is long, the editor or renderer will soft-wrap the display.
+
+Hard-wrap only when the source itself needs a forced line break, such as inside a code block or a diagram.
+
+## Headings
+
+Use Title Case for all English section and chapter names.
+
+Use sentence case for Polish section and chapter names.
+
+Use H2 (`##`) for top-level sections.
+
+Use H3 (`###`) for subsections.
+
+Keep section names short.
+
+Do not put descriptive qualifiers in section names using parentheses.
+
+Put qualifiers like "mandatory" or "do not repeat" in the section body instead.
+
+Parenthetical content in headings is allowed for compact technical identifiers only, such as address ranges, register numbers, or standard disambiguators.
+
+Avoid headings with trailing punctuation.
+
+## Lists
 
 Use dashes (`-`) for bullet points.
 
 Use numbered lists only for sequential steps.
 
-Do not use typographic quotes (`""`). Use standard ASCII double quotes (`""`).
+Put one empty line before and after every list.
 
-## Adding New Topic Files
+Do not put blank lines between short list items.
+
+Use blank lines between list items when the items are long or contain multiple sentences.
+
+Put one blank line between a parent list item and its nested sublist.
+
+For nested lists, indent the sublist to the parent item.
+
+## Empty Lines and Spacing
+
+Use one blank line between paragraphs.
+
+Put one blank line before and after a list.
+
+Put one blank line before and after a code block.
+
+Do not stack multiple blank lines.
+
+Do not use trailing spaces at the end of lines.
+
+## Code Blocks
+
+Use a language tag on every fenced code block that contains code in a programming, markup, or data language.
+
+Do not use a language tag on fenced blocks that contain ASCII art, directory trees, diagrams, or plain text.
+
+Leave those blocks as plain fenced blocks with no tag.
+
+Do not leave a blank line as the first or last line inside the block.
+
+Keep code blocks compact and relevant.
+
+Use backticks for inline code, file names, commands, and values.
+
+## Inline Formatting
+
+Prefer standard ASCII characters for normal text.
+
+Use standard ASCII double quotes (`"`) instead of typographic quotes.
+
+Use standard ASCII apostrophes (`'`) instead of typographic apostrophes.
+
+Use bold text for key term definitions: **Term**: definition.
+
+Use italics sparingly.
+
+Do not overuse emphasis.
+
+## Semicolons
+
+Do not use the semicolon character in prose.
+
+Join two closely related clauses with a comma instead.
+
+Split the clauses into separate sentences when they express separate thoughts.
+
+This rule does not apply to code blocks, inline code, or file paths.
+
+## Tables
+
+Tables must remain readable as plain text.
+
+Column alignment and consistent padding are the primary goals.
+
+### Delimiters
+
+Use pipe characters (`|`) to delimit columns.
+
+Place one space after the leading pipe and one space before the trailing pipe.
+
+Do not add extra spaces around the pipes beyond the single required space.
+
+### Header Separator
+
+Place a separator line immediately after the header row.
+
+The separator line contains only hyphens and pipe characters.
+
+The hyphens in the separator row are contiguous with the pipe characters.
+
+Do not add spaces between the pipes and the hyphens in the separator row.
+
+The separator width for each column must match the header and content cell width between the pipes.
+
+This means the separator contains the calculated column width plus two hyphens.
+
+The extra hyphens account for the single space before and after each cell value.
+
+The minimum width of any column is three characters.
+
+### Cell Padding
+
+Pad every cell with trailing spaces so it matches the column width.
+
+Empty cells must also be padded to the column width.
+
+Do not pad beyond the column width.
+
+Never truncate cell contents.
+
+Use left alignment for all cells.
+
+### Column Widths
+
+Calculate the column width as the maximum character width of all cells in that column, including the header cell.
+
+Measure the width as the length of the cell string between the cell delimiters.
+
+The width is the **source text** character count, not the rendered character count.
+
+This is the most important rule in this section.
+
+Count every character that appears in the plain-text Markdown source, including all formatting markers.
+
+Do not strip, interpret, or collapse any characters before measuring.
+
+Do not measure the width of what the cell would look like after a Markdown renderer processes it.
+
+A Markdown renderer hides backticks, asterisks, and other formatting markers from the reader, but those markers are still present in the source text and must be counted.
+
+The table is formatted for plain-text readability first, and a Markdown renderer second.
+
+In plain-text view, every character is visible, so every character must be counted.
+
+**Characters That Must Be Counted**
+
+The following characters are part of the cell content and must be included in the width measurement.
+
+- Backticks around inline code (e.g., the cell `` `some.value` `` has 13 characters, not 11).
+- Double backticks around code containing backticks (e.g., the cell `` `` `00` `` `` has 8 characters, not 4).
+- Asterisks for emphasis (e.g., the cell `*italic*` has 9 characters, not 7).
+- Double asterisks for bold (e.g., the cell `**bold**` has 10 characters, not 4).
+- Underscores for emphasis (e.g., the cell `_under_` has 8 characters, not 5).
+- Triple backticks, pipe characters inside code spans, and any other literal characters.
+- Spaces, punctuation, and all other visible characters.
+
+**Common Mistake**
+
+The most common formatting mistake is measuring the **rendered** width instead of the **source** width.
+
+For example, the cell `` `config.settings.json` `` contains 22 characters in the source text, including the two backticks.
+
+A Markdown renderer displays only `config.settings.json`, which is 20 characters.
+
+If the formatter uses 20 instead of 22, the column will be too narrow and the pipes will not align in plain text.
+
+Always count the source text, never the rendered text.
+
+### Compacting
+
+Compact the table after calculating column widths.
+
+Remove any padding that exceeds the widest cell in each column.
+
+Recalculate the separator line and all cell padding after compacting.
+
+A compacted table has the minimum column widths needed to display all cells correctly.
+
+The compacted version is the correct version.
+
+### Reformat After Editing
+
+Editing any cell can change a column's width, so reformat the whole table after every edit.
+
+Recompute each column's width, re-pad every data cell, and replace every separator cell with the correct number of hyphens.
+
+A table is only correctly edited when every cell in a column has the same width and every separator cell matches that width plus two.
+
+### Multi-Line Cells
+
+Avoid multi-line cells.
+
+If a cell must wrap, apply the same formatting rules to every row in the table.
+
+## Special Characters
+
+Box-drawing characters are allowed inside code blocks for diagrams.
+
+Do not replace box-drawing characters with `+`, `-`, or other ASCII approximations.
+
+Do not use emojis unless explicitly requested.
+
+## Language
+
+Write documentation in the language used by the project.
+
+For English, use Title Case in section names.
+
+For Polish, use sentence case in section names.
+
+For Polish content examples, use "Przykład zawartości" instead of "Content Example".
+
+## File References
+
+When referencing other files in the skill, use relative paths from the skill root.
+
+Keep file references one level deep from `SKILL.md`.
+
+Avoid deeply nested reference chains.
+
+Reference files clearly from `SKILL.md` with guidance on when to read them.
+
+Use backtick code spans around file paths in both prose and table cells.
+
+Examples: `system/memory.md`, `hardware/chip.md`, `process/workflow.md`.
+
+## Skill Document Requirements
+
+Documents that are part of an Agent Skill must follow additional rules from the [Agent Skills specification](https://agentskills.io/specification) and the `skill-creator` skill.
+
+### SKILL.md Frontmatter
+
+The `SKILL.md` file must contain YAML frontmatter followed by Markdown content.
+
+Required frontmatter fields:
+
+- **`name`** - 1-64 characters, lowercase letters and hyphens only, must not start or end with a hyphen, must not contain consecutive hyphens, must match the parent directory name.
+- **`description`** - 1-1024 characters, non-empty, describes what the skill does and when to use it, should include specific trigger keywords.
+
+Optional frontmatter fields:
+
+- **`license`** - License name or reference to a bundled license file.
+- **`compatibility`** - 1-500 characters, environment requirements.
+- **`metadata`** - Map from string keys to string values for additional properties.
+- **`allowed-tools`** - Space-separated string of pre-approved tools.
+
+### Progressive Disclosure
+
+Skills use a three-level loading system.
+
+1. **Metadata** - The `name` and `description` fields are loaded at startup for all skills.
+2. **Instructions** - The full `SKILL.md` body is loaded when the skill is activated.
+3. **Resources** - Files in `scripts/`, `references/`, `assets/`, or other directories are loaded only when required.
+
+Keep `SKILL.md` under 500 lines.
+
+Move detailed reference material to separate files.
+
+For large reference files over 300 lines, include a table of contents.
+
+### Writing Style for Skill Instructions
+
+Prefer the imperative form in instructions.
+
+Explain why things are important instead of using heavy-handed directives.
+
+Use theory of mind and make the skill general, not narrow to specific examples.
+
+Start by writing a draft and then review it with fresh eyes to improve it.
+
+### Directory Structure
+
+A skill is a directory containing, at minimum, a `SKILL.md` file.
+
+Optional directories:
+
+- `scripts/` - Executable code for deterministic or repetitive tasks.
+- `references/` - Documentation loaded into context as needed.
+- `assets/` - Files used in output such as templates, icons, and fonts.
+
+When a skill supports multiple domains or frameworks, organize by variant and let the agent read only the relevant reference file.
+
+## Adding New Files
 
 ### Register in SKILL.md
 
-Every new file must be registered in `SKILL.md`:
+Every new file must be registered in `SKILL.md`.
 
-1. Add a row to the appropriate topic table under the correct category heading.
-2. Add one or more rows to the Common Task Routing table.
-3. If the file exceeds roughly 500 lines, add it to the "Note on Large Reference Files" table.
+Add a reference to the appropriate section or table in `SKILL.md` with guidance on when to read the file.
 
 ### File Naming
 
 Use a single lowercase word for single-concept files: `cpu.md`, `sound.md`, `memory.md`.
 
-Use a hyphen for multi-word names: `dasm-assembler.md`.
-
-### Folder Assignment
-
-| Folder       | Contents                                                          |
-|--------------|-------------------------------------------------------------------|
-| `hardware/`  | Chip registers, timing, hardware-level facts                      |
-| `system/`    | OS routines, memory layout, I/O protocols                         |
-| `expansion/` | Add-on cards and peripherals not part of the stock PET 3032       |
-| `code/`      | Implementation techniques, algorithmic patterns, coding standards |
-| `utility/`   | Tools, assembler, build system                                    |
-| `example/`   | Complete runnable programs and templates                          |
+Use hyphens for multi-word names: `dasm-assembler.md`, `risk-register.md`.
 
 ### Required Sections
 
 Every new topic file must include at minimum:
 
 - H1 title
-- `## Purpose` with `> **Scope:**` and `> **Key items:**` blockquote
-- Out-of-scope table with at least one row pointing to a related skill file
+- `## Purpose` section
 - One or more main content sections
 
-Files over roughly 200 lines must also include a `## Contents` table.
+Files over 300 lines must also include a `## Contents` table.
+
+## File Maintenance
+
+Maintain the existing line break style and encoding of any document you edit.
+
+Create new files in UTF-8 by default.

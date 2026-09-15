@@ -19,7 +19,7 @@ Everything here was verified against a BASIC 2 (`basic-2.901465-01-02`) machine 
 
 BASIC program text starts at `$0401` (decimal 1025). Location `$0400` holds a single `$00` byte that sits just below the program.
 
-Variables and arrays grow upward from the end of the program; strings grow downward from the top of memory. Five zero-page pointers track these regions.
+Variables and arrays grow upward from the end of the program, strings grow downward from the top of memory. Five zero-page pointers track these regions.
 
 | Pointer   | Points to                                |
 |-----------|------------------------------------------|
@@ -30,13 +30,13 @@ Variables and arrays grow upward from the end of the program; strings grow downw
 | `$30-$31` | Bottom of string space (moving down)     |
 | `$34-$35` | Top of BASIC memory (highest usable RAM) |
 
-Lower `$34-$35` before BASIC starts to reserve high memory for machine code or data. The currently executing line number is in `$36-$37`; it reads `$00` when BASIC is in direct mode.
+Lower `$34-$35` before BASIC starts to reserve high memory for machine code or data. The currently executing line number is in `$36-$37`, it reads `$00` when BASIC is in direct mode.
 
 ## Line Storage Format
 
 Each program line is a variable-length block:
 
-```
+```asm
 [link lo][link hi]  [line# lo][line# hi]  [token bytes ...]  [$00]
 ```
 
@@ -49,7 +49,7 @@ Lines are always stored in ascending line-number order. Inserting a line shifts 
 
 A live example -- the program `10 PRINT"HI"` stored from `$0401`:
 
-```
+```asm
 $0400:  00              ; leading zero byte below the program
 $0401:  0B 04           ; link -> $040B (start of next line)
 $0403:  0A 00           ; line number 10
@@ -116,7 +116,7 @@ These are the tokens for BASIC 2 (3008/3016/3032), decoded from the ROM keyword 
 
 ## Walking a Program from Machine Code
 
-To traverse a program, start at `$0401`, read the two-byte link, and follow it; stop when the link is `$0000`. The line number sits at offset 2-3 of each block, the tokens at offset 4.
+To traverse a program, start at `$0401`, read the two-byte link, and follow it, stop when the link is `$0000`. The line number sits at offset 2-3 of each block, the tokens at offset 4.
 
 ```asm
         lda $28
@@ -140,4 +140,4 @@ walk_line:
 walk_done:
 ```
 
-A null link (`$0000`) is the only end-of-program marker; there is no separate count of lines.
+A null link (`$0000`) is the only end-of-program marker, there is no separate count of lines.

@@ -75,7 +75,7 @@ RVS ON/OFF codes are documented in `system/screen.md`. The remaining codes appea
 
 The OFF RVS key is the physical Tab key on the PET 3032 graphics keyboard. Unshifted it sends RVS OFF (`$92`), shifted it sends RVS ON (`$12`). These codes can be used as application-defined toggle keys (e.g. menu open/close) since they are rarely needed for their original reverse-video purpose in machine-code programs that write directly to screen RAM.
 
-SHIFT LOCK mechanically latches the keyboard in the shifted state; it is a separate physical key from the two SHIFT keys in row 4 of the main segment.
+SHIFT LOCK mechanically latches the keyboard in the shifted state, it is a separate physical key from the two SHIFT keys in row 4 of the main segment.
 
 RUN STOP (main segment, row 3) is the same key documented in STOP Key above.
 
@@ -125,9 +125,9 @@ The STOP key is also returned by GETIN as PETSCII `$03` (ETX / RUN/STOP).
 
 The PET keyboard is a 10-row by 8-column matrix.
 
-PIA 1 PORT A bits 3-0 hold a **row number (0-9)**, which an external 74145 BCD-to-decimal decoder turns into ten row-select lines (only the selected row is pulled low). This is the key difference from the C64: the C64 drives one-hot select lines directly, so C64 scan code writes patterns like `$FE`/`$FD`; the PET writes the plain binary row number `0`-`9`. Writing a one-hot pattern to the PET selects the wrong row (or a nonexistent one).
+PIA 1 PORT A bits 3-0 hold a **row number (0-9)**, which an external 74145 BCD-to-decimal decoder turns into ten row-select lines (only the selected row is pulled low). This is the key difference from the C64: the C64 drives one-hot select lines directly, so C64 scan code writes patterns like `$FE`/`$FD`, the PET writes the plain binary row number `0`-`9`. Writing a one-hot pattern to the PET selects the wrong row (or a nonexistent one).
 
-PIA 1 PORT B reads back the 8 column bits for the selected row. A bit value of `0` means the key is pressed; `1` means not pressed. PORT A bits 7-4 are inputs (cassette sense, IEEE EOI, diagnostic), so writing a row number `0`-`9` to `$E810` leaves them undisturbed.
+PIA 1 PORT B reads back the 8 column bits for the selected row. A bit value of `0` means the key is pressed, `1` means not pressed. PORT A bits 7-4 are inputs (cassette sense, IEEE EOI, diagnostic), so writing a row number `0`-`9` to `$E810` leaves them undisturbed.
 
 This is the graphics keyboard of the PET 3008/3016/3032. Columns are labelled by their PORT B bit (bit 7 down to bit 0):
 
@@ -144,7 +144,7 @@ This is the graphics keyboard of the PET 3008/3016/3032. Columns are labelled by
 | 8        | `-`      | `0`      | R SHIFT | `>`   | —     | `]`   | `@`   | L SHIFT |
 | 9        | `=`      | `.`      | —       | `<`   | STOP  | SPACE | `[`   | RVS ON  |
 
-**Note:** This is the PET 3032 graphics keyboard; the business keyboard (4032B/8032) has a different matrix. Left SHIFT is row 8 bit 0, right SHIFT is row 8 bit 5, RETURN is row 6 bit 5, RUN/STOP is row 9 bit 4. (Matrix verified against VICE's `gtk3_grus_sym.vkm` PET graphics keymap.)
+**Note:** This is the PET 3032 graphics keyboard, the business keyboard (4032B/8032) has a different matrix. Left SHIFT is row 8 bit 0, right SHIFT is row 8 bit 5, RETURN is row 6 bit 5, RUN/STOP is row 9 bit 4. (Matrix verified against VICE's `gtk3_grus_sym.vkm` PET graphics keymap.)
 
 ## Direct Matrix Scan
 
@@ -173,7 +173,7 @@ To test whether 'Q' (row 2, column bit 0) is pressed:
 
 ### Scan All Rows
 
-Write each row number 0-9 in turn; no lookup table is needed since the row select is just the loop index:
+Write each row number 0-9 in turn, no lookup table is needed since the row select is just the loop index:
 
 ```asm
 scan_all:
@@ -332,7 +332,7 @@ ml_check_keys:
 
 Apply the same debounce after closing: store the close key in `menu_open_key`, set `menu_debounce`, and ignore that key in `main_loop` until the timer expires. This prevents the close key's auto-repeat from immediately re-opening the element.
 
-A timer value of 30 (half a second at 60 Hz) is a practical minimum. Too short and the user has not released the key yet; too long and the toggle feels sluggish.
+A timer value of 30 (half a second at 60 Hz) is a practical minimum. Too short and the user has not released the key yet, too long and the toggle feels sluggish.
 
 ### PIA 1 DDR and Initial State
 
@@ -398,14 +398,14 @@ The next `GETIN` call will return `$56` (the 'V' key) and reset the count to 0.
 
 When debugging with the VICE remote monitor over TCP, inject keys by writing to memory with the monitor's `>` command:
 
-```
+```asm
 > $026F 56
 > $009E 01
 ```
 
 This writes PETSCII `$56` ('V') to the buffer and sets the count to 1. After a short delay (to let the program's `GETIN` loop consume the key), dump screen memory to verify the result:
 
-```
+```asm
 m $8000 $83E7
 ```
 

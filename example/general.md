@@ -595,7 +595,7 @@ frame_data:
 **Notes:**
 
 - The KERNAL IRQ entry at `$E61B` saves A/X/Y before dispatching to CINV, so the custom handler does not need to preserve registers.
-- Chaining via `jmp (old_cinv)` is portable across ROM versions; the original CINV value points to the KERNAL keyboard scan and clock update handler.
+- Chaining via `jmp (old_cinv)` is portable across ROM versions, the original CINV value points to the KERNAL keyboard scan and clock update handler.
 - Reading `PIA1_PORTB` ($E812) is mandatory in any custom IRQ handler that replaces CINV completely. On the 6520 PIA, the CB1 interrupt flag clears only on a Port B read — reading CRB ($E813) does not clear it.
 
 ## Screen Data Row Format

@@ -48,24 +48,24 @@ PET screen codes include values > 127 (inverse video via bit 7). A sign-bit flag
 
 ### Example Encoding
 
-```
+```asm
 $66                    ; literal: one $66
 $00 $00 $66            ; repeat: $66 for 256 times
 $00 $E8 $66            ; repeat: $66 for 232 times
 ```
 
 A full screen of `$66` (1000 bytes) compresses to 12 bytes:
-```
+```asm
 $00,$00,$66,$00,$00,$66,$00,$00,$66,$00,$E8,$66
 ```
 
 ### Decompressor
 
-Uses self-modifying pointers (`rle_read+1/+2`, `rle_write+1/+2`) for source and destination access -- no zero-page indirection needed. Borrows ZP $FB-$FE for working registers; saves and restores all four.
+Uses self-modifying pointers (`rle_read+1/+2`, `rle_write+1/+2`) for source and destination access -- no zero-page indirection needed. Borrows ZP $FB-$FE for working registers, saves and restores all four.
 
 **Calling convention:** X = low byte, Y = high byte of a 6-byte parameter block in free RAM.
 
-```
+```asm
 ; parameter block layout:
 ; +0 src lo  +1 src hi  +2 dst lo  +3 dst hi  +4 len lo  +5 len hi
 ```
@@ -201,7 +201,7 @@ rle_block:
 
 A simpler format for data without many literal singles: alternate count and value, with `$00` as end marker. Less efficient than the `$00`-escape variant above when mixed literals and runs are common.
 
-```
+```asm
 $05 $20                ; 5 spaces
 $03 $41                ; 3 'A's
 $00                    ; end marker
@@ -213,7 +213,7 @@ Uses self-modifying pointers for source reads and a self-modifying absolute writ
 
 **Calling convention:** X = low byte, Y = high byte of a 4-byte parameter block in free RAM.
 
-```
+```asm
 ; parameter block layout:
 ; +0 src lo  +1 src hi  +2 dst lo  +3 dst hi
 ```
@@ -306,7 +306,7 @@ For animation, store only changed bytes between frames.
 Each delta record: 3 bytes (offset low, offset high, new value)
 Terminated by offset $FFFF.
 
-```
+```asm
 $10 $80 $41           ; screen[$8010] = $41
 $25 $80 $42           ; screen[$8025] = $42
 $FF $FF               ; end of delta
@@ -314,11 +314,11 @@ $FF $FF               ; end of delta
 
 ### Delta Applier
 
-Uses self-modifying code for source reads; patches each write address directly from the delta record. No zero-page required.
+Uses self-modifying code for source reads, patches each write address directly from the delta record. No zero-page required.
 
 **Calling convention:** X = low byte, Y = high byte of a 2-byte parameter block in free RAM.
 
-```
+```asm
 ; parameter block layout:
 ; +0 src lo  +1 src hi
 ```
@@ -421,7 +421,7 @@ After the token:
 
 ### Example Encoding
 
-```
+```asm
 $40 $41 $42 $43 $04      ; token: 4 literals, 0 match
                           ; literals: $41 $42 $43 $04
 
@@ -436,11 +436,11 @@ $00                      ; token: 0 literals, 0 match
 
 ### Decompressor
 
-Uses self-modifying pointers for source reads and destination writes. A shared write subroutine handles both literal and match copies. Borrows ZP `$FB`-`$FE` for working registers; saves and restores all four. Uses `$FF` (documented unused by PET BASIC 2) for the literal count high byte without saving.
+Uses self-modifying pointers for source reads and destination writes. A shared write subroutine handles both literal and match copies. Borrows ZP `$FB`-`$FE` for working registers, saves and restores all four. Uses `$FF` (documented unused by PET BASIC 2) for the literal count high byte without saving.
 
 **Calling convention:** X = low byte, Y = high byte of a 4-byte parameter block in free RAM.
 
-```
+```asm
 ; parameter block layout:
 ; +0 src lo  +1 src hi  +2 dst lo  +3 dst hi
 ```

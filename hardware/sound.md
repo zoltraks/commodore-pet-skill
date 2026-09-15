@@ -74,7 +74,7 @@ Use $F0, $CC, $AA for the inverted equivalents - they produce the same pitch.
 
 ## Frequency Formula
 
-```
+```asm
 f = 500000 / (T2_LO * 8)     for SR = $0F
 f = 500000 / (T2_LO * 4)     for SR = $33
 f = 500000 / (T2_LO * 2)     for SR = $55
@@ -200,7 +200,7 @@ The PCR register ($E84C) controls both CA2 (character set) and CB2 (speaker).
 
 The ACR method above controls CB2 via the SR path and does not affect CA2 or the character set.
 
-Do not modify PCR bits 7-4 for sound; use ACR and SR only.
+Do not modify PCR bits 7-4 for sound, use ACR and SR only.
 
 ```asm
 PCR     = $E84C

@@ -66,7 +66,7 @@ To call OPEN or CLOSE from machine code, use the **low-level ROM entry points** 
 | OPEN    | $FFC0      | $F524               | BASIC param parse at $F4CE     |
 | CLOSE   | $FFC3      | $F2AC               | BASIC param parse at $F4CE     |
 
-These low-level entries are the instruction immediately **after** the `JSR $F4CE` (BASIC parameter parse) at the top of each routine: `$FFC0` jumps to `$F521` where `$F521: JSR $F4CE` / `$F524: LDA $D2` — so `$F524` runs the open logic against the zero-page parameters you set yourself. Likewise `$FFC3` jumps to `$F2A9` where `$F2A9: JSR $F4CE` / `$F2AC: LDA $D2`. (These were verified by disassembling `kernal-2.901465-03`; do not use `$F560`/`$F2DD` — those land in the middle of an instruction and crash.)
+These low-level entries are the instruction immediately **after** the `JSR $F4CE` (BASIC parameter parse) at the top of each routine: `$FFC0` jumps to `$F521` where `$F521: JSR $F4CE` / `$F524: LDA $D2` — so `$F524` runs the open logic against the zero-page parameters you set yourself. Likewise `$FFC3` jumps to `$F2A9` where `$F2A9: JSR $F4CE` / `$F2AC: LDA $D2`. (These were verified by disassembling `kernal-2.901465-03`, do not use `$F560`/`$F2DD` — those land in the middle of an instruction and crash.)
 
 CHKIN, CHKOUT, CLRCHN, CHRIN, CHROUT, GETIN, CLALL, and STOP work correctly from the jump table — they do NOT include BASIC parsing.
 
@@ -258,5 +258,5 @@ open_ok:
 
 See the "PET-specific file I/O wrappers" section above for the wrapper routine definitions.
 
-**Note:** The PET KERNAL file I/O differs significantly from the C64. The C64 has SETNAM ($FFBD) and SETLFS ($FFBA) in its jump table; the PET does not. Always use the PET-specific wrappers when writing machine code for the PET.
+**Note:** The PET KERNAL file I/O differs significantly from the C64. The C64 has SETNAM ($FFBD) and SETLFS ($FFBA) in its jump table, the PET does not. Always use the PET-specific wrappers when writing machine code for the PET.
 

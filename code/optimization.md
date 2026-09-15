@@ -26,7 +26,6 @@ This file covers optimization patterns for the PET 3032 in four progressive laye
 
 ## Unrolled Loops
 
-
 The PET has no DMA and no hardware copy assist. For maximum speed, unroll loops that touch screen RAM or copy data.
 
 ### Unrolled Screen Row Clear (40 bytes)
@@ -99,9 +98,9 @@ Zero-page access is 1 cycle faster than absolute and 1 byte smaller.
 
 ### Using ZP Pointers
 
-ZP indirect addressing (`($zp),y`) requires two contiguous ZP bytes for the pointer. On PET BASIC 2, most ZP is consumed by the KERNAL and BASIC; there is no free block you can assume. If a routine needs ZP pointers internally, save and restore the bytes it borrows.
+ZP indirect addressing (`($zp),y`) requires two contiguous ZP bytes for the pointer. On PET BASIC 2, most ZP is consumed by the KERNAL and BASIC, there is no free block you can assume. If a routine needs ZP pointers internally, save and restore the bytes it borrows.
 
-Only $FF is documented unused in PET BASIC 2. $FB-$FE are used by KERNAL tape routines; borrow them only when tape I/O will not run concurrently.
+Only $FF is documented unused in PET BASIC 2. $FB-$FE are used by KERNAL tape routines, borrow them only when tape I/O will not run concurrently.
 
 ```asm
 copy_block:

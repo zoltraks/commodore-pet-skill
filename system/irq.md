@@ -104,7 +104,7 @@ The NMOS 6502 does not clear the decimal flag on IRQ entry.
 
 ## Chaining to the KERNAL Handler
 
-The hardware IRQ vector (`$FFFE`) points to the KERNAL IRQ entry at `$E61B`, which saves A/X/Y and then dispatches through CINV (`$0090`). The default clock/keyboard handler that CINV points to is at `$E62E` in Editor ROM. Both addresses are specific to BASIC 2 (new ROM); the safest, version-independent way to chain is through the saved original CINV value rather than a hard-coded address.
+The hardware IRQ vector (`$FFFE`) points to the KERNAL IRQ entry at `$E61B`, which saves A/X/Y and then dispatches through CINV (`$0090`). The default clock/keyboard handler that CINV points to is at `$E62E` in Editor ROM. Both addresses are specific to BASIC 2 (new ROM), the safest, version-independent way to chain is through the saved original CINV value rather than a hard-coded address.
 
 To run your code first then pass control to the KERNAL:
 

@@ -109,7 +109,7 @@ The PET character ROM provides four distinct box-drawing styles. All use screen 
 
 Lines pass through the center of each cell. Dedicated corner characters join the horizontal and vertical at the center point.
 
-```
+```asm
 #################################
 #                               #
 #                               #
@@ -129,7 +129,7 @@ Lines pass through the center of each cell. Dedicated corner characters join the
 
 Walls are 3 pixels wide at the edges of each cell. No dedicated corners — walls meet at cell boundaries.
 
-```
+```asm
 ##############################
 ###                        ###
 ##############################
@@ -146,7 +146,7 @@ Walls are 3 pixels wide at the edges of each cell. No dedicated corners — wall
 
 Walls are 2 pixels wide at the edges of each cell.
 
-```
+```asm
 ############################
 ##                        ##
 ############################
@@ -163,7 +163,7 @@ Walls are 2 pixels wide at the edges of each cell.
 
 Walls are 1 pixel wide at the edges of each cell.
 
-```
+```asm
 ##########################
 #                        #
 ##########################
@@ -280,7 +280,7 @@ fill_checker:
 
 Use the center-line box-drawing characters to draw a bordered window at any screen position. These codes work in both character sets — no charset switching needed.
 
-Pass the window parameters as a 4-byte block in free RAM; put the block's address in X (low byte) and Y (high byte). The routine borrows $FB-$FD internally, saves and restores all three.
+Pass the window parameters as a 4-byte block in free RAM, put the block's address in X (low byte) and Y (high byte). The routine borrows $FB-$FD internally, saves and restores all three.
 
 ```asm
 SCREEN      = $8000
@@ -922,7 +922,7 @@ If a program must work in both character sets without detecting which is active,
 
 ### Toggling a Checkbox
 
-Replace the marker screen code at the marker position to toggle state. The caller sets `$FB`/`$FC` to the marker's screen address; the routine saves and restores A.
+Replace the marker screen code at the marker position to toggle state. The caller sets `$FB`/`$FC` to the marker's screen address, the routine saves and restores A.
 
 ```asm
 MARK_OFF  = $57           ; empty ball (unchecked, uppercase set)
@@ -972,7 +972,7 @@ Each character fills a cell from the bottom upward. The 5-pixel through 8-pixel 
 | 7      | `$E3`       | `$63`     | Reverse of top 1px      |
 | 8      | `$E0`       | `$60`     | Reverse of blank (full) |
 
-`$E0` and `$A0` both produce a full 8-pixel block. `$E0` is reverse of `$60` (blank), `$A0` is reverse of `$20` (space). Either works; `$E0` follows the reverse-edge pattern of the 5-7px fills.
+`$E0` and `$A0` both produce a full 8-pixel block. `$E0` is reverse of `$60` (blank), `$A0` is reverse of `$20` (space). Either works, `$E0` follows the reverse-edge pattern of the 5-7px fills.
 
 All fill characters are in shared code ranges (`$20`, `$60`-`$68`, `$6D`-`$6F`, `$70`-`$79`) or use hardware reverse video, so they produce the same glyphs in both character sets.
 
@@ -1001,7 +1001,7 @@ Each bar is 2 cells tall. Values 0-7 fill the bottom cell with 1-8 pixels (top c
 
 ### Drawing a Bar
 
-Use a 32-byte lookup table with 2 screen codes per value (top, bottom). The caller sets `$FB`/`$FC` to the screen address of the bar's top cell; the routine saves and restores A, X, Y and clobbers `$FB`/`$FC` (advancing them to the bottom cell).
+Use a 32-byte lookup table with 2 screen codes per value (top, bottom). The caller sets `$FB`/`$FC` to the screen address of the bar's top cell, the routine saves and restores A, X, Y and clobbers `$FB`/`$FC` (advancing them to the bottom cell).
 
 ```asm
 SCREEN  = $8000
@@ -1117,7 +1117,7 @@ The half-block characters produce clean vertical edges for reverse-video bars. W
 
 A full-width reverse-video bar (40 columns) uses this layout:
 
-```
+```asm
 col:  0    1-38              39
 byte: $E1  $A0 ... $A0       $61
 ```
@@ -1241,19 +1241,19 @@ On **content rows** (between the borders), use `$5D` (vertical center line) at e
 A 40-column frame with vertical dividers at columns 5, 17, 29, and 34:
 
 **Top border (row 1):**
-```
+```asm
 col:  0    1-4    5    6-16   17   18-28  29   30-33  34   35-38  39
 byte: $70  $40×4  $72  $40×11 $72  $40×11 $72  $40×4  $71  $40×4  $6E
 ```
 
 **Content row (rows 2-22):**
-```
+```asm
 col:  0    1-4    5    6-16   17   18-28  29   30-33  34   35-38  39
 byte: $5D  data   $5D  data   $5D  data   $5D  data   $5D  data   $5D
 ```
 
 **Bottom border (row 23):**
-```
+```asm
 col:  0    1-4    5    6-16   17   18-28  29   30-33  34   35-38  39
 byte: $6D  $40×4  $71  $40×11 $71  $40×11 $71  $40×4  $71  $40×4  $7D
 ```
@@ -1319,7 +1319,7 @@ side_loop:
 
 ### Mode-Dependent Frame Layout
 
-When a frame's dividers change based on display mode (e.g., hex mode has dividers, text mode does not), check the mode before placing T-junctions and dividers. The outer corners and horizontal/vertical lines remain the same; only the internal junctions and dividers are conditional.
+When a frame's dividers change based on display mode (e.g., hex mode has dividers, text mode does not), check the mode before placing T-junctions and dividers. The outer corners and horizontal/vertical lines remain the same, only the internal junctions and dividers are conditional.
 
 ```asm
         lda view_mode
@@ -1398,7 +1398,7 @@ hdr_hex:
 
 ### Footer Bar with Shortcut Labels
 
-A footer bar shows available commands. Shortcut letters (the hotkeys) are in normal video; the rest of each label is reversed. This creates a visual cue for which key to press.
+A footer bar shows available commands. Shortcut letters (the hotkeys) are in normal video, the rest of each label is reversed. This creates a visual cue for which key to press.
 
 Because the content is fixed, a static 40-byte table is the most efficient approach (see Mixed Reverse Video above). The table encodes each byte with the correct reverse bit pre-set.
 

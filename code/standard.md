@@ -109,7 +109,7 @@ Rules:
 
 ## Zero Page Usage
 
-PET BASIC 2 leaves almost no zero page free. Only `$FF` and `$A2` are documented unused; everything else belongs to the KERNAL or BASIC. The rule is not to avoid naming a zero-page address but to never use one without saving and restoring it.
+PET BASIC 2 leaves almost no zero page free. Only `$FF` and `$A2` are documented unused, everything else belongs to the KERNAL or BASIC. The rule is not to avoid naming a zero-page address but to never use one without saving and restoring it.
 
 ### Parameter Block Convention
 
@@ -153,7 +153,7 @@ Rules:
 
 - Comment the borrowed byte where it is declared to state what it holds and that it is saved/restored.
 - Save and restore in mirrored pairs (push order reversed on the pull side).
-- Reference borrowed bytes by alias or by raw hex; either is fine as long as the save/restore is present.
+- Reference borrowed bytes by alias or by raw hex, either is fine as long as the save/restore is present.
 
 ### What to Avoid
 
@@ -617,7 +617,7 @@ Every `.asm` file must end with exactly one trailing blank line. No more, no les
 
 Prefixes group related labels. A subroutine and all its internal branch targets share the same prefix (`lz4_`). This makes the structure readable when scanning label names alone.
 
-Abbreviations are allowed when they are conventional for the platform: `lo`, `hi`, `ptr`, `sp`, `dp`, `zp`, `dos`, `sa` (secondary address). Do not invent new cryptic abbreviations; spell out anything a reader would not recognise at a glance.
+Abbreviations are allowed when they are conventional for the platform: `lo`, `hi`, `ptr`, `sp`, `dp`, `zp`, `dos`, `sa` (secondary address). Do not invent new cryptic abbreviations, spell out anything a reader would not recognise at a glance.
 
 ## Column Alignment Summary
 

@@ -77,7 +77,7 @@ Never read AY addresses. Track all register state in shadow variables in RAM and
 | `$0E`  | IO_A        | I/O port A (not used for sound)          |
 | `$0F`  | IO_B        | I/O port B (not used for sound)          |
 
-Registers `$0E` and `$0F` are general-purpose I/O ports on the AY-8910. The PetAY board does not expose them for sound; they are not used in typical music programming.
+Registers `$0E` and `$0F` are general-purpose I/O ports on the AY-8910. The PetAY board does not expose them for sound, they are not used in typical music programming.
 
 ## Frequency Calculation
 
@@ -140,7 +140,7 @@ The mixer register controls which channels produce tone and which produce noise.
 | 6   | I/O port A: input | I/O port A: output  |
 | 7   | I/O port B: input | I/O port B: output  |
 
-PetAY does not connect the I/O ports; always write 0 to bits 6-7 to leave them as inputs.
+PetAY does not connect the I/O ports, always write 0 to bits 6-7 to leave them as inputs.
 
 To enable only channel A tone: `$3E`. To enable all three tone channels: `$38`. To enable channel A tone and noise: `$36`.
 
@@ -158,7 +158,7 @@ To enable only channel A tone: `$3E`. To enable all three tone channels: `$38`. 
 2. Clear (set to 0) each bit for every channel you want active.
 3. Leave bits 6–7 = 0.
 
-```
+```asm
 bits:  7  6  5  4  3  2  1  0
        |  |  |  |  |  |  |  |
        IO IO NC NB NA TC TB TA
@@ -167,7 +167,7 @@ bits:  7  6  5  4  3  2  1  0
 
 Example — channel A tone only (`$3E`):
 
-```
+```asm
 bits:  0  0  1  1  1  1  1  0   = $3E
               ^  ^  ^  ^  ^  ^
               NC NB NA TC TB TA=0 (on)
@@ -175,7 +175,7 @@ bits:  0  0  1  1  1  1  1  0   = $3E
 
 Example — channel A tone and noise (`$36`):
 
-```
+```asm
 bits:  0  0  1  1  0  1  1  0   = $36
                     ^           ^
                     NA=0 (on)   TA=0 (on)
@@ -183,7 +183,7 @@ bits:  0  0  1  1  0  1  1  0   = $36
 
 Example — silence all (`$3F`):
 
-```
+```asm
 bits:  0  0  1  1  1  1  1  1   = $3F
 ```
 
@@ -204,7 +204,7 @@ The envelope generator produces automatic volume changes (attack, decay, sustain
 
 The envelope frequency uses the same formula as tone channels but with a different divisor:
 
-```
+```asm
 f_env = clock / (256 * divider)
 ```
 
@@ -246,7 +246,7 @@ AY_VAL_L = AY_BASE+1     ; left AY value register
 
 ## Register Write Subroutine
 
-A reusable subroutine that writes A to register X on the left AY chip. The caller saves and restores X; the routine clobbers nothing else.
+A reusable subroutine that writes A to register X on the left AY chip. The caller saves and restores X, the routine clobbers nothing else.
 
 ```asm
 AY_BASE  = $A000         ; $9000, $A000, or $B000 — set to match socket
@@ -357,7 +357,7 @@ The following BASIC program plays A4 (440 Hz) on the left AY and a higher tone o
 80 POKE 40962,8:POKE 40963,15
 ```
 
-`40960` = `$A000` (left control), `40961` = `$A001` (left value), `40962` = `$A002` (right control), `40963` = `$A003` (right value). For the `$9000` socket, use 36864–36867; for `$B000`, use 45056–45059.
+`40960` = `$A000` (left control), `40961` = `$A001` (left value), `40962` = `$A002` (right control), `40963` = `$A003` (right value). For the `$9000` socket, use 36864–36867, for `$B000`, use 45056–45059.
 
 Lines 10-40 set the left AY: channel A divider = 142 (A4), mixer = `$3E` (channel A tone on), volume = 15. Lines 50-80 set the right AY: channel A divider = 125, mixer = `$3E`, volume = 15.
 
