@@ -19,7 +19,7 @@ compatibility: >-
   files. DASM or Docker is needed only to assemble examples, VICE xpet only
   for emulation and debugging tasks.
 metadata:
-  version: "0.3.0"
+  version: "0.3.1"
   author: Filip Golewski
 ---
 
@@ -183,14 +183,14 @@ Use the table of contents to jump to the relevant section rather than reading th
 
 | File                        | Lines |
 |-----------------------------|-------|
+| `system/file.md`            | ~1410 |
 | `system/graphics.md`        | ~1410 |
-| `system/file.md`            | ~1400 |
 | `utility/vice-emulator.md`  | ~1260 |
-| `example/file.md`           | ~1010 |
+| `example/file.md`           | ~1020 |
 | `system/screen.md`          | ~900  |
 | `system/disk.md`            | ~780  |
 | `code/standard.md`          | ~740  |
-| `code/compression.md`       | ~700  |
+| `code/compression.md`       | ~710  |
 | `example/general.md`        | ~610  |
 | `utility/dasm-assembler.md` | ~570  |
 | `system/keyboard.md`        | ~490  |

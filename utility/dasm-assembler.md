@@ -2,7 +2,7 @@
 
 ## Purpose
 
-> **Scope:** DASM syntax, directives, macros, segments, conditional assembly, command-line options
+> **Scope:** DASM syntax, directives, macros, segments, conditional assembly, command-line options.
 > **Key items:** `processor 6502`, `org $0401`, `byte`, `word`, `hex`, `equ`, `mac`/`endm`, `-f1` PRG format
 
 This file covers DASM for PET 3032 work in four progressive layers:

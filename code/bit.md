@@ -2,7 +2,7 @@
 
 ## Purpose
 
-> **Scope:** 6502 bit manipulation, flag testing, pointer arithmetic, 16-bit INC/DEC, zero-page idioms
+> **Scope:** 6502 bit manipulation, flag testing, pointer arithmetic, 16-bit INC/DEC, zero-page idioms.
 > **Key items:** ASL/LSR/ROL/ROR, bit masks, 16-bit pointers, compare-free loops, stack tricks
 
 This file covers bit-operation patterns for the PET 3032 in four progressive layers:
@@ -12,12 +12,12 @@ This file covers bit-operation patterns for the PET 3032 in four progressive lay
 - **Working code examples** - verified ASM snippets
 - **Deep reference notes** - edge cases, caveats, implementation rules
 
-| Out of scope                     | See instead                 |
-|----------------------------------|-----------------------------|
-| 6502 instructions and flags      | `hardware/cpu.md`           |
-| DASM syntax and directives       | `utility/dasm-assembler.md` |
-| File structure and naming        | `code/standard.md`          |
-| Loop and size optimization       | `code/optimization.md`      |
+| Out of scope                | See instead                 |
+|-----------------------------|-----------------------------|
+| 6502 instructions and flags | `hardware/cpu.md`           |
+| DASM syntax and directives  | `utility/dasm-assembler.md` |
+| File structure and naming   | `code/standard.md`          |
+| Loop and size optimization  | `code/optimization.md`      |
 
 ## Bit Manipulation
 

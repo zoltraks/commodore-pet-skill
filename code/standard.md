@@ -2,7 +2,7 @@
 
 ## Purpose
 
-> **Scope:** 6502/DASM assembly coding standards for the Commodore PET 3032 -- file structure, formatting, labels, equates, comments, section headers, naming, column alignment, flag semantics
+> **Scope:** 6502/DASM assembly coding standards for the Commodore PET 3032 -- file structure, formatting, labels, equates, comments, section headers, naming, column alignment, flag semantics.
 > **Key items:** `processor 6502`, `org $0401`, BASIC stub, label spacing, tab-stop comments, section banners, `UPPER_SNAKE_CASE` equates, `snake_case` labels, flag-affecting instructions, branch-after-load bug
 
 This file is the authoritative coding standard for writing PET 3032 assembly with DASM.

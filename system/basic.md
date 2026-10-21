@@ -2,7 +2,7 @@
 
 ## Purpose
 
-> **Scope:** How a BASIC program is laid out in PET 3032 RAM -- start address, line link/number/token format, tokenization, the BASIC zero-page pointers, and the full BASIC 2 token table
+> **Scope:** How a BASIC program is laid out in PET 3032 RAM -- start address, line link/number/token format, tokenization, the BASIC zero-page pointers, and the full BASIC 2 token table.
 > **Key items:** start `$0401`, leading `$00` at `$0400`, line = link + line# + tokens + `$00`, end = null link, start-of-BASIC pointer `$28/$29`, tokens `$80`-`$CB`
 
 A PET stores a BASIC program as tokenised text in RAM from `$0401` up. Machine code that reads, generates, or relocates BASIC -- or that simply needs to understand the `SYS` stub the skill ships -- needs this layout.

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-> **Scope:** Screen RAM, PETSCII, screen codes, cursor, reverse video, direct writes
+> **Scope:** Screen RAM, PETSCII, screen codes, cursor, reverse video, direct writes.
 > **Key items:** SCREEN=$8000, 40x25 layout, PETSCII $93 = CLR/HOME, bit 7 = reverse, row stride = 40
 
 This file covers PET 3032 screen I/O in four progressive layers:
@@ -504,7 +504,7 @@ Writing directly to screen RAM while the display is being drawn causes visible f
 3. Copy the back buffer to screen RAM during VBLANK -- the display is not drawing, so no flicker.
 4. Repeat.
 
-The copy must complete within the VBLANK period. At 1 MHz, the 1000-byte copy takes roughly 6000 cycles (6 bytes per iteration: LDA/STA pair × 3 pages + tail). The PET VBLANK period is long enough for this.
+The copy must complete within the VBLANK period. At 1 MHz, the 1000-byte copy takes roughly 6000 cycles (6 bytes per iteration: LDA/STA pair x 3 pages + tail). The PET VBLANK period is long enough for this.
 
 ### Back Buffer Placement
 
@@ -743,7 +743,7 @@ The buffer copy runs inside VBLANK, so the user never sees a partially updated s
 
 | Mistake                                                      | Consequence                                         | Fix                                                               |
 |--------------------------------------------------------------|-----------------------------------------------------|-------------------------------------------------------------------|
-| `bne copy_tail` after `lda` in copy tail                     | Loop tests loaded byte, not counter; X wraps past 0 | Insert `txa` before `bne`, or move `dex` after `sta`              |
+| `bne copy_tail` after `lda` in copy tail                     | Loop tests loaded byte, not counter, X wraps past 0 | Insert `txa` before `bne`, or move `dex` after `sta`              |
 | `BUFFER+$300-1,x` in copy tail (off-by-one)                  | Last screen byte (row 24 col 39) never copied       | Use `BUFFER+$300,x` without the `-1` offset                       |
 | Unbounded VBLANK poll under VICE                             | Program hangs -- PB5 never toggles                  | Bound each phase to 256 iterations                                |
 | Writing past `$83E7` in copy tail                            | Overwrites KERNAL vars or I/O registers             | Use the 768 + 232 split, never a 4-page loop                      |
@@ -778,10 +778,10 @@ Store the raw byte value at the screen position. No `petscii_to_screen` conversi
 
 | Scenario                       | Approach                         | Reason                                      |
 |--------------------------------|----------------------------------|---------------------------------------------|
-| Displaying text from a file    | `petscii_to_screen`              | File data is PETSCII; needs conversion      |
-| Hex viewer ASCII column        | Raw screen code                  | Shows exact byte value; no conversion       |
+| Displaying text from a file    | `petscii_to_screen`              | File data is PETSCII, needs conversion      |
+| Hex viewer ASCII column        | Raw screen code                  | Shows exact byte value, no conversion       |
 | Non-printable byte placeholder | `$2E` (dot)                      | User needs a visible "not printable" marker |
-| Reversed text in a title bar   | `petscii_to_screen` + `ora #$80` | Text is PETSCII; reverse for emphasis       |
+| Reversed text in a title bar   | `petscii_to_screen` + `ora #$80` | Text is PETSCII, reverse for emphasis       |
 
 ### Why No Dot Substitution for Raw Display
 

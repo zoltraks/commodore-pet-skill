@@ -2,7 +2,7 @@
 
 ## Purpose
 
-> **Scope:** Loading PRG and binary data files from cassette tape and IEEE-488 disk via the LOAD KERNAL call
+> **Scope:** Loading PRG and binary data files from cassette tape and IEEE-488 disk via the LOAD KERNAL call.
 > **Key items:** LOAD from ML = $F3C9 (NOT the $FFD5 jump entry, which re-parses BASIC and wipes params), VERCK=$9D, pet_setlfs, pet_setnam, SA=0 (header addr), SA=1 (fixed addr), device 1=tape, device 8=disk
 
 | Out of scope             | See instead        |
@@ -11,9 +11,9 @@
 | Sequential file I/O      | `system/file.md`   |
 | Safe memory zones        | `system/memory.md` |
 
-> **Critical ML caveat — do not `jsr $FFD5`/`$FFD8` from machine code.** On the PET, the `LOAD` (`$FFD5`) and `SAVE` (`$FFD8`) jump-table entries are BASIC-command implementations. Both begin with `JSR $F43E`, which **unconditionally zeroes `$D1` (filename length), `$D3` (SA), and `$D4` (device) and then re-reads the real parameters from the BASIC text pointer** (`$77/$78`) — exactly like `OPEN`/`CLOSE` (see `system/kernal.md`). So the `pet_setnam`/`pet_setlfs` values are wiped before the load runs. This is verified two ways: disassembling `kernal-2.901465-03` (`$F442: STX $D1` with X=0, unconditional), and a live xpet run in which `$D1` was set to `$05` and read back `$00` after executing `$F43E`.
+> **Critical ML caveat - do not `jsr $FFD5`/`$FFD8` from machine code.** On the PET, the `LOAD` (`$FFD5`) and `SAVE` (`$FFD8`) jump-table entries are BASIC-command implementations. Both begin with `JSR $F43E`, which **unconditionally zeroes `$D1` (filename length), `$D3` (SA), and `$D4` (device) and then re-reads the real parameters from the BASIC text pointer** (`$77/$78`) - exactly like `OPEN`/`CLOSE` (see `system/kernal.md`). So the `pet_setnam`/`pet_setlfs` values are wiped before the load runs. This is verified two ways: disassembling `kernal-2.901465-03` (`$F442: STX $D1` with X=0, unconditional), and a live xpet run in which `$D1` was set to `$05` and read back `$00` after executing `$F43E`.
 >
-> **The fix:** enter the routine **past** the parse. For BASIC 2 (new ROM), LOAD continues at **`$F3C9`** and SAVE at **`$F6A1`/`$F6A4`** — the instructions after `JSR $F43E`. Set the zero-page parameters yourself (via `pet_setnam`/`pet_setlfs`), set the load/verify flag `$9D` (0=load, 1=verify), then `jsr $F3C9`. This was confirmed end-to-end under xpet: with a `DAT` file on device 8, the sequence below loaded its payload to the header address correctly. (On BASIC 4 the equivalent LOAD entry is `$F356`.)
+> **The fix:** enter the routine **past** the parse. For BASIC 2 (new ROM), LOAD continues at **`$F3C9`** and SAVE at **`$F6A1`/`$F6A4`** - the instructions after `JSR $F43E`. Set the zero-page parameters yourself (via `pet_setnam`/`pet_setlfs`), set the load/verify flag `$9D` (0=load, 1=verify), then `jsr $F3C9`. This was confirmed end-to-end under xpet: with a `DAT` file on device 8, the sequence below loaded its payload to the header address correctly. (On BASIC 4 the equivalent LOAD entry is `$F356`.)
 
 ## Loading a Binary File (LOAD)
 

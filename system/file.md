@@ -2,14 +2,14 @@
 
 ## Purpose
 
-> **Scope:** PET file architecture, logical files, device numbers, secondary addresses, all KERNAL file routines, call sequences, STATUS byte, error handling
+> **Scope:** PET file architecture, logical files, device numbers, secondary addresses, all KERNAL file routines, call sequences, STATUS byte, error handling.
 > **Key items:** pet_setnam/pet_setlfs wrappers, OPEN=$FFC0 (use $F524), CLOSE=$FFC3 (use $F2AC), CHKIN=$FFC6, CHKOUT=$FFC9, CLRCHN=$FFCC, CHRIN=$FFCF, CHROUT=$FFD2, LOAD=$FFD5, SAVE=$FFD8, STATUS=$0096
 
 This file covers the complete PET 3032 KERNAL file I/O system.
 
 The PET 3032 runs BASIC 2.0 and uses a KERNAL that was the ancestor of the C64 KERNAL.
 
-**Critical PET difference:** The PET KERNAL does NOT have `SETNAM` ($FFBD), `SETLFS` ($FFBA), or `READST` ($FFB7) in its jump table — those are C64-only addresses. On the PET, file I/O parameters are set by writing directly to zero-page locations ($D1, $D2, $D3, $D4, $DA, $DB). The PET's `OPEN` and `CLOSE` jump table entries also include BASIC parameter parsing, so machine code must call the low-level ROM entry points ($F524, $F2AC) instead. See the wrapper routines below.
+**Critical PET difference:** The PET KERNAL does NOT have `SETNAM` ($FFBD), `SETLFS` ($FFBA), or `READST` ($FFB7) in its jump table - those are C64-only addresses. On the PET, file I/O parameters are set by writing directly to zero-page locations ($D1, $D2, $D3, $D4, $DA, $DB). The PET's `OPEN` and `CLOSE` jump table entries also include BASIC parameter parsing, so machine code must call the low-level ROM entry points ($F524, $F2AC) instead. See the wrapper routines below.
 
 Do not use C64 addresses - they differ.
 
@@ -33,7 +33,7 @@ Do not use C64 addresses - they differ.
 | Tape File Notes             | Cassette SA values, sequential vs PRG                                                              |
 | Multiple Open Files         | Table limits, safe LFN allocation                                                                  |
 | Chunk-Based Partial Reading | Re-open and skip to offset, read fixed-size chunks, STATUS-based EOF                               |
-| No Backward Seek            | CBM-DOS cannot seek backward; re-open and skip forward for scroll-up                               |
+| No Backward Seek            | CBM-DOS cannot seek backward, re-open and skip forward for scroll-up                               |
 | Zero-Page Save and Restore  | restore_zp pattern: save $FB-$FE on entry, restore before each KERNAL call                         |
 | Troubleshooting             | Common bugs and their causes                                                                       |
 
@@ -87,11 +87,11 @@ Secondary addresses (SA) carry different meanings depending on the device.
 
 **Cassette (devices 1-2):**
 
-| SA  | Meaning                  |
-|-----|--------------------------|
-| 0   | Read (load)              |
-| 1   | Write (save, append off) |
-| 2   | Write with EOT marker    |
+| SA | Meaning                  |
+|----|--------------------------|
+| 0  | Read (load)              |
+| 1  | Write (save, append off) |
+| 2  | Write with EOT marker    |
 
 **Disk drives (devices 8-15):**
 
@@ -294,7 +294,7 @@ Must be called after pet_setnam and before pet_open, LOAD, or SAVE.
 
 **Error handling:**
 
-The PET's OPEN routine does NOT use carry for error reporting. On failure, it jumps directly to the BASIC error handler (`$CE03`), which prints `?SYNTAX ERROR` or similar and returns to BASIC. The `pet_open` wrapper detects success by checking if `$AE` (open file count) increased. If OPEN fails by jumping to the error handler, the wrapper never returns — the program crashes to BASIC.
+The PET's OPEN routine does NOT use carry for error reporting. On failure, it jumps directly to the BASIC error handler (`$CE03`), which prints `?SYNTAX ERROR` or similar and returns to BASIC. The `pet_open` wrapper detects success by checking if `$AE` (open file count) increased. If OPEN fails by jumping to the error handler, the wrapper never returns - the program crashes to BASIC.
 
 **Notes:**
 
@@ -649,7 +649,7 @@ Must call pet_setnam and pet_setlfs first.
 - Do not call OPEN before LOAD - LOAD handles the file open internally.
 - After LOAD returns, X/Y point to the first byte after the loaded data.
 
-> **ML caveat:** The `$FFD5` jump entry re-parses BASIC and wipes the zero-page parameters (see `system/load.md` — verified by disassembly and a live xpet run). From machine code, enter the low-level LOAD at **`$F3C9`** (past `JSR $F43E`), with `$9D` (VERCK) = 0 for load / 1 for verify. Note that on hard errors (file-not-found, device-not-present) the PET LOAD prints the error and returns to BASIC READY rather than returning to your caller — so unlike the C64 you cannot always trap the error via the carry flag, check `STATUS` after a load that returns.
+> **ML caveat:** The `$FFD5` jump entry re-parses BASIC and wipes the zero-page parameters (see `system/load.md` - verified by disassembly and a live xpet run). From machine code, enter the low-level LOAD at **`$F3C9`** (past `JSR $F43E`), with `$9D` (VERCK) = 0 for load / 1 for verify. Note that on hard errors (file-not-found, device-not-present) the PET LOAD prints the error and returns to BASIC READY rather than returning to your caller - so unlike the C64 you cannot always trap the error via the carry flag, check `STATUS` after a load that returns.
 
 ```asm
 ; PET does not have SETLFS - use pet_setlfs wrapper (see above)
@@ -713,13 +713,19 @@ Must call pet_setnam and pet_setlfs first.
 
 **Side effects:** Writes file to device. Sets STATUS.
 
-> **Critical ML caveat — the A/X/Y convention below is C64, not PET.** On the PET, `$FFD8` SAVE is a BASIC-command entry: it begins with `JSR $F43E` (re-parses BASIC, wipes `$D1`/`$D3`/`$D4`), and the underlying routine is wired to save the **BASIC-program range** — it takes the start/end from the BASIC pointers (`$28/$29` start, `$2A/$2B` end, via `$F68D`/`$FB76`), *not* from `A`/`X`/`Y`. There is no clean single-register PET entry that saves an arbitrary memory range. Verified against `kernal-2.901465-03`.
+> **Critical ML caveat - the A/X/Y convention below is C64, not PET.**
+>
+> On the PET, `$FFD8` SAVE is a BASIC-command entry: it begins with `JSR $F43E` (re-parses BASIC, wipes `$D1`/`$D3`/`$D4`), and the underlying routine is wired to save the **BASIC-program range** - it takes the start/end from the BASIC pointers (`$28/$29` start, `$2A/$2B` end, via `$F68D`/`$FB76`), *not* from `A`/`X`/`Y`.
+>
+> There is no clean single-register PET entry that saves an arbitrary memory range.
+>
+> Verified against `kernal-2.901465-03`.
 >
 > **To save arbitrary ML data on the PET, use one of:**
-> 1. **Recommended — write the file yourself with OPEN + CHKOUT + CHROUT** (see the sequential-file write pattern earlier in this file). This gives full control over the bytes and works from pure ML.
-> 2. Temporarily set the BASIC pointers `$28/$29` (start) and `$2A/$2B` (end) to your range, call the low-level SAVE past the parse (`$F6A1`), then restore them — fiddly and clobbers BASIC state, test under VICE before relying on it.
+> 1. **Recommended - write the file yourself with OPEN + CHKOUT + CHROUT** (see the sequential-file write pattern earlier in this file). This gives full control over the bytes and works from pure ML.
+> 2. Temporarily set the BASIC pointers `$28/$29` (start) and `$2A/$2B` (end) to your range, call the low-level SAVE past the parse (`$F6A1`), then restore them - fiddly and clobbers BASIC state, test under VICE before relying on it.
 >
-> The C64-style block below (`A` = ZP start pointer, `X`/`Y` = end+1) is retained only to show the interface people expect from the C64 — **it does not work as-is from ML on the PET.**
+> The C64-style block below (`A` = ZP start pointer, `X`/`Y` = end+1) is retained only to show the interface people expect from the C64 - **it does not work as-is from ML on the PET.**
 
 ```asm
 ; NOTE: C64 convention shown for reference -- does NOT work from PET ML.
@@ -986,7 +992,7 @@ LOAD handles the file open/close internally.
 
 Do not call OPEN before SAVE.
 
-> **PET:** this is the C64 SAVE convention and does **not** work from PET ML — `$FFD8` re-parses BASIC and saves the BASIC-program range, not an arbitrary A/X/Y range. To save arbitrary data on the PET, write it yourself with OPEN + CHKOUT + CHROUT (see the sequential-file write above). Block kept for C64 reference only.
+> **PET:** this is the C64 SAVE convention and does **not** work from PET ML - `$FFD8` re-parses BASIC and saves the BASIC-program range, not an arbitrary A/X/Y range. To save arbitrary data on the PET, write it yourself with OPEN + CHKOUT + CHROUT (see the sequential-file write above). Block kept for C64 reference only.
 
 ```asm
 save_ptr = $FB                  ; ZP: store start address here
@@ -1390,15 +1396,15 @@ The `$FB`-`$FE` bytes are KERNAL tape pointers, safe to borrow while the tape dr
 
 | Symptom                            | Likely cause                                                                                                              |
 |------------------------------------|---------------------------------------------------------------------------------------------------------------------------|
-| `?SYNTAX ERROR` after calling OPEN | Used `jsr $FFBD` (SETNAM) or `jsr $FFBA` (SETLFS) — these don't exist on PET. Use pet_setnam/pet_setlfs wrappers instead. |
-| `?SYNTAX ERROR` after calling OPEN | Used `jsr $FFC0` (OPEN jump table) from machine code — it includes BASIC parsing. Use pet_open (calls $F524) instead.     |
-| OPEN jumps to BASIC error handler  | PET OPEN/CLOSE/CHKIN don't use carry for errors — they jump to $CE03 on failure. If they return, they succeeded.          |
-| pet_open returns carry set         | File count ($AE) did not increase — OPEN failed internally. Check device, SA, filename.                                   |
-| CHRIN returns garbage after CHKIN  | File not opened for read; wrong SA or file opened for write                                                               |
-| STATUS bit 0 set after CHRIN       | IEEE-488 read timeout; drive not responding                                                                               |
-| STATUS bit 1 set after CHROUT      | IEEE-488 write timeout; drive not responding                                                                              |
+| `?SYNTAX ERROR` after calling OPEN | Used `jsr $FFBD` (SETNAM) or `jsr $FFBA` (SETLFS) - these don't exist on PET. Use pet_setnam/pet_setlfs wrappers instead. |
+| `?SYNTAX ERROR` after calling OPEN | Used `jsr $FFC0` (OPEN jump table) from machine code - it includes BASIC parsing. Use pet_open (calls $F524) instead.     |
+| OPEN jumps to BASIC error handler  | PET OPEN/CLOSE/CHKIN don't use carry for errors - they jump to $CE03 on failure. If they return, they succeeded.          |
+| pet_open returns carry set         | File count ($AE) did not increase - OPEN failed internally. Check device, SA, filename.                                   |
+| CHRIN returns garbage after CHKIN  | File not opened for read, wrong SA or file opened for write                                                               |
+| STATUS bit 0 set after CHRIN       | IEEE-488 read timeout, drive not responding                                                                               |
+| STATUS bit 1 set after CHROUT      | IEEE-488 write timeout, drive not responding                                                                              |
 | STATUS bit 4 set                   | Unrecoverable read error or file not found on cassette                                                                    |
-| File writes but drive LED flashes  | DOS error; read command channel (SA=15) for error code                                                                    |
-| CHROUT goes to screen not file     | CLRCHN was called; call CHKOUT again before writing                                                                       |
-| LOAD returns incorrect end address | SA=0 used with non-PRG file; use SA=1 with explicit load address                                                          |
-| Program hangs after file operation | CLRCHN not called; KERNAL still reading from file instead of keyboard                                                     |
+| File writes but drive LED flashes  | DOS error, read command channel (SA=15) for error code                                                                    |
+| CHROUT goes to screen not file     | CLRCHN was called, call CHKOUT again before writing                                                                       |
+| LOAD returns incorrect end address | SA=0 used with non-PRG file, use SA=1 with explicit load address                                                          |
+| Program hangs after file operation | CLRCHN not called, KERNAL still reading from file instead of keyboard                                                     |

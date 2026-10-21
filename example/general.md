@@ -2,7 +2,7 @@
 
 ## Purpose
 
-> **Scope:** Working PET 3032 assembly examples: BASIC stub, screen I/O, VBLANK, animation, character sets
+> **Scope:** Working PET 3032 assembly examples: BASIC stub, screen I/O, VBLANK, animation, character sets.
 > **Key items:** SYS1038 stub, screen clear, wait_key, vblank_wait, screen_copy, frame playback
 
 This file provides verified, runnable code examples for the PET 3032. Each example is self-contained and follows DASM syntax with the standard PET conventions.
@@ -14,7 +14,7 @@ This file provides verified, runnable code examples for the PET 3032. Each examp
 | Minimal BASIC Stub             | Shortest valid BASIC stub at $0401, SYS1038          |
 | Clear Screen                   | Fill 1000 bytes of screen RAM with space character   |
 | Wait for Key Press             | Poll GETIN until non-zero                            |
-| VBLANK Polling                 | Two-phase VBLANK poll via VIA PORT B bit 5           |
+| VBLANK Polling                 | Two-phase VBLANK poll via the VIA PORT B bit 5       |
 | Copy Screen to Screen          | Copy 1000 bytes between two page-aligned buffers     |
 | Switch Character Set           | PCR register values for uppercase and lowercase sets |
 | Minimal Animation Frame Player | Frame table, copy loop, VBLANK wait, keypress exit   |
@@ -331,7 +331,6 @@ frame2:
 
         byte $20,$20,$20,$20,$20,$20,$20,$20,$20,$20
         ; ... etc ...
-
 ```
 
 ## Demo Skeleton Template
@@ -596,7 +595,7 @@ frame_data:
 
 - The KERNAL IRQ entry at `$E61B` saves A/X/Y before dispatching to CINV, so the custom handler does not need to preserve registers.
 - Chaining via `jmp (old_cinv)` is portable across ROM versions, the original CINV value points to the KERNAL keyboard scan and clock update handler.
-- Reading `PIA1_PORTB` ($E812) is mandatory in any custom IRQ handler that replaces CINV completely. On the 6520 PIA, the CB1 interrupt flag clears only on a Port B read — reading CRB ($E813) does not clear it.
+- Reading `PIA1_PORTB` ($E812) is mandatory in any custom IRQ handler that replaces CINV completely. On the 6520 PIA, the CB1 interrupt flag clears only on a Port B read - reading CRB ($E813) does not clear it.
 
 ## Screen Data Row Format
 

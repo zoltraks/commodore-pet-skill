@@ -2,7 +2,7 @@
 
 ## Purpose
 
-> **Scope:** 6502 size/speed trade-offs, unrolled loops, branch tuning, zero-page usage, PET-specific constraints
+> **Scope:** 6502 size/speed trade-offs, unrolled loops, branch tuning, zero-page usage, PET-specific constraints.
 > **Key items:** 7-cycle penalty branches, unrolled screen copies, ZP indirect vs absolute, RTS chains
 
 This file covers optimization patterns for the PET 3032 in four progressive layers:
@@ -12,12 +12,12 @@ This file covers optimization patterns for the PET 3032 in four progressive laye
 - **Working code examples** - verified ASM snippets
 - **Deep reference notes** - edge cases, caveats, implementation rules
 
-| Out of scope                | See instead            |
-|-----------------------------|------------------------|
-| Instruction cycle counts    | `hardware/cpu.md`      |
-| Bit manipulation patterns   | `code/bit.md`          |
-| Code structure and comments | `code/standard.md`     |
-| Compression algorithms      | `code/compression.md`  |
+| Out of scope                | See instead           |
+|-----------------------------|-----------------------|
+| Instruction cycle counts    | `hardware/cpu.md`     |
+| Bit manipulation patterns   | `code/bit.md`         |
+| Code structure and comments | `code/standard.md`    |
+| Compression algorithms      | `code/compression.md` |
 
 ## Size vs Speed Quick Reference
 

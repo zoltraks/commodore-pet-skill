@@ -2,7 +2,7 @@
 
 ## Purpose
 
-> **Scope:** 6502 IRQ mechanism, CINV vector, PET VBLANK source (PIA1 CB1), handler setup/teardown, VBLANK polling
+> **Scope:** 6502 IRQ mechanism, CINV vector, PET VBLANK source (PIA1 CB1), handler setup/teardown, VBLANK polling.
 > **Key items:** CINV=$0090, PIA1 CRB=$E813, VIA PB5=$E840 bit 5, 60 Hz VBLANK, CLD mandatory
 
 | Out of scope                      | See instead        |
@@ -17,7 +17,7 @@ The PET 3032 generates a 60 Hz interrupt from the screen vertical retrace.
 
 The CRTC 6545 generates vertical sync, which is inverted and connected to PIA 1 CB1.
 
-The CB1 interrupt flag stays set until the PIA is acknowledged by reading PIA 1 Port B (`$E812`). On the 6520 PIA, CB1's flag is cleared only by reading the Port B data register — reading Control Register B ($E813) does not clear it.
+The CB1 interrupt flag stays set until the PIA is acknowledged by reading PIA 1 Port B (`$E812`). On the 6520 PIA, CB1's flag is cleared only by reading the Port B data register - reading Control Register B ($E813) does not clear it.
 
 If your IRQ handler does not read `$E812`, the interrupt re-fires immediately after `RTI`, locking the CPU in an infinite interrupt loop.
 
@@ -242,4 +242,4 @@ A 256-iteration bound per phase is approximately 2 ms at 1 MHz. See `system/scre
 | Don't restore CINV on exit        | KERNAL broken after program exits         | Save `old_cinv`, restore in cleanup                                                    |
 | Use `JSR` to chain                | `RTI` returns to wrong address            | Use `JMP` to chain to KERNAL handler                                                   |
 | Unbounded PB5 poll under VICE     | Program hangs -- bit never toggles        | Bound each phase to 256 iterations                                                     |
-| No debounce on a GETIN toggle key | Auto-repeat closes UI element immediately | Store toggle key + set countdown timer; see `system/keyboard.md` "Toggle Key Debounce" |
+| No debounce on a GETIN toggle key | Auto-repeat closes UI element immediately | Store toggle key + set countdown timer, see `system/keyboard.md` "Toggle Key Debounce" |

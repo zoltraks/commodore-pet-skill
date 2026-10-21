@@ -46,8 +46,8 @@ The Purpose section may use a blockquote format to summarize scope and key items
 ```markdown
 ## Purpose
 
-> **Scope:** one-line description of what this file covers
-> **Key items:** comma-separated list of key concepts or references
+> **Scope:** one-line description of what this file covers.
+> **Key items:** comma-separated list of key concepts or references.
 ```
 
 This format is recommended for reference files and topic documents.
@@ -319,6 +319,8 @@ If a cell must wrap, apply the same formatting rules to every row in the table.
 Box-drawing characters are allowed inside code blocks for diagrams.
 
 Do not replace box-drawing characters with `+`, `-`, or other ASCII approximations.
+
+Unicode glyphs that are themselves the subject matter are allowed in prose and tables: physical key-cap legends such as `⮁`, `←`, `↑`, character-set renderings such as `○`, `●`, `■`, and a consistent placeholder glyph in a matrix table.
 
 Do not use emojis unless explicitly requested.
 

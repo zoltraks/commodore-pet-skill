@@ -2,7 +2,7 @@
 
 ## Purpose
 
-> **Scope:** MOS 6502: registers, flags, instruction set, addressing modes, cycle timing, stack, interrupts
+> **Scope:** MOS 6502: registers, flags, instruction set, addressing modes, cycle timing, stack, interrupts.
 > **Key items:** A/X/Y/SP/PC/P registers, N/V/C/D/I/Z/B flags, immediate/ZP/absolute/indexed/indirect modes, 7-cycle BRK/IRQ, 60 Hz PET VBLANK IRQ via PIA1 CB1
 
 This file covers the 6502 CPU as used in the Commodore PET 3032 in four progressive layers:
@@ -57,7 +57,7 @@ The 6502 is little-endian: 16-bit values are stored low byte first, then high by
 | 7   | N    | Negative (sign bit of last operation)                     |
 | 6   | V    | Overflow                                                  |
 | 5   | -    | Unused (always 1 on stack, 0 when read in some contexts)  |
-| 4   | B    | Break (set by BRK, cleared by IRQ; not directly readable) |
+| 4   | B    | Break (set by BRK, cleared by IRQ, not directly readable) |
 | 3   | D    | Decimal mode                                              |
 | 2   | I    | Interrupt disable                                         |
 | 1   | Z    | Zero (set if result was zero)                             |
@@ -248,11 +248,10 @@ my_irq:
 
 | Idiom               | Example                                       | Notes                              |
 |---------------------|-----------------------------------------------|------------------------------------|
-| 16-bit increment    | `INC ptr / BNE skip / INC ptr+1`              | 5c + 2c + 2c; skip if no carry     |
+| 16-bit increment    | `INC ptr / BNE skip / INC ptr+1`              | 5c + 2c + 2c, skip if no carry     |
 | 16-bit decrement    | `LDA ptr / BNE dohi / DEC ptr+1`              | test low byte first                |
 | Bit flag set        | `ORA #$80`                                    | set bit 7                          |
 | Bit flag clear      | `AND #~$80`                                   | clear bit 7                        |
 | Negative-index loop | `LDY #-n` ... `DEY / BPL loop`                | counts n+1 times through 0         |
 | Fast save/restore   | `STA zp / STX zp+1`                           | faster than stack for repeated use |
 | 16-bit load         | `LDA #<val / STA ptr / LDA #>val / STA ptr+1` | standard PET pattern               |
-

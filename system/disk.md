@@ -2,7 +2,7 @@
 
 ## Purpose
 
-> **Scope:** Commodore IEEE-488 disk drives, DOS commands, command channel, directory listing, drive error messages, disk images, emulator workflows, BASIC vs KERNAL vs direct comparison
+> **Scope:** Commodore IEEE-488 disk drives, DOS commands, command channel, directory listing, drive error messages, disk images, emulator workflows, BASIC vs KERNAL vs direct comparison.
 > **Key items:** Device 8, SA=15 command channel, `$` directory pseudo-file, D64/D80/D82 image formats, VICE xpet, "scratch/rename/format" commands
 
 This file covers Commodore DOS disk operations for the PET 3032.
@@ -515,8 +515,8 @@ Where CC is the error code, MESSAGE is text, TT is track, SS is sector.
 | 62   | FILE NOT FOUND     | Named file does not exist on disk            |
 | 63   | FILE EXISTS        | Cannot write: file already exists            |
 | 64   | FILE TYPE MISMATCH | SA/type mismatch with existing file          |
-| 70   | NO CHANNEL         | All drive buffers in use; close a file first |
-| 71   | DIR ERROR          | BAM checksum error; run Validate             |
+| 70   | NO CHANNEL         | All drive buffers in use, close a file first |
+| 71   | DIR ERROR          | BAM checksum error, run Validate             |
 | 72   | DISK FULL          | No more free blocks on disk                  |
 | 73   | DOS MISMATCH       | Drive power-on or incompatible format        |
 | 74   | DRIVE NOT READY    | No disk inserted or drive door open          |
@@ -716,18 +716,18 @@ Use it only for:
 - Debugging bus timing issues.
 - Implementing non-standard file protocols.
 
-> **Not the C64 addresses.** The C64/serial-IEC entries `TALK` ($FFB4), `LISTEN` ($FFB1), `TKSA` ($FF96), `SECOND` ($FF93), `ACPTR` ($FFA5), `CIOUT` ($FFA8), `UNTALK` ($FFAB), `UNLSN` ($FFAE) **do not exist on the PET**. On the PET jump table (which only spans `$FFC0-$FFEA`) those addresses fall in the machine-language monitor and the copyright string — the bytes at `$FFB1-$FFBF` are the ASCII text `"C. 0978 CBM "`, not a JMP. Verified against `kernal-2.901465-03`.
+> **Not the C64 addresses.** The C64/serial-IEC entries `TALK` ($FFB4), `LISTEN` ($FFB1), `TKSA` ($FF96), `SECOND` ($FF93), `ACPTR` ($FFA5), `CIOUT` ($FFA8), `UNTALK` ($FFAB), `UNLSN` ($FFAE) **do not exist on the PET**. On the PET jump table (which only spans `$FFC0-$FFEA`) those addresses fall in the machine-language monitor and the copyright string - the bytes at `$FFB1-$FFBF` are the ASCII text `"C. 0978 CBM "`, not a JMP. Verified against `kernal-2.901465-03`.
 
-The PET's IEEE-488 primitives live in the KERNAL body at these **new-ROM-specific** addresses (not a stable jump table — wrong on BASIC 1 and BASIC 4 machines, reach them only when the standard file routines cannot do the job):
+The PET's IEEE-488 primitives live in the KERNAL body at these **new-ROM-specific** addresses (not a stable jump table - wrong on BASIC 1 and BASIC 4 machines, reach them only when the standard file routines cannot do the job):
 
-| PET routine                                    | Address | Description                                       |
-|------------------------------------------------|---------|---------------------------------------------------|
-| Set up IEEE for Talk/Listen                    | $F0B6   | Address the bus and assert ATN                    |
-| Send byte to IEEE (deferred)                   | $F0EE   | Output a data byte on the bus                     |
-| Send byte to IEEE (immediate)                  | $F128   | Output a command byte with ATN                    |
-| Send Listen + secondary address (immediate)    | $F164   | Address a listener and its SA                     |
-| Drop IEEE channel (Unlisten / Untalk)          | $F17F   | Release the current talker/listener               |
-| Receive byte from IEEE                          | $F18C   | Input one data byte from the bus                  |
+| PET routine                                 | Address | Description                         |
+|---------------------------------------------|---------|-------------------------------------|
+| Set up IEEE for Talk/Listen                 | $F0B6   | Address the bus and assert ATN      |
+| Send byte to IEEE (deferred)                | $F0EE   | Output a data byte on the bus       |
+| Send byte to IEEE (immediate)               | $F128   | Output a command byte with ATN      |
+| Send Listen + secondary address (immediate) | $F164   | Address a listener and its SA       |
+| Drop IEEE channel (Unlisten / Untalk)       | $F17F   | Release the current talker/listener |
+| Receive byte from IEEE                      | $F18C   | Input one data byte from the bus    |
 
 ## Best Practices
 

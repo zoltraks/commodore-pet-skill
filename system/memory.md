@@ -2,7 +2,7 @@
 
 ## Purpose
 
-> **Scope:** 32 KB RAM ($0000-$7FFF), zero page, BASIC workspace, screen RAM, ROM regions, safe zones for ML
+> **Scope:** 32 KB RAM ($0000-$7FFF), zero page, BASIC workspace, screen RAM, ROM regions, safe zones for ML.
 > **Key items:** BASIC program at $0401, screen at $8000, KERNAL at $F000, zero-page vectors at $0090-$0095
 
 This file covers the PET 3032 memory map in four progressive layers:
@@ -21,22 +21,22 @@ This file covers the PET 3032 memory map in four progressive layers:
 
 ### By Region
 
-| Region             | Range       | Size   | Description                                                                |
-|--------------------|-------------|--------|----------------------------------------------------------------------------|
-| Zero page          | $0000-$00FF | 256 B  | System variables, pointers, vectors                                        |
-| Stack              | $0100-$01FF | 256 B  | 6502 hardware stack                                                        |
-| BASIC input buffer | $0200-$0250 | 81 B   | System INPUT buffer                                                        |
-| File tables        | $0251-$026E | 30 B   | KERNAL logical file tables (three 10-entry tables: LFN, device, SA)        |
-| Keyboard buffer    | $026F-$0278 | 10 B   | Keyboard buffer queue                                                      |
-| Tape buffers       | $027A-$03F9 | 576 B  | Tape #1 ($027A-$0339) and Tape #2 ($033A-$03F9) I/O buffers                |
-| BASIC program      | $0400-$7FFF | ~31 KB | Tokenized BASIC + free RAM                                                 |
-| Screen RAM         | $8000-$83E7 | 1000 B | 40x25 character screen                                                     |
-| Unused video       | $83E8-$83FF | 24 B   | Unused video RAM ($8400-$8FFF are mirrors of the 1 KB screen)              |
-| Expansion sockets  | $9000-$BFFF | 12 KB  | Unused on stock 3032; ROM/expansion sockets (PetAY base $9000/$A000/$B000, see `expansion/petay.md`) |
-| BASIC ROM          | $C000-$E0F8 | ~8 KB  | Microsoft BASIC interpreter                                                |
-| Editor ROM         | $E0F9-$E7FF | ~1.8 KB| Screen editor, keyboard scan, interrupt service                            |
-| I/O area           | $E800-$E8FF | 256 B  | PIA1 ($E810), PIA2 ($E820), VIA ($E840), CRTC ($E880)                      |
-| KERNAL ROM         | $F000-$FFFF | 4 KB   | Reset, tape, IEEE-488, LOAD/SAVE, monitor, jump table                      |
+| Region             | Range       | Size    | Description                                                                                          |
+|--------------------|-------------|---------|------------------------------------------------------------------------------------------------------|
+| Zero page          | $0000-$00FF | 256 B   | System variables, pointers, vectors                                                                  |
+| Stack              | $0100-$01FF | 256 B   | 6502 hardware stack                                                                                  |
+| BASIC input buffer | $0200-$0250 | 81 B    | System INPUT buffer                                                                                  |
+| File tables        | $0251-$026E | 30 B    | KERNAL logical file tables (three 10-entry tables: LFN, device, SA)                                  |
+| Keyboard buffer    | $026F-$0278 | 10 B    | Keyboard buffer queue                                                                                |
+| Tape buffers       | $027A-$03F9 | 576 B   | Tape #1 ($027A-$0339) and Tape #2 ($033A-$03F9) I/O buffers                                          |
+| BASIC program      | $0400-$7FFF | ~31 KB  | Tokenized BASIC + free RAM                                                                           |
+| Screen RAM         | $8000-$83E7 | 1000 B  | 40x25 character screen                                                                               |
+| Unused video       | $83E8-$83FF | 24 B    | Unused video RAM ($8400-$8FFF are mirrors of the 1 KB screen)                                        |
+| Expansion sockets  | $9000-$BFFF | 12 KB   | Unused on stock 3032, ROM/expansion sockets (PetAY base $9000/$A000/$B000, see `expansion/petay.md`) |
+| BASIC ROM          | $C000-$E0F8 | ~8 KB   | Microsoft BASIC interpreter                                                                          |
+| Editor ROM         | $E0F9-$E7FF | ~1.8 KB | Screen editor, keyboard scan, interrupt service                                                      |
+| I/O area           | $E800-$E8FF | 256 B   | PIA1 ($E810), PIA2 ($E820), VIA ($E840), CRTC ($E880)                                                |
+| KERNAL ROM         | $F000-$FFFF | 4 KB    | Reset, tape, IEEE-488, LOAD/SAVE, monitor, jump table                                                |
 
 ### PET 3032 RAM Layout
 
@@ -66,7 +66,7 @@ The PET 3032 has 32 KB of contiguous RAM from `$0000` to `$7FFF`.
 | `$11-$12` | Temp integer value                                                                                                                                                    |
 | `$13-$53` | Temp string stack, utility pointers, BASIC text and variable and array pointers, line numbers, DATA pointer, FOR/NEXT index pointer, math temporaries                 |
 | `$54-$6F` | Floating point accumulators 1 and 2, cassette buffer pointer                                                                                                          |
-| `$70-$87` | CHRGET routine - self-modifying code patched by BASIC at runtime; `$77-$78` = TXTPTR (current BASIC text pointer). This entire range is executable code in zero page. |
+| `$70-$87` | CHRGET routine - self-modifying code patched by BASIC at runtime, `$77-$78` = TXTPTR (current BASIC text pointer). This entire range is executable code in zero page. |
 | `$88-$8C` | RND seed                                                                                                                                                              |
 
 The `$13-$53` block includes the pointers that bound the program and its data: start of BASIC (`$28-$29`), end of program / start of variables (`$2A-$2B`), arrays (`$2C-$2F`), bottom of strings (`$30-$31`), top of memory (`$34-$35`), and the current line number (`$36-$37`). For the individual pointer table and the BASIC line format, see `system/basic.md`.

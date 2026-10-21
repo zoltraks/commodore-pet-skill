@@ -2,7 +2,7 @@
 
 ## Purpose
 
-> **Scope:** VIA 6522, PIA 6520 (x2), CRTC 6545, I/O decoding, screen RAM, character generator, VBLANK
+> **Scope:** VIA 6522, PIA 6520 (x2), CRTC 6545, I/O decoding, screen RAM, character generator, VBLANK.
 > **Key items:** VIA $E840-$E84F, PIA1 $E810-$E813, PIA2 $E820-$E823, CRTC $E880-$E881, SCREEN=$8000, PCR=$E84C, PCR_U=$0C, PCR_L=$0E
 
 This file covers the PET 3032 hardware chips in four progressive layers:
@@ -34,15 +34,15 @@ This file covers the PET 3032 hardware chips in four progressive layers:
 
 ## Memory Map Overview
 
-| Region            | Address Range | Size   | Description                              |
-|-------------------|---------------|--------|------------------------------------------|
-| RAM               | $0000 - $7FFF | 32 KB  | Main system RAM                          |
-| Screen RAM        | $8000 - $83E7 | 1000 B | 40 columns by 25 rows ($8400-$8FFF mirror)|
-| Expansion sockets | $9000 - $BFFF | 12 KB  | Unused on stock 3032 (ROM/expansion)     |
-| BASIC ROM         | $C000 - $E0F8 | ~8 KB  | Microsoft BASIC interpreter              |
-| Editor ROM        | $E0F9 - $E7FF | ~1.8 KB| Screen editor, keyboard, IRQ service     |
-| I/O Area          | $E800 - $E8FF | 256 B  | PIA1/PIA2/VIA/CRTC registers             |
-| KERNAL ROM        | $F000 - $FFFF | 4 KB   | Reset, tape, IEEE-488, monitor, vectors  |
+| Region            | Address Range | Size    | Description                                |
+|-------------------|---------------|---------|--------------------------------------------|
+| RAM               | $0000 - $7FFF | 32 KB   | Main system RAM                            |
+| Screen RAM        | $8000 - $83E7 | 1000 B  | 40 columns by 25 rows ($8400-$8FFF mirror) |
+| Expansion sockets | $9000 - $BFFF | 12 KB   | Unused on stock 3032 (ROM/expansion)       |
+| BASIC ROM         | $C000 - $E0F8 | ~8 KB   | Microsoft BASIC interpreter                |
+| Editor ROM        | $E0F9 - $E7FF | ~1.8 KB | Screen editor, keyboard, IRQ service       |
+| I/O Area          | $E800 - $E8FF | 256 B   | PIA1/PIA2/VIA/CRTC registers               |
+| KERNAL ROM        | $F000 - $FFFF | 4 KB    | Reset, tape, IEEE-488, monitor, vectors    |
 
 ### Screen Memory Layout
 
@@ -60,12 +60,12 @@ The I/O area uses minimal decoding.
 
 Address lines A4-A7 select individual chips:
 
-| Chip  | Address Range | A7  | A6  | A5  | A4  |
-|-------|---------------|-----|-----|-----|-----|
-| PIA 1 | $E810-$E81F   | 0   | 0   | 0   | 1   |
-| PIA 2 | $E820-$E82F   | 0   | 0   | 1   | 0   |
-| VIA   | $E840-$E84F   | 0   | 1   | 0   | 0   |
-| CRTC  | $E880-$E88F   | 1   | 0   | 0   | 0   |
+| Chip  | Address Range | A7 | A6 | A5 | A4 |
+|-------|---------------|----|----|----|----|
+| PIA 1 | $E810-$E81F   | 0  | 0  | 0  | 1  |
+| PIA 2 | $E820-$E82F   | 0  | 0  | 1  | 0  |
+| VIA   | $E840-$E84F   | 0  | 1  | 0  | 0  |
+| CRTC  | $E880-$E88F   | 1  | 0  | 0  | 0  |
 
 Multiple chips may be selected simultaneously at overlapping addresses.
 
@@ -78,9 +78,9 @@ PIA 1 handles keyboard scanning, cassette I/O, and the VBLANK interrupt source.
 | Address | Register | Description                                                                                              |
 |---------|----------|----------------------------------------------------------------------------------------------------------|
 | $E810   | PORT A   | Keyboard row select (bits 3-0), IEEE EOI in (bit 6), cassette sense (bits 5,4), diagnostic sense (bit 7) |
-| $E811   | CRA      | Control register A: CA2 = screen blank (old PETs) / IEEE EOI out; CA1 = cassette #1 read                 |
+| $E811   | CRA      | Control register A: CA2 = screen blank (old PETs) / IEEE EOI out, CA1 = cassette #1 read                 |
 | $E812   | PORT B   | Keyboard row contents (bits 7-0). Usually all or all-but-one bits set.                                   |
-| $E813   | CRB      | Control register B: CB2 = cassette #1 motor (0=on, 1=off); CB1 = screen retrace detection in             |
+| $E813   | CRB      | Control register B: CB2 = cassette #1 motor (0=on, 1=off), CB1 = screen retrace detection in             |
 
 ### VBLANK Detection
 
@@ -92,7 +92,7 @@ PIA 1 handles keyboard scanning, cassette I/O, and the VBLANK interrupt source.
 
 The VBLANK IRQ is level-triggered via PIA 1 CB1.
 
-The interrupt flag remains set until the PIA is acknowledged by **reading PIA 1 Port B ($E812)**. On the 6520 PIA, CB1's interrupt flag is cleared only by reading the Port B data register — reading the Control Register B ($E813) does not clear it.
+The interrupt flag remains set until the PIA is acknowledged by **reading PIA 1 Port B ($E812)**. On the 6520 PIA, CB1's interrupt flag is cleared only by reading the Port B data register - reading the Control Register B ($E813) does not clear it.
 
 If a custom IRQ handler does not read $E812, the interrupt re-fires immediately after `RTI`, locking the CPU.
 
@@ -150,9 +150,9 @@ PIA 2 handles the IEEE-488 bus data and control lines.
 | Address | Register | Description                                                |
 |---------|----------|------------------------------------------------------------|
 | $E820   | PORT A   | Input buffer for IEEE data lines                           |
-| $E821   | CRA      | Control register A: CA2 = IEEE NDAC out; CA1 = IEEE ATN in |
+| $E821   | CRA      | Control register A: CA2 = IEEE NDAC out, CA1 = IEEE ATN in |
 | $E822   | PORT B   | Output buffer for IEEE data lines                          |
-| $E823   | CRB      | Control register B: CB2 = IEEE DAV out; CB1 = IEEE SRQ in  |
+| $E823   | CRB      | Control register B: CB2 = IEEE DAV out, CB1 = IEEE SRQ in  |
 
 ## VIA 6522 ($E840-$E84F)
 
@@ -285,7 +285,7 @@ The PET 3032 uses board #3.
 
 - Character ROM is internal to the video hardware
 - 128 characters, 8x8 pixels each
-- Two character sets selected via VIA CA2 (PCR register):
+- Two character sets selected via the VIA CA2 (PCR register):
 
   - Uppercase + graphics (`$0C`)
   - Lowercase + uppercase (`$0E`)

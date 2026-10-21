@@ -2,7 +2,7 @@
 
 ## Purpose
 
-> **Scope:** PET keyboard matrix, PIA 1 row/column scan, KERNAL GETIN, special keys, multi-key detection
+> **Scope:** PET keyboard matrix, PIA 1 row/column scan, KERNAL GETIN, special keys, multi-key detection.
 > **Key items:** PIA1 PORT A=$E810, PORT B=$E812, 10 rows x 8 columns, GETIN=$FFE4, STOP=$FFE1
 
 This file covers PET 3032 keyboard input in four progressive layers:

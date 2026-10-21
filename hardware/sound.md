@@ -2,7 +2,7 @@
 
 ## Purpose
 
-> **Scope:** VIA 6522 shift register sound, CB2 speaker output, frequency table, tone control
+> **Scope:** VIA 6522 shift register sound, CB2 speaker output, frequency table, tone control.
 > **Key items:** ACR=$10, SR=$E84A, T2=$E848, CB2 speaker, $0F/$33/$55 patterns, disable with ACR=$00
 
 Two methods are available.

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-> **Scope:** Semigraphics characters, box drawing styles, window/line/rect routines, double-density plotting, screen scrolling
+> **Scope:** Semigraphics characters, box drawing styles, window/line/rect routines, double-density plotting, screen scrolling.
 > **Key items:** Screen codes for UI drawing, center-line vs edge-line styles, draw_box_xy, fill_rect, scroll_up, 80x50 plot_point
 
 This file covers PET 3032 semigraphics and UI drawing techniques in four progressive layers:
@@ -24,10 +24,10 @@ This file covers PET 3032 semigraphics and UI drawing techniques in four progres
 | Section                 | What it covers                                                       |
 |-------------------------|----------------------------------------------------------------------|
 | Semigraphics Characters | Block, fill, quarter-block, center-line, edge-line character tables  |
-| Box Drawing Styles      | Four styles: center-line, thick, medium, thin; choosing a style      |
+| Box Drawing Styles      | Four styles: center-line, thick, medium, thin, choosing a style      |
 | Center-Line Connectors  | Full connector set: corners, T-junctions, cross, grid frame example  |
 | Drawing Routines        | draw_box_xy, horizontal/vertical dividers, fill_rect, progress bar   |
-| Double-Density Plotting | 80x50 pixel grid via 2x2 quadrant chars; quadrant map; plot_point    |
+| Double-Density Plotting | 80x50 pixel grid via 2x2 quadrant chars, quadrant map, plot_point    |
 | Title Bar               | Reverse-video full-width title/status bar                            |
 | Option Markers          | Checkbox markers for both character sets, toggle routine             |
 | Vertical Bar Graphs     | 4-bit value bars, 2-cell fill characters, lookup table, draw_bar     |
@@ -39,7 +39,7 @@ This file covers PET 3032 semigraphics and UI drawing techniques in four progres
 
 ## Semigraphics Characters
 
-The semigraphics characters below are verified against the 901447-10 character ROM. Unless noted, these codes produce the same glyph in **both** character sets — they can be used for UI drawing without switching sets.
+The semigraphics characters below are verified against the 901447-10 character ROM. Unless noted, these codes produce the same glyph in **both** character sets - they can be used for UI drawing without switching sets.
 
 ### Block and Fill Characters
 
@@ -84,7 +84,7 @@ These draw 1-pixel lines through the **center** of each character cell (row 4 or
 
 ### Edge-Line Drawing Characters (1px/2px/3px at cell edges)
 
-These draw lines at the **edges** of character cells. Adjacent cells form continuous lines. No dedicated corner characters — walls meet naturally at cell boundaries.
+These draw lines at the **edges** of character cells. Adjacent cells form continuous lines. No dedicated corner characters - walls meet naturally at cell boundaries.
 
 | Screen Code | Pixel Pattern | Description     |
 |-------------|---------------|-----------------|
@@ -103,7 +103,7 @@ These draw lines at the **edges** of character cells. Adjacent cells form contin
 
 ## Box Drawing Styles
 
-The PET character ROM provides four distinct box-drawing styles. All use screen codes that are **identical in both character sets** — no charset switching is needed. Each style produces a visually different border weight.
+The PET character ROM provides four distinct box-drawing styles. All use screen codes that are **identical in both character sets** - no charset switching is needed. Each style produces a visually different border weight.
 
 ### Style 1: Center-Line (1px through cell center, with corners)
 
@@ -127,7 +127,7 @@ Lines pass through the center of each cell. Dedicated corner characters join the
 
 ### Style 2: Thick (3px walls at cell edges)
 
-Walls are 3 pixels wide at the edges of each cell. No dedicated corners — walls meet at cell boundaries.
+Walls are 3 pixels wide at the edges of each cell. No dedicated corners - walls meet at cell boundaries.
 
 ```asm
 ##############################
@@ -185,7 +185,7 @@ Walls are 1 pixel wide at the edges of each cell.
 | Medium      | 2px edge   | No       | Panels, grouped sections |
 | Thin        | 1px edge   | No       | Subtle separators, grids |
 
-The center-line style is the only one with dedicated corner characters. The edge-line styles (thick, medium, thin) form corners naturally where the wall cells meet — the left wall cell and top wall cell share a corner pixel at the cell boundary.
+The center-line style is the only one with dedicated corner characters. The edge-line styles (thick, medium, thin) form corners naturally where the wall cells meet - the left wall cell and top wall cell share a corner pixel at the cell boundary.
 
 ## Center-Line Connectors
 
@@ -207,9 +207,9 @@ The center-line style provides a full set of connector characters for drawing gr
 
 ### Grid Frame Example
 
-A 2×2 cell grid using all nine center-line connectors — 4 corners, 4 T-junctions, and 1 cross. This is the default frame pattern for divided panels.
+A 2x2 cell grid using all nine center-line connectors - 4 corners, 4 T-junctions, and 1 cross. This is the default frame pattern for divided panels.
 
-Screen layout (5 rows × 9 columns):
+Screen layout (5 rows x 9 columns):
 
 ```
 70 40 40 40 72 40 40 40 6E      ┌───────┬───────┐
@@ -278,7 +278,7 @@ fill_checker:
 
 ### Drawing a Window Frame
 
-Use the center-line box-drawing characters to draw a bordered window at any screen position. These codes work in both character sets — no charset switching needed.
+Use the center-line box-drawing characters to draw a bordered window at any screen position. These codes work in both character sets - no charset switching needed.
 
 Pass the window parameters as a 4-byte block in free RAM, put the block's address in X (low byte) and Y (high byte). The routine borrows $FB-$FD internally, saves and restores all three.
 
@@ -754,24 +754,24 @@ Pixel `(x, y)` with `(0, 0)` at the top-left maps to cell column `x / 2`, cell r
 
 Screen code for each combination of lit quadrants, verified against the 901447-10 character ROM. Combinations beyond the four base quarter-blocks use the reverse-video glyph (bit 7 set).
 
-| TL  | TR  | BL  | BR  | Screen code | Looks like  |
-|-----|-----|-----|-----|-------------|-------------|
-| .   | .   | .   | .   | `$20`       | empty       |
-| #   | .   | .   | .   | `$7E`       | TL quarter  |
-| .   | #   | .   | .   | `$7C`       | TR quarter  |
-| #   | #   | .   | .   | `$E2`       | top half    |
-| .   | .   | #   | .   | `$7B`       | BL quarter  |
-| #   | .   | #   | .   | `$61`       | left half   |
-| .   | #   | #   | .   | `$FF`       | diagonal /  |
-| #   | #   | #   | .   | `$EC`       | all but BR  |
-| .   | .   | .   | #   | `$6C`       | BR quarter  |
-| #   | .   | .   | #   | `$7F`       | diagonal \  |
-| .   | #   | .   | #   | `$E1`       | right half  |
-| #   | #   | .   | #   | `$FB`       | all but BL  |
-| .   | .   | #   | #   | `$62`       | bottom half |
-| #   | .   | #   | #   | `$FC`       | all but TR  |
-| .   | #   | #   | #   | `$FE`       | all but TL  |
-| #   | #   | #   | #   | `$A0`       | full block  |
+| TL | TR | BL | BR | Screen code | Looks like  |
+|----|----|----|----|-------------|-------------|
+| .  | .  | .  | .  | `$20`       | empty       |
+| #  | .  | .  | .  | `$7E`       | TL quarter  |
+| .  | #  | .  | .  | `$7C`       | TR quarter  |
+| #  | #  | .  | .  | `$E2`       | top half    |
+| .  | .  | #  | .  | `$7B`       | BL quarter  |
+| #  | .  | #  | .  | `$61`       | left half   |
+| .  | #  | #  | .  | `$FF`       | diagonal /  |
+| #  | #  | #  | .  | `$EC`       | all but BR  |
+| .  | .  | .  | #  | `$6C`       | BR quarter  |
+| #  | .  | .  | #  | `$7F`       | diagonal \  |
+| .  | #  | .  | #  | `$E1`       | right half  |
+| #  | #  | .  | #  | `$FB`       | all but BL  |
+| .  | .  | #  | #  | `$62`       | bottom half |
+| #  | .  | #  | #  | `$FC`       | all but TR  |
+| .  | #  | #  | #  | `$FE`       | all but TL  |
+| #  | #  | #  | #  | `$A0`       | full block  |
 
 ### plot_point Routine
 

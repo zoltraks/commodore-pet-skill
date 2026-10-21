@@ -2,7 +2,7 @@
 
 ## Purpose
 
-> **Scope:** Running PET 3032 programs and debugging with the `xpet` command (VICE 3.7+)
+> **Scope:** Running PET 3032 programs and debugging with the `xpet` command (VICE 3.7+).
 > **Key items:** `-model 3032`, `-autostart`, `-drive8type 2031`, `-remotemonitor`, `-limitcycles`, `-warp`, headless screen inspection
 
 | Out of scope               | See instead                 |
@@ -16,16 +16,16 @@
 | Section                                           | What it covers                                                                                  |
 |---------------------------------------------------|-------------------------------------------------------------------------------------------------|
 | Invocation                                        | Minimal command form and model flag                                                             |
-| PET ROM Setup                                     | How VICE finds ROMs; symlinking on Linux, bindist on Windows                                    |
-| Drive Types on PET                                | `-drive8type 2031` for D64; never 1541 on PET                                                   |
+| PET ROM Setup                                     | How VICE finds ROMs, symlinking on Linux, bindist on Windows                                    |
+| Drive Types on PET                                | `-drive8type 2031` for D64, never 1541 on PET                                                   |
 | Running a PRG                                     | Autostart modes, why disk autostart is most reliable                                            |
 | Autostart From a Disk Image (recommended for PET) | Building D64s, "readme" hang bug, interactive mode, filename case folding                       |
 | Headless Debugging                                | Remote monitor over TCP, cycle limits, screen dumps, warp timing, Windows                       |
-| Decoding Screen Codes                             | Reading dumped `$8000-$83E7` bytes back into characters; row arithmetic                         |
-| Keyboard Buffer Injection                         | Writing to `$026F`/`$009E` to simulate key presses; warp mode and auto-repeat hazards           |
+| Decoding Screen Codes                             | Reading dumped `$8000-$83E7` bytes back into characters, row arithmetic                         |
+| Keyboard Buffer Injection                         | Writing to `$026F`/`$009E` to simulate key presses, warp mode and auto-repeat hazards           |
 | Signal-Byte Tracing                               | Writing trace bytes to safe RAM to locate crash points                                          |
 | Memory Landmarks                                  | Addresses worth checking during diagnostics                                                     |
-| Verifying KERNAL Jump Table Entries               | Disassembling `$FFC0-$FFEA`; PET vs C64 entry differences                                       |
+| Verifying KERNAL Jump Table Entries               | Disassembling `$FFC0-$FFEA`, PET vs C64 entry differences                                       |
 | Diagnosing Crashes                                | SYNTAX ERROR from bad KERNAL calls, KERNAL hang, SP depth, VIA PCR hazard                       |
 | Debugging Workflow                                | Step-by-step recipe: check if program ran, breakpoint, step, watch, trace, keyboard input logic |
 | Built-in Monitor                                  | Opening the monitor, full command reference, register modification, memory                      |
@@ -669,7 +669,7 @@ Useful zero-page and low-RAM addresses to dump during diagnostics:
 | Address       | Name                                                 | Tells you                                                                                                                               |
 |---------------|------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------|
 | `$0028-$0029` | TXTTAB                                               | Start of BASIC program (should be `$0401`)                                                                                              |
-| `$002A-$002B` | VARTAB                                               | One past loaded program end; non-`$0401` value confirms LOAD ran                                                                        |
+| `$002A-$002B` | VARTAB                                               | One past loaded program end, non-`$0401` value confirms LOAD ran                                                                        |
 | `$002C-$002D` | ARYTAB                                               | Start of array storage                                                                                                                  |
 | `$002E-$002F` | STREND                                               | End of array storage                                                                                                                    |
 | `$0077-$0078` | TXTPTR                                               | BASIC's current text-parse pointer                                                                                                      |
@@ -682,7 +682,7 @@ Useful zero-page and low-RAM addresses to dump during diagnostics:
 | `$0326-$0327` | IBSOUT                                               | Indirect CHROUT vector                                                                                                                  |
 | `$01F0-$01FF` | Top of the 6502 hardware stack                       |                                                                                                                                         |
 | `$8000-$83E7` | Screen RAM (40x25 screen codes)                      |                                                                                                                                         |
-| `$E84C`       | PCR                                                  | VIA peripheral control; bits 7:5 = CB2 mode (CB2 = IEEE-488 NDAC); writing `$0C` puts CB2 in input mode and breaks all OPEN/CHKIN/CHRIN |
+| `$E84C`       | PCR                                                  | VIA peripheral control, bits 7:5 = CB2 mode (CB2 = IEEE-488 NDAC), writing `$0C` puts CB2 in input mode and breaks all OPEN/CHKIN/CHRIN |
 
 Useful checks:
 
@@ -726,9 +726,9 @@ The PET does NOT have these C64-only entries:
 
 | Address | C64 routine | PET status                         |
 |---------|-------------|------------------------------------|
-| `$FFB7` | READST      | Not present; ROM text/filler bytes |
-| `$FFBA` | SETLFS      | Not present; bytes are `$AA` (TAX) |
-| `$FFBD` | SETNAM      | Not present; bytes are `$AA` (TAX) |
+| `$FFB7` | READST      | Not present, ROM text/filler bytes |
+| `$FFBA` | SETLFS      | Not present, bytes are `$AA` (TAX) |
+| `$FFBD` | SETNAM      | Not present, bytes are `$AA` (TAX) |
 
 ## Diagnosing Crashes
 
@@ -740,8 +740,8 @@ The bytes at `$FFBD` are `$AA` (the `TAX` instruction), so `jsr $FFBD` executes 
 
 | Symptom                                 | Cause                                                     |
 |-----------------------------------------|-----------------------------------------------------------|
-| `?SYNTAX ERROR IN 10` after `jsr $FFBD` | `$FFBD` is not SETNAM on PET; bytes are `$AA` (TAX)       |
-| `?SYNTAX ERROR IN 10` after `jsr $FFBA` | `$FFBA` is not SETLFS on PET; same fall-through into OPEN |
+| `?SYNTAX ERROR IN 10` after `jsr $FFBD` | `$FFBD` is not SETNAM on PET, bytes are `$AA` (TAX)       |
+| `?SYNTAX ERROR IN 10` after `jsr $FFBA` | `$FFBA` is not SETLFS on PET, same fall-through into OPEN |
 | OPEN hangs or returns garbage           | OPEN received uninitialised filename/length pointers      |
 
 **Fix**: use PET-specific wrappers that set the zero-page locations directly instead of calling non-existent KERNAL entries. On the PET, the filename length goes to `$D1`, the filename address to `$DA/$DB`, the logical file number to `$D2`, the secondary address to `$D3`, and the device number to `$D4`. Set those locations directly in your code before calling the low-level OPEN logic at `$F524` (not the jump table entry at `$FFC0`, which includes BASIC parameter parsing). See `system/kernal.md` for the complete wrapper routines.
@@ -769,7 +769,7 @@ Use the PC to locate the crash site:
 When `r` shows PC in the KERNAL ROM (`$E000-$FFFF`) and the `I` flag = 1 (interrupt disable), the CPU is stuck inside a KERNAL critical section. The most common cause on PET 3032 is an IEEE-488 bus deadlock in the byte-transfer handshake loop (around `$E698`).
 
 What to check:
-1. SP: `SP=$FF` is an empty stack, `SP=$EF` = 16 bytes pushed (8 JSR frames), `SP=$EC` = 19 bytes (≈9 JSR frames). A depth of 9 is consistent with the KERNAL `OPEN`→`LISTEN`→byte-receive chain.
+1. SP: `SP=$FF` is an empty stack, `SP=$EF` = 16 bytes pushed (8 JSR frames), `SP=$EC` = 19 bytes (~9 JSR frames). A depth of 9 is consistent with the KERNAL `OPEN`->`LISTEN`->byte-receive chain.
 2. `STATUS` at `$0096`: non-zero value means the KERNAL already logged an I/O error flag but is still looping.
 3. VIA PCR (see below).
 
@@ -779,10 +779,10 @@ The VIA 6522 at `$E840` controls the IEEE-488 handshake lines through its Periph
 
 | PCR bits | Lines controlled | Notes                                                                  |
 |----------|------------------|------------------------------------------------------------------------|
-| 7:5      | CB2 mode         | `000` = CB2 as **input**; on PET 3032, CB2 **is NDAC**                 |
-| 3:1      | CA2 mode         | `110` = manual output low; selects uppercase/graphics charset ROM half |
+| 7:5      | CB2 mode         | `000` = CB2 as **input**, on PET 3032, CB2 **is NDAC**                 |
+| 3:1      | CA2 mode         | `110` = manual output low, selects uppercase/graphics charset ROM half |
 
-Writing `$0C` to PCR sets bits 7:5 = `000` → CB2 in **input** mode. With NDAC in input mode, the PET can never signal "Not Data Accepted" to the drive. The drive keeps waiting, the KERNAL loops forever, interrupts are disabled. Every subsequent `OPEN`, `CHKIN`, or `CHRIN` call hangs permanently.
+Writing `$0C` to PCR sets bits 7:5 = `000` -> CB2 in **input** mode. With NDAC in input mode, the PET can never signal "Not Data Accepted" to the drive. The drive keeps waiting, the KERNAL loops forever, interrupts are disabled. Every subsequent `OPEN`, `CHKIN`, or `CHRIN` call hangs permanently.
 
 **Hazard**: if your program saves and restores PCR to switch character sets (a common technique), verify the value you write. `$0C` looks like "set bit 3 and 2" but puts CB2 into input mode. Use `$4C` (CB2 output high) or `$08` (CA2 low only, CB2 default output) instead, depending on which charset the PET was in at startup.
 
@@ -1035,7 +1035,7 @@ These are the essential commands for debugging PET programs.
 | `f <range> <data>` | Fill memory range with data (repeated if shorter)        |
 | `t <range> <dest>` | Move (transfer) memory from range to destination         |
 | `c <range> <dest>` | Compare memory range with destination, show mismatches   |
-| `h <range> <data>` | Hunt (search) for byte pattern in range; `xx` = wildcard |
+| `h <range> <data>` | Hunt (search) for byte pattern in range, `xx` = wildcard |
 
 ### Monitor State
 

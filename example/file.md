@@ -2,7 +2,7 @@
 
 ## Purpose
 
-> **Scope:** Complete, runnable DASM examples for PET 3032 file I/O: load PRG, save PRG, read SEQ, write SEQ, command channel, directory listing, error handling
+> **Scope:** Complete, runnable DASM examples for PET 3032 file I/O: load PRG, save PRG, read SEQ, write SEQ, command channel, directory listing, error handling.
 > **Key items:** pet_setnam, pet_setlfs, pet_open (calls $F524), pet_close (calls $F2AC), CHKIN=$FFC6, CHKOUT=$FFC9, CLRCHN=$FFCC, CHRIN=$FFCF, CHROUT=$FFD2, LOAD=$FFD5, SAVE=$FFD8, STATUS=$0096
 
 This file contains verified, runnable DASM assembly examples for all common PET 3032 file I/O patterns.
@@ -205,7 +205,13 @@ scrname_end:
 
 ## Save a PRG File
 
-> **PET caveat:** the code below uses the **C64** SAVE convention (start pointer in A, end+1 in X/Y). It does **not** work from ML on the PET: `$FFD8` re-parses BASIC and the underlying routine saves the BASIC-program range (`$28-$2B`), not an arbitrary A/X/Y range. To save arbitrary ML data on the PET, write the file yourself with OPEN + CHKOUT + CHROUT (see `system/file.md`). This block is kept only to show the familiar C64 interface.
+> **PET caveat:** the code below uses the **C64** SAVE convention (start pointer in A, end+1 in X/Y).
+>
+> It does **not** work from ML on the PET: `$FFD8` re-parses BASIC and the underlying routine saves the BASIC-program range (`$28-$2B`), not an arbitrary A/X/Y range.
+>
+> To save arbitrary ML data on the PET, write the file yourself with OPEN + CHKOUT + CHROUT (see `system/file.md`).
+>
+> This block is kept only to show the familiar C64 interface.
 
 This example (C64 convention) saves the memory range `$040F`-`$07FF` as `MYFILE` on device 8.
 

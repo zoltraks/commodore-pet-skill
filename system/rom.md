@@ -2,7 +2,7 @@
 
 ## Purpose
 
-> **Scope:** Callable BASIC-2 (new-ROM) ROM entry points beyond the KERNAL jump table: editor/screen routines, interrupt entry, floating-point math, number and string conversion
+> **Scope:** Callable BASIC-2 (new-ROM) ROM entry points beyond the KERNAL jump table: editor/screen routines, interrupt entry, floating-point math, number and string conversion.
 > **Key items:** clear `$E229`, home `$E257`, scroll `$E53F`, IRQ entry `$E61B`, FAC1 `$5E-$63`, FAC2 `$66-$6B`, CHRGET `$70`, FP add `$D76E`, FAC->ASCII `$DCE9`
 
 This file lists ROM routines that have **no KERNAL jump-table equivalent** but are useful from machine code on the PET 3032.
@@ -28,7 +28,7 @@ Every address in this file was verified by disassembling the `basic-2.901465-01-
 | Interrupt Entry Points  | `$E61B` IRQ entry and `$E62E` clock/keyboard service |
 | Floating-Point Routines | FAC layout, load/store, arithmetic, functions        |
 | Number and String       | FAC<->ASCII, print line number, string functions     |
-| CHRGET and the Wedge    | `$70-$87` text scanner; adding commands to BASIC     |
+| CHRGET and the Wedge    | `$70-$87` text scanner, adding commands to BASIC     |
 
 ## Detecting the ROM
 
@@ -61,13 +61,13 @@ These editor-ROM routines drive the screen directly. Most take no parameters, th
 
 | Address | Routine                | Notes                                                       |
 |---------|------------------------|-------------------------------------------------------------|
-| `$E229` | Clear screen           | Faster than `CHROUT #$93`; resets the line-link table       |
+| `$E229` | Clear screen           | Faster than `CHROUT #$93`, resets the line-link table       |
 | `$E257` | Home cursor            | Sets `$C6` and `$D8` to 0                                   |
 | `$E3D8` | Output ASCII to screen | Screen-editor character handler (what `CHROUT` reaches)     |
 | `$E519` | Advance to next line   | Moves cursor down one screen line                           |
-| `$E53F` | Scroll screen up       | One physical scroll; no PETSCII equivalent                  |
+| `$E53F` | Scroll screen up       | One physical scroll, no PETSCII equivalent                  |
 | `$E5BA` | Open a line (insert)   | Same action as the INSERT key                               |
-| `$E6EA` | Print char to screen   | Char in `A`; waits for retrace (`$E840` bit 5) before write |
+| `$E6EA` | Print char to screen   | Char in `A`, waits for retrace (`$E840` bit 5) before write |
 
 Prefer `CHROUT` (`$FFD2`) for normal output -- it routes through `$E3D8` and respects the current output device. Call these directly only when you specifically need the editor action (an explicit scroll, a fast full-screen clear) without going through PETSCII control codes.
 
@@ -83,7 +83,7 @@ The hardware IRQ vector (`$FFFE`) points to `$E61B`. This is the routine that ru
 | Address | Routine                | Notes                                                                          |
 |---------|------------------------|--------------------------------------------------------------------------------|
 | `$E61B` | Main IRQ entry         | Saves A/X/Y, tests the stacked B flag, dispatches via `$0090`/`$0092`          |
-| `$E62E` | Clock/keyboard service | Default target of CINV (`$0090`); calls `UDTIM`, scans keyboard, blinks cursor |
+| `$E62E` | Clock/keyboard service | Default target of CINV (`$0090`), calls `UDTIM`, scans keyboard, blinks cursor |
 
 `$E61B` saves the registers, then does `JMP ($0092)` for a BRK or `JMP ($0090)` (CINV) for a normal IRQ. Because the entry dispatches through the RAM vector CINV, the correct and stable way to hook the interrupt is to chain through CINV, not to JSR `$E62E` directly. See `system/irq.md` for the full hook-and-chain pattern.
 

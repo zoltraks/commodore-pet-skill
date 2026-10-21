@@ -2,7 +2,7 @@
 
 ## Purpose
 
-> **Scope:** PetAY extension card: dual AY-8910 stereo sound, I/O addresses, register map, frequency calculation, programming
+> **Scope:** PetAY extension card: dual AY-8910 stereo sound, I/O addresses, register map, frequency calculation, programming.
 > **Key items:** `$9000`/`$A000`/`$B000` configurable base, AY-8910 register map, 1 MHz clock, frequency divider, mixer, envelope, stereo left/right, read-is-write limitation
 
 | Out of scope              | See instead         |
@@ -69,7 +69,7 @@ Each AY chip has 16 internal registers. To write a value, first write the regist
 
 ## Read/Write Limitation
 
-The expansion ROM sockets used by the PetAY lack a R/W line connection. The board sees every bus access — read or write — as a write. Reading any of the four addresses writes the current data bus value into the AY chip instead of returning a register value.
+The expansion ROM sockets used by the PetAY lack a R/W line connection. The board sees every bus access - read or write - as a write. Reading any of the four addresses writes the current data bus value into the AY chip instead of returning a register value.
 
 The data bus is not driven during a CPU read cycle, so it floats and is pulled toward `$FF` by bus resistors, or picks up noise from a previous cycle. Either way the AY registers will be corrupted by the read.
 
@@ -167,15 +167,15 @@ To enable only channel A tone: `$3E`. To enable all three tone channels: `$38`. 
 
 **Assumptions (from the AY-8910 datasheet):**
 
-- Bits 0–5 are active-low channel enables: 0 = channel active, 1 = channel silent.
-- Bits 6–7 are I/O port direction flags: 0 = input (default), 1 = output.
-- PetAY does not connect the AY I/O ports to any external signal. Bits 6–7 have no effect on sound and should always be written 0.
+- Bits 0-5 are active-low channel enables: 0 = channel active, 1 = channel silent.
+- Bits 6-7 are I/O port direction flags: 0 = input (default), 1 = output.
+- PetAY does not connect the AY I/O ports to any external signal. Bits 6-7 have no effect on sound and should always be written 0.
 
 **Derivation procedure:**
 
 1. Start with all bits = 1 (everything off, I/O as input).
 2. Clear (set to 0) each bit for every channel you want active.
-3. Leave bits 6–7 = 0.
+3. Leave bits 6-7 = 0.
 
 ```asm
 bits:  7  6  5  4  3  2  1  0
@@ -184,7 +184,7 @@ bits:  7  6  5  4  3  2  1  0
        B  A
 ```
 
-Example — channel A tone only (`$3E`):
+Example - channel A tone only (`$3E`):
 
 ```asm
 bits:  0  0  1  1  1  1  1  0   = $3E
@@ -192,7 +192,7 @@ bits:  0  0  1  1  1  1  1  0   = $3E
               NC NB NA TC TB TA=0 (on)
 ```
 
-Example — channel A tone and noise (`$36`):
+Example - channel A tone and noise (`$36`):
 
 ```asm
 bits:  0  0  1  1  0  1  1  0   = $36
@@ -200,13 +200,13 @@ bits:  0  0  1  1  0  1  1  0   = $36
                     NA=0 (on)   TA=0 (on)
 ```
 
-Example — silence all (`$3F`):
+Example - silence all (`$3F`):
 
 ```asm
 bits:  0  0  1  1  1  1  1  1   = $3F
 ```
 
-**Why $FF silences but is wrong:** Writing `$FF` also sets bits 6–7 to 1, which puts both I/O ports into output mode. On PetAY this has no audible consequence because the ports are unconnected. However it modifies state beyond what was intended, and is inconsistent with the "always 0" rule for bits 6–7. Use `$3F`.
+**Why $FF silences but is wrong:** Writing `$FF` also sets bits 6-7 to 1, which puts both I/O ports into output mode. On PetAY this has no audible consequence because the ports are unconnected. However it modifies state beyond what was intended, and is inconsistent with the "always 0" rule for bits 6-7. Use `$3F`.
 
 ## Volume Registers ($08-$0A)
 
@@ -376,7 +376,7 @@ The following BASIC program plays A4 (440 Hz) on the left AY and a higher tone o
 80 POKE 40962,8:POKE 40963,15
 ```
 
-`40960` = `$A000` (left control), `40961` = `$A001` (left value), `40962` = `$A002` (right control), `40963` = `$A003` (right value). For the `$9000` socket, use 36864–36867, for `$B000`, use 45056–45059.
+`40960` = `$A000` (left control), `40961` = `$A001` (left value), `40962` = `$A002` (right control), `40963` = `$A003` (right value). For the `$9000` socket, use 36864-36867, for `$B000`, use 45056-45059.
 
 Lines 10-40 set the left AY: channel A divider = 142 (A4), mixer = `$3E` (channel A tone on), volume = 15. Lines 50-80 set the right AY: channel A divider = 125, mixer = `$3E`, volume = 15.
 

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-> **Scope:** RLE, byte-run, frame-delta, LZ4, decompression routines for PET screen data and animation
+> **Scope:** RLE, byte-run, frame-delta, LZ4, decompression routines for PET screen data and animation.
 > **Key items:** RLE flag bytes, run length encoding, delta frames, LZ4 token decode, screen-oriented depackers
 
 This file covers compression patterns for the PET 3032 in four progressive layers:
@@ -55,6 +55,7 @@ $00 $E8 $66            ; repeat: $66 for 232 times
 ```
 
 A full screen of `$66` (1000 bytes) compresses to 12 bytes:
+
 ```asm
 $00,$00,$66,$00,$00,$66,$00,$00,$66,$00,$E8,$66
 ```
@@ -303,7 +304,8 @@ For animation, store only changed bytes between frames.
 
 ### Format
 
-Each delta record: 3 bytes (offset low, offset high, new value)
+Each delta record: 3 bytes (offset low, offset high, new value).
+
 Terminated by offset $FFFF.
 
 ```asm
@@ -436,7 +438,13 @@ $00                      ; token: 0 literals, 0 match
 
 ### Decompressor
 
-Uses self-modifying pointers for source reads and destination writes. A shared write subroutine handles both literal and match copies. Borrows ZP `$FB`-`$FE` for working registers, saves and restores all four. Uses `$FF` (documented unused by PET BASIC 2) for the literal count high byte without saving.
+Uses self-modifying pointers for source reads and destination writes.
+
+A shared write subroutine handles both literal and match copies.
+
+Borrows ZP `$FB`-`$FE` for working registers, saves and restores all four.
+
+Uses `$FF` (documented unused by PET BASIC 2) for the literal count high byte without saving.
 
 **Calling convention:** X = low byte, Y = high byte of a 4-byte parameter block in free RAM.
 
@@ -701,5 +709,5 @@ For full-screen images (1000 bytes), RLE works well because the PET screen has l
 | Empty screen         | 20:1      | 1000 spaces -> 3 bytes            |
 | Solid pattern        | 83:1      | 1000 identical codes -> 12 bytes  |
 | Text pages           | 3:1       | Moderate runs with mixed literals |
-| Graphics/art         | 1.2:1     | Little repetition; may expand     |
-| Character animations | 2:1       | Repeated frames; delta may help   |
+| Graphics/art         | 1.2:1     | Little repetition, may expand     |
+| Character animations | 2:1       | Repeated frames, delta may help   |

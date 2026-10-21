@@ -2,7 +2,7 @@
 
 ## Purpose
 
-> **Scope:** KERNAL jump table ($FFC0-$FFEA), indirect vectors, CHROUT/GETIN/CLALL/STOP, file I/O, tape, safe hooks, PET vs C64 differences
+> **Scope:** KERNAL jump table ($FFC0-$FFEA), indirect vectors, CHROUT/GETIN/CLALL/STOP, file I/O, tape, safe hooks, PET vs C64 differences.
 > **Key items:** CHROUT=$FFD2, GETIN=$FFE4, CLALL=$FFE7, STOP=$FFE1, CINV=$0090, CBINV=$0092, NMINV=$0094
 
 This file covers the PET 3032 KERNAL in four progressive layers:
@@ -25,27 +25,33 @@ The PET 3032 KERNAL provides a jump table at the top of ROM.
 
 Each entry is a 3-byte `JMP` instruction.
 
-**Critical:** The PET jump table starts at `$FFC0`, NOT `$FFB7`. The addresses `$FFB7-$FFBF` contain ROM code text (`"C. 0978 CBM "`) and filler bytes (`$AA` = `TAX`), NOT jump table entries. The C64 has `SETNAM` at `$FFBD`, `SETLFS` at `$FFBA`, and `READST` at `$FFB7` — **these do NOT exist on the PET**. Calling them executes `TAX TAX TAX` and falls through to `OPEN` with wrong parameters, causing `?SYNTAX ERROR`.
+**Critical:** The PET jump table starts at `$FFC0`, NOT `$FFB7`.
 
-| Address | Name   | Description                          | Input                                         | Output                 |
-|---------|--------|--------------------------------------|-----------------------------------------------|------------------------|
-| $FFC0   | OPEN   | Open logical file (BASIC parsing!)   | (params set via ZP, see below)                | jumps to error on fail |
-| $FFC3   | CLOSE  | Close logical file (BASIC parsing!)  | A = logical file number                       | jumps to error on fail |
-| $FFC6   | CHKIN  | Set input channel                    | X = logical file number                       | C=0 ok, C=1 error      |
-| $FFC9   | CHKOUT | Set output channel                   | X = logical file number                       | C=0 ok, C=1 error      |
-| $FFCC   | CLRCHN | Clear channels                       | -                                             | -                      |
-| $FFCF   | BASIN  | Read byte from current input         | -                                             | A = byte               |
-| $FFD2   | CHROUT | Output character to current output   | A = PETSCII char                              | -                      |
-| $FFD5   | LOAD   | Load file to memory (BASIC parsing!) | A = 0 (load) / 1 (verify), X/Y = addr if SA=1 | X/Y = end+1            |
-| $FFD8   | SAVE   | Save memory range (BASIC parsing!)   | A = ZP ptr to start, X/Y = end+1              | -                      |
-| $FFDB   | VERIFY | Verify file vs memory (BASIC parsing!)| (params via BASIC text)                      | jumps to error on fail |
-| $FFDE   | SYS    | Call ML from BASIC (BASIC parsing!)  | (address via BASIC text)                      | -                      |
-| $FFE1   | STOP   | Check STOP key                       | -                                             | Z = 1 if pressed       |
-| $FFE4   | GETIN  | Read keyboard buffer                 | -                                             | A = char (0 = empty)   |
-| $FFE7   | CLALL  | Close all files/channels             | -                                             | -                      |
-| $FFEA   | UDTIM  | Update jiffy clock                   | -                                             | -                      |
+The addresses `$FFB7-$FFBF` contain ROM code text (`"C. 0978 CBM "`) and filler bytes (`$AA` = `TAX`), NOT jump table entries.
 
-**PET-specific slots:** `$FFDB` and `$FFDE` are **VERIFY** and **SYS** on the PET — *not* the C64's `SETTIM`/`RDTIM`. Like `OPEN`/`CLOSE`/`LOAD`/`SAVE`, these six entries (`$FFC0`, `$FFC3`, `$FFD5`, `$FFD8`, `$FFDB`, `$FFDE`) are BASIC-command extensions: they read their arguments from the BASIC text pointer, so they are not directly callable from machine code. The device/channel routines (`CHKIN`/`CHKOUT`/`CLRCHN`/`BASIN`/`CHROUT`/`STOP`/`GETIN`/`CLALL`/`UDTIM`) take register/zero-page parameters and are ML-safe.
+The C64 has `SETNAM` at `$FFBD`, `SETLFS` at `$FFBA`, and `READST` at `$FFB7` - **these do NOT exist on the PET**.
+
+Calling them executes `TAX TAX TAX` and falls through to `OPEN` with wrong parameters, causing `?SYNTAX ERROR`.
+
+| Address | Name   | Description                            | Input                                         | Output                 |
+|---------|--------|----------------------------------------|-----------------------------------------------|------------------------|
+| $FFC0   | OPEN   | Open logical file (BASIC parsing!)     | (params set via ZP, see below)                | jumps to error on fail |
+| $FFC3   | CLOSE  | Close logical file (BASIC parsing!)    | A = logical file number                       | jumps to error on fail |
+| $FFC6   | CHKIN  | Set input channel                      | X = logical file number                       | C=0 ok, C=1 error      |
+| $FFC9   | CHKOUT | Set output channel                     | X = logical file number                       | C=0 ok, C=1 error      |
+| $FFCC   | CLRCHN | Clear channels                         | -                                             | -                      |
+| $FFCF   | BASIN  | Read byte from current input           | -                                             | A = byte               |
+| $FFD2   | CHROUT | Output character to current output     | A = PETSCII char                              | -                      |
+| $FFD5   | LOAD   | Load file to memory (BASIC parsing!)   | A = 0 (load) / 1 (verify), X/Y = addr if SA=1 | X/Y = end+1            |
+| $FFD8   | SAVE   | Save memory range (BASIC parsing!)     | A = ZP ptr to start, X/Y = end+1              | -                      |
+| $FFDB   | VERIFY | Verify file vs memory (BASIC parsing!) | (params via BASIC text)                       | jumps to error on fail |
+| $FFDE   | SYS    | Call ML from BASIC (BASIC parsing!)    | (address via BASIC text)                      | -                      |
+| $FFE1   | STOP   | Check STOP key                         | -                                             | Z = 1 if pressed       |
+| $FFE4   | GETIN  | Read keyboard buffer                   | -                                             | A = char (0 = empty)   |
+| $FFE7   | CLALL  | Close all files/channels               | -                                             | -                      |
+| $FFEA   | UDTIM  | Update jiffy clock                     | -                                             | -                      |
+
+**PET-specific slots:** `$FFDB` and `$FFDE` are **VERIFY** and **SYS** on the PET - *not* the C64's `SETTIM`/`RDTIM`. Like `OPEN`/`CLOSE`/`LOAD`/`SAVE`, these six entries (`$FFC0`, `$FFC3`, `$FFD5`, `$FFD8`, `$FFDB`, `$FFDE`) are BASIC-command extensions: they read their arguments from the BASIC text pointer, so they are not directly callable from machine code. The device/channel routines (`CHKIN`/`CHKOUT`/`CLRCHN`/`BASIN`/`CHROUT`/`STOP`/`GETIN`/`CLALL`/`UDTIM`) take register/zero-page parameters and are ML-safe.
 
 ### Routines that do NOT exist on PET KERNAL
 
@@ -57,7 +63,7 @@ Each entry is a 3-byte `JMP` instruction.
 
 ### OPEN and CLOSE include BASIC parameter parsing
 
-The PET's `OPEN` (`$FFC0`) and `CLOSE` (`$FFC3`) jump table entries include BASIC text parameter parsing — they expect to read parameters from the BASIC text pointer (`$77-$78`), not from registers. When called from machine code, they will fail or crash.
+The PET's `OPEN` (`$FFC0`) and `CLOSE` (`$FFC3`) jump table entries include BASIC text parameter parsing - they expect to read parameters from the BASIC text pointer (`$77-$78`), not from registers. When called from machine code, they will fail or crash.
 
 To call OPEN or CLOSE from machine code, use the **low-level ROM entry points** that skip the BASIC parsing:
 
@@ -66,9 +72,9 @@ To call OPEN or CLOSE from machine code, use the **low-level ROM entry points** 
 | OPEN    | $FFC0      | $F524               | BASIC param parse at $F4CE     |
 | CLOSE   | $FFC3      | $F2AC               | BASIC param parse at $F4CE     |
 
-These low-level entries are the instruction immediately **after** the `JSR $F4CE` (BASIC parameter parse) at the top of each routine: `$FFC0` jumps to `$F521` where `$F521: JSR $F4CE` / `$F524: LDA $D2` — so `$F524` runs the open logic against the zero-page parameters you set yourself. Likewise `$FFC3` jumps to `$F2A9` where `$F2A9: JSR $F4CE` / `$F2AC: LDA $D2`. (These were verified by disassembling `kernal-2.901465-03`, do not use `$F560`/`$F2DD` — those land in the middle of an instruction and crash.)
+These low-level entries are the instruction immediately **after** the `JSR $F4CE` (BASIC parameter parse) at the top of each routine: `$FFC0` jumps to `$F521` where `$F521: JSR $F4CE` / `$F524: LDA $D2` - so `$F524` runs the open logic against the zero-page parameters you set yourself. Likewise `$FFC3` jumps to `$F2A9` where `$F2A9: JSR $F4CE` / `$F2AC: LDA $D2`. (These were verified by disassembling `kernal-2.901465-03`, do not use `$F560`/`$F2DD` - those land in the middle of an instruction and crash.)
 
-CHKIN, CHKOUT, CLRCHN, CHRIN, CHROUT, GETIN, CLALL, and STOP work correctly from the jump table — they do NOT include BASIC parsing.
+CHKIN, CHKOUT, CLRCHN, CHRIN, CHROUT, GETIN, CLALL, and STOP work correctly from the jump table - they do NOT include BASIC parsing.
 
 ### PET file I/O zero-page locations
 
@@ -202,13 +208,13 @@ my_irq:
 
 ## I/O Device Numbers
 
-| Number | Device      | Description           |
-|--------|-------------|-----------------------|
-| 0      | Keyboard    | Default input         |
-| 1      | Cassette #1 | Tape device           |
-| 2      | Cassette #2 | Tape device (via VIA) |
-| 3      | Screen      | Default output        |
-| 4+     | IEEE-488    | Disk, printer, etc.   |
+| Number | Device      | Description               |
+|--------|-------------|---------------------------|
+| 0      | Keyboard    | Default input             |
+| 1      | Cassette #1 | Tape device               |
+| 2      | Cassette #2 | Tape device (via the VIA) |
+| 3      | Screen      | Default output            |
+| 4+     | IEEE-488    | Disk, printer, etc.       |
 
 ### Setting Output Device
 
