@@ -20,13 +20,13 @@ This file covers compression patterns for the PET 3032 in four progressive layer
 
 ## Contents
 
-| Section                           | Line | What it covers                                            |
-|-----------------------------------|------|-----------------------------------------------------------|
-| RLE for Screen Codes ($00 Escape) | 31   | $00-escape RLE format, encode/decode routines             |
-| Byte-Run (Alternative Simple RLE) | 200  | Simpler RLE with sign-bit flag, when $00 escape is unsafe |
-| Frame-Delta Compression           | 300  | XOR delta frames for animation, keyframe + delta pairs    |
-| LZ4 Block Format                  | 399  | LZ4 token decode, block format, depacker routine          |
-| Screen-Oriented Packing           | 670  | Column-major packing, partial screen updates              |
+| Section                           | What it covers                                            |
+|-----------------------------------|-----------------------------------------------------------|
+| RLE for Screen Codes ($00 Escape) | $00-escape RLE format, encode/decode routines             |
+| Byte-Run (Alternative Simple RLE) | Simpler RLE with sign-bit flag, when $00 escape is unsafe |
+| Frame-Delta Compression           | XOR delta frames for animation, keyframe + delta pairs    |
+| LZ4 Block Format                  | LZ4 token decode, block format, depacker routine          |
+| Screen-Oriented Packing           | Column-major packing, partial screen updates              |
 
 ## RLE for Screen Codes ($00 Escape)
 

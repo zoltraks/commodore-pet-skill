@@ -55,13 +55,13 @@ Values are hexadecimal (`$NN`) unless noted decimal.
 Project install - committed to a repo, shared with your team:
 
 ```bash
-git clone https://github.com/YOURNAME/commodore-pet-skill .windsurf/skills/commodore-pet
+git clone https://github.com/zoltraks/commodore-pet-skill .windsurf/skills/commodore-pet-skill
 ```
 
 Or use the cross-tool `.agents/skills/` path:
 
 ```bash
-git clone https://github.com/YOURNAME/commodore-pet-skill .agents/skills/commodore-pet
+git clone https://github.com/zoltraks/commodore-pet-skill .agents/skills/commodore-pet-skill
 ```
 
 ### Claude Code - manual clone
@@ -69,46 +69,46 @@ git clone https://github.com/YOURNAME/commodore-pet-skill .agents/skills/commodo
 Personal install (available in all your projects):
 
 ```bash
-git clone https://github.com/YOURNAME/commodore-pet-skill \
-  ~/.claude/skills/commodore-pet
+git clone https://github.com/zoltraks/commodore-pet-skill \
+  ~/.claude/skills/commodore-pet-skill
 ```
 
 Project install:
 
 ```bash
-git clone https://github.com/YOURNAME/commodore-pet-skill \
-  .claude/skills/commodore-pet
+git clone https://github.com/zoltraks/commodore-pet-skill \
+  .claude/skills/commodore-pet-skill
 ```
 
 ### Gemini CLI
 
 ```bash
-gemini skills install https://github.com/YOURNAME/commodore-pet-skill
+gemini skills install https://github.com/zoltraks/commodore-pet-skill
 ```
 
 Or manual:
 
 ```bash
-git clone https://github.com/YOURNAME/commodore-pet-skill /tmp/pet-skill
-cp -r /tmp/pet-skill ~/.gemini/skills/commodore-pet
+git clone https://github.com/zoltraks/commodore-pet-skill /tmp/pet-skill
+cp -r /tmp/pet-skill ~/.gemini/skills/commodore-pet-skill
 ```
 
 ### OpenCode
 
 ```bash
-git clone https://github.com/YOURNAME/commodore-pet-skill ~/.config/opencode/skills/commodore-pet
+git clone https://github.com/zoltraks/commodore-pet-skill ~/.config/opencode/skills/commodore-pet-skill
 ```
 
 Or use the Claude-compatible path:
 
 ```bash
-git clone https://github.com/YOURNAME/commodore-pet-skill ~/.claude/skills/commodore-pet
+git clone https://github.com/zoltraks/commodore-pet-skill ~/.claude/skills/commodore-pet-skill
 ```
 
 ### GitHub Copilot CLI
 
 ```bash
-gh skill install YOURNAME/commodore-pet-skill commodore-pet
+gh skill install zoltraks/commodore-pet-skill commodore-pet-skill
 ```
 
 ---
@@ -146,7 +146,10 @@ gh skill install YOURNAME/commodore-pet-skill commodore-pet
 ```
 commodore-pet-skill/
 ├── SKILL.md                       # Root router - load this first
+├── AGENTS.md                      # Maintenance entry point for this repository
 ├── STYLE.md                       # Formatting rules for all skill documents
+├── CHANGELOG.md                   # Release history
+├── LICENSE                        # MIT
 ├── hardware/
 │   ├── cpu.md                     # 6502 registers, flags, instructions, interrupts
 │   ├── chip.md                    # VIA, PIA, CRTC registers, I/O decoding, VBLANK
@@ -154,10 +157,12 @@ commodore-pet-skill/
 ├── system/
 │   ├── memory.md                  # PET 3032 RAM layout, zero page, safe zones
 │   ├── kernal.md                  # KERNAL jump table, indirect vectors, I/O routines
+│   ├── rom.md                     # Callable ROM entry points beyond the jump table
+│   ├── basic.md                   # BASIC program layout, tokens, zero-page pointers
 │   ├── irq.md                     # VBLANK IRQ setup, CINV vector, handler template, polling
-│   ├── load.md                    # PRG loading from tape/disk, LOAD call, tape file format
 │   ├── screen.md                  # Screen RAM, PETSCII, cursor, reverse video
 │   ├── graphics.md                # Semigraphics characters, box drawing, window/line/rect routines, scrolling
+│   ├── load.md                    # PRG loading from tape/disk, LOAD call, tape file format
 │   ├── keyboard.md                # Keyboard matrix, PIA 1 scan, GETIN, multi-key detection
 │   ├── file.md                    # KERNAL file I/O: SETNAM/SETLFS/OPEN/CLOSE/CHKIN/CHKOUT/CHRIN/CHROUT/LOAD/SAVE
 │   └── disk.md                    # DOS commands, command channel, directory, error codes, disk images, emulators
@@ -169,10 +174,16 @@ commodore-pet-skill/
 │   ├── optimization.md            # Size/speed trade-offs, unrolled loops, branch tuning
 │   └── compression.md             # $00-escape RLE, byte-run, frame-delta, LZ4
 ├── utility/
-│   └── dasm-assembler.md          # DASM syntax, directives, macros, conventions
-└── example/
-    ├── general.md                 # BASIC stub, screen clear, VBLANK, IRQ skeleton
-    └── file.md                  # Complete DASM file I/O examples: load/save/read/write/command/directory
+│   ├── dasm-assembler.md          # DASM syntax, directives, macros, conventions
+│   └── vice-emulator.md           # Running and debugging PRGs in xpet, headless scripting
+├── example/
+│   ├── general.md                 # BASIC stub, screen clear, VBLANK, IRQ skeleton
+│   └── file.md                    # Complete DASM file I/O examples: load/save/read/write/command/directory
+├── script/
+│   └── check-contents.py          # Verifies Contents tables and the SKILL.md file-size table
+└── test/
+    └── evals/
+        └── evals.json             # Behavioral regression prompts
 ```
 
 The skill activates automatically when you ask about Commodore PET programming, 6502 assembly, DASM, PET hardware, or related topics.

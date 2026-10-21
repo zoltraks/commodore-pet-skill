@@ -13,25 +13,25 @@
 
 ## Contents
 
-| Section                             | Line | What it covers                                                                                  |
-|-------------------------------------|------|-------------------------------------------------------------------------------------------------|
-| Invocation                          | 34   | Minimal command form and model flag                                                             |
-| PET ROM Setup                       | 44   | How VICE finds ROMs; symlinking on Linux, bindist on Windows                                    |
-| Drive Types on PET                  | 116  | `-drive8type 2031` for D64; never 1541 on PET                                                   |
-| Running a PRG                       | 132  | Autostart modes, why disk autostart is most reliable                                            |
-| c1541 Disk Image Building           | 171  | Building D64s, "readme" hang bug, interactive mode, filename case folding                       |
-| Headless Debugging                  | 186  | Remote monitor over TCP, cycle limits, screen dumps, warp timing, Windows                       |
-| Decoding Screen Codes               | 413  | Reading dumped `$8000-$83E7` bytes back into characters; row arithmetic                         |
-| Keyboard Buffer Injection           | 466  | Writing to `$026F`/`$009E` to simulate key presses; warp mode and auto-repeat hazards           |
-| Signal-Byte Tracing                 | 514  | Writing trace bytes to safe RAM to locate crash points                                          |
-| Memory Landmarks                    | 514  | Addresses worth checking during diagnostics                                                     |
-| Verifying KERNAL Jump Table Entries | 542  | Disassembling `$FFC0-$FFEA`; PET vs C64 entry differences                                       |
-| Diagnosing Crashes                  | 580  | SYNTAX ERROR from bad KERNAL calls, KERNAL hang, SP depth, VIA PCR hazard                       |
-| Debugging Workflow                  | 638  | Step-by-step recipe: check if program ran, breakpoint, step, watch, trace, keyboard input logic |
-| Built-in Monitor                    | 737  | Opening the monitor, full command reference, register modification, memory                      |
-| Breakpoints                         | 888  | initbreak, break, watch, trace, conditional, warp-mode timing                                   |
-| Monitor Scripts                     | 937  | moncommands file for automated debug sessions                                                   |
-| Useful Flags                        | 963  | warp, speed, keybuf, logging                                                                    |
+| Section                                           | What it covers                                                                                  |
+|---------------------------------------------------|-------------------------------------------------------------------------------------------------|
+| Invocation                                        | Minimal command form and model flag                                                             |
+| PET ROM Setup                                     | How VICE finds ROMs; symlinking on Linux, bindist on Windows                                    |
+| Drive Types on PET                                | `-drive8type 2031` for D64; never 1541 on PET                                                   |
+| Running a PRG                                     | Autostart modes, why disk autostart is most reliable                                            |
+| Autostart From a Disk Image (recommended for PET) | Building D64s, "readme" hang bug, interactive mode, filename case folding                       |
+| Headless Debugging                                | Remote monitor over TCP, cycle limits, screen dumps, warp timing, Windows                       |
+| Decoding Screen Codes                             | Reading dumped `$8000-$83E7` bytes back into characters; row arithmetic                         |
+| Keyboard Buffer Injection                         | Writing to `$026F`/`$009E` to simulate key presses; warp mode and auto-repeat hazards           |
+| Signal-Byte Tracing                               | Writing trace bytes to safe RAM to locate crash points                                          |
+| Memory Landmarks                                  | Addresses worth checking during diagnostics                                                     |
+| Verifying KERNAL Jump Table Entries               | Disassembling `$FFC0-$FFEA`; PET vs C64 entry differences                                       |
+| Diagnosing Crashes                                | SYNTAX ERROR from bad KERNAL calls, KERNAL hang, SP depth, VIA PCR hazard                       |
+| Debugging Workflow                                | Step-by-step recipe: check if program ran, breakpoint, step, watch, trace, keyboard input logic |
+| Built-in Monitor                                  | Opening the monitor, full command reference, register modification, memory                      |
+| Breakpoints                                       | initbreak, break, watch, trace, conditional, warp-mode timing                                   |
+| Monitor Scripts                                   | moncommands file for automated debug sessions                                                   |
+| Useful Flags                                      | warp, speed, keybuf, logging                                                                    |
 
 ## Invocation
 
@@ -306,9 +306,9 @@ The remote monitor speaks the same text protocol as `-nativemonitor`. Pipe a seq
 Each `m` line on the response carries one 16-byte row prefixed with `>C:<addr>`:
 
 ```
->C:8000  20 20 20 20  20 20 20 20  20 20 20 20  20 20 20 20                   
->C:8010  20 20 20 20  20 20 20 20  20 20 20 20  20 20 20 20                   
->C:8020  20 20 20 20  20 20 20 20  3f 13 19 0e  14 01 18 20           ?...... 
+>C:8000  20 20 20 20  20 20 20 20  20 20 20 20  20 20 20 20
+>C:8010  20 20 20 20  20 20 20 20  20 20 20 20  20 20 20 20
+>C:8020  20 20 20 20  20 20 20 20  3f 13 19 0e  14 01 18 20           ?......
 ```
 
 The trailing characters in each line are VICE's ASCII translation, NOT the screen characters -- screen RAM uses screen codes (next section).

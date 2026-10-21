@@ -12,6 +12,13 @@ This file covers bit-operation patterns for the PET 3032 in four progressive lay
 - **Working code examples** - verified ASM snippets
 - **Deep reference notes** - edge cases, caveats, implementation rules
 
+| Out of scope                     | See instead                 |
+|----------------------------------|-----------------------------|
+| 6502 instructions and flags      | `hardware/cpu.md`           |
+| DASM syntax and directives       | `utility/dasm-assembler.md` |
+| File structure and naming        | `code/standard.md`          |
+| Loop and size optimization       | `code/optimization.md`      |
+
 ## Bit Manipulation
 
 ### Set/Clear/Toggle Bits

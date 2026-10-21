@@ -21,16 +21,16 @@ The drive's firmware (Commodore DOS) interprets commands and manages the file sy
 
 ## Contents
 
-| Section                          | Line | What it covers                                                |
-|----------------------------------|------|---------------------------------------------------------------|
-| Supported Disk Drives            | 35   | 2031, 2040, 4040, 8050, 8250, SFD-1001 specs and DOS versions |
-| The Command Channel              | 58   | SA=15 open, read status string, send DOS command pattern      |
-| DOS Commands                     | 184  | Initialize, scratch, rename, copy, format, validate           |
-| Reading the Directory            | 323  | `$` pseudo-file, BASIC-format encoding, parsing loop          |
-| DOS Error Messages               | 486  | Full error code table (00-74), checking CC field              |
-| Disk Images and Emulators        | 548  | D64/D80/D82 formats, D64 on PET caveats, VICE xpet workflow   |
-| Comparing File Access Approaches | 664  | BASIC vs KERNAL routines vs direct IEEE-488                   |
-| Best Practices                   | 731  | CLRCHN, CLOSE, STATUS, command channel, LFN limits            |
+| Section                          | What it covers                                                |
+|----------------------------------|---------------------------------------------------------------|
+| Supported Disk Drives            | 2031, 2040, 4040, 8050, 8250, SFD-1001 specs and DOS versions |
+| The Command Channel              | SA=15 open, read status string, send DOS command pattern      |
+| DOS Commands                     | Initialize, scratch, rename, copy, format, validate           |
+| Reading the Directory            | `$` pseudo-file, BASIC-format encoding, parsing loop          |
+| DOS Error Messages               | Full error code table (00-74), checking CC field              |
+| Disk Images and Emulators        | D64/D80/D82 formats, D64 on PET caveats, VICE xpet workflow   |
+| Comparing File Access Approaches | BASIC vs KERNAL routines vs direct IEEE-488                   |
+| Best Practices                   | CLRCHN, CLOSE, STATUS, command channel, LFN limits            |
 
 ## Supported Disk Drives
 

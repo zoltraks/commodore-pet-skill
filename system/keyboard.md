@@ -18,6 +18,21 @@ This file covers PET 3032 keyboard input in four progressive layers:
 | KERNAL jump table addresses | `system/kernal.md` |
 | Screen output and PETSCII   | `system/screen.md` |
 
+## Contents
+
+| Section                   | What it covers                      |
+|---------------------------|-------------------------------------|
+| Quick-Lookup              | Need-to-section map                 |
+| Physical Key Layout       | Key positions and matrix segments   |
+| KERNAL GETIN              | Buffered reads through the KERNAL   |
+| STOP Key                  | Checking the STOP key flag          |
+| Keyboard Matrix Map       | Full 10-row by 8-column matrix      |
+| Direct Matrix Scan        | PIA 1 row and column scan code      |
+| Multi-Key Detection       | Simultaneous key presses            |
+| Common PETSCII Key Codes  | PETSCII values for common keys      |
+| Deep Reference Notes      | Edge cases and buffer details       |
+| Keyboard Buffer Injection | Writing key presses into the buffer |
+
 ## Quick-Lookup
 
 | Need                                    | Section                      |

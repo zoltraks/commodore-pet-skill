@@ -17,18 +17,18 @@ Every example assembles cleanly with DASM and follows the conventions in `system
 
 ## Contents
 
-| Section                            | Line | What it covers                                         |
-|------------------------------------|------|--------------------------------------------------------|
-| Address Definitions                | 33   | Standard KERNAL equates block to paste at top of file  |
-| Load a PRG File                    | 105  | LOAD with SA=0 (file address) and SA=1 (fixed address) |
-| Save a PRG File                    | 202  | SAVE from zero-page pointer to end address             |
-| Read a Sequential File             | 268  | OPEN + CHKIN + CHRIN loop + STATUS EOF check + CLOSE   |
-| Write a Sequential File            | 405  | OPEN + CHKOUT + CHROUT loop + STATUS check + CLOSE     |
-| Send a DOS Command                 | 517  | SA=15 OPEN with command string, reopen to read status  |
-| Read the Disk Directory            | 649  | Open `$`, skip header, parse BASIC-format lines        |
-| Complete File I/O Program Template | 775  | Full program with init, read, error paths, CLOSE       |
-| Common Mistakes                    | 943  | CLRCHN, CLOSE on error, SA=0 misuse, LFN conflicts     |
-| Quick Reference: Call Sequences    | 991  | One-line summary of every operation                    |
+| Section                            | What it covers                                         |
+|------------------------------------|--------------------------------------------------------|
+| Address Definitions                | Standard KERNAL equates block to paste at top of file  |
+| Load a PRG File                    | LOAD with SA=0 (file address) and SA=1 (fixed address) |
+| Save a PRG File                    | SAVE from zero-page pointer to end address             |
+| Read a Sequential File             | OPEN + CHKIN + CHRIN loop + STATUS EOF check + CLOSE   |
+| Write a Sequential File            | OPEN + CHKOUT + CHROUT loop + STATUS check + CLOSE     |
+| Send a DOS Command                 | SA=15 OPEN with command string, reopen to read status  |
+| Read the Disk Directory            | Open `$`, skip header, parse BASIC-format lines        |
+| Complete File I/O Program Template | Full program with init, read, error paths, CLOSE       |
+| Common Mistakes                    | CLRCHN, CLOSE on error, SA=0 misuse, LFN conflicts     |
+| Quick Reference: Call Sequences    | One-line summary of every operation                    |
 
 ## Address Definitions
 

@@ -18,25 +18,25 @@ Follow these rules when writing new `.asm` files or editing existing ones to kee
 
 ## Contents
 
-| Section                  | Line | What it covers                                                                        |
-|--------------------------|------|---------------------------------------------------------------------------------------|
-| Toolchain                | 40   | DASM invocation, target CPU, hardware, load address                                   |
-| File Structure           | 49   | Top-to-bottom layout for every `.asm` file                                            |
-| Directives               | 65   | `processor 6502` and `org $0401` placement                                            |
-| Equates                  | 83   | Global hardware equates, grouping and alignment rules                                 |
-| Zero Page Usage          | 107  | Parameter blocks, borrowing `$FB`-`$FE`, save/restore, indirect addressing limitation |
-| BASIC Stub               | 222  | Standard SYS1038 stub with `nextline:` and `old_pcr:`                                 |
-| Labels                   | 199  | Spacing, naming, colon rules, subroutine boundaries                                   |
-| Instruction Formatting   | 256  | Indentation, tab-stop comments, operand rules                                         |
-| Comment Placement        | 284  | Block intent comments, label description comments                                     |
-| Routine Conventions      | 336  | Contracts, scratch registers, error signalling, self-modifying code                   |
-| Section Headers          | 371  | Major and minor banner format                                                         |
-| Data Directives          | 397  | `byte`, `word`, string bytes, screen row layout                                       |
-| Screen RAM Operations    | 442  | 1000-byte screen invariant, 768+232 clear/fill/copy pattern                           |
-| End-of-File Format       | 472  | Trailing blank line rule                                                              |
-| Naming Conventions       | 476  | Convention table for all identifier kinds, abbreviations                              |
-| Column Alignment Summary | 491  | Column position table for every source element                                        |
-| 6502 Flag Semantics      | 506  | Flag-affecting instructions, branch-after-load bug, BIT A-AND-operand hazard          |
+| Section                  | What it covers                                                                        |
+|--------------------------|---------------------------------------------------------------------------------------|
+| Toolchain                | DASM invocation, target CPU, hardware, load address                                   |
+| File Structure           | Top-to-bottom layout for every `.asm` file                                            |
+| Directives               | `processor 6502` and `org $0401` placement                                            |
+| Equates                  | Global hardware equates, grouping and alignment rules                                 |
+| Zero Page Usage          | Parameter blocks, borrowing `$FB`-`$FE`, save/restore, indirect addressing limitation |
+| BASIC Stub               | Standard SYS1038 stub with `nextline:` and `old_pcr:`                                 |
+| Labels                   | Spacing, naming, colon rules, subroutine boundaries                                   |
+| Instruction Formatting   | Indentation, tab-stop comments, operand rules                                         |
+| Comment Placement        | Block intent comments, label description comments                                     |
+| Routine Conventions      | Contracts, scratch registers, error signalling, self-modifying code                   |
+| Section Headers          | Major and minor banner format                                                         |
+| Data Directives          | `byte`, `word`, string bytes, screen row layout                                       |
+| Screen RAM Operations    | 1000-byte screen invariant, 768+232 clear/fill/copy pattern                           |
+| End-of-File Format       | Trailing blank line rule                                                              |
+| Naming Conventions       | Convention table for all identifier kinds, abbreviations                              |
+| Column Alignment Summary | Column position table for every source element                                        |
+| 6502 Flag Semantics      | Flag-affecting instructions, branch-after-load bug, BIT A-AND-operand hazard          |
 
 ## Toolchain
 

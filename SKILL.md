@@ -1,5 +1,5 @@
 ---
-name: commodore-pet
+name: commodore-pet-skill
 description: >-
   Expert reference for Commodore PET 3032 6502 assembly programming, hardware
   registers, and working DASM code examples. Always use this skill whenever
@@ -12,6 +12,15 @@ description: >-
   Commodore disk drives. Do not skip this skill just because a question
   seems simple -- even short 6502 questions benefit from verified PET-specific
   addresses and hardware facts.
+license: MIT
+compatibility: >-
+  Designed for agent coding environments with file system access (Claude Code,
+  Cursor, Windsurf, Devin, and similar). Requires the ability to read text
+  files. DASM or Docker is needed only to assemble examples, VICE xpet only
+  for emulation and debugging tasks.
+metadata:
+  version: "0.3.0"
+  author: Filip Golewski
 ---
 
 # Commodore PET Programming Reference
@@ -162,6 +171,10 @@ When adding or editing files, follow the conventions in `STYLE.md`.
 
 It covers file header structure, table alignment, code block layout, inline formatting, and how to register new files in this routing table.
 
+`AGENTS.md` is the maintenance entry point for work on this skill repository.
+
+Run `python3 script/check-contents.py` after editing headings or file sizes - it verifies every Contents table entry resolves to a real heading and keeps the large-file table below accurate.
+
 ## Note on Large Reference Files
 
 These files are long and have their own table of contents at the top.
@@ -172,11 +185,14 @@ Use the table of contents to jump to the relevant section rather than reading th
 |-----------------------------|-------|
 | `system/graphics.md`        | ~1410 |
 | `system/file.md`            | ~1400 |
-| `utility/vice-emulator.md`  | ~1160 |
-| `example/file.md`           | ~1000 |
-| `system/screen.md`          | ~855  |
+| `utility/vice-emulator.md`  | ~1260 |
+| `example/file.md`           | ~1010 |
+| `system/screen.md`          | ~900  |
 | `system/disk.md`            | ~780  |
-| `code/compression.md`       | ~680  |
-| `code/standard.md`          | ~660  |
+| `code/standard.md`          | ~740  |
+| `code/compression.md`       | ~700  |
 | `example/general.md`        | ~610  |
-| `utility/dasm-assembler.md` | ~565  |
+| `utility/dasm-assembler.md` | ~570  |
+| `system/keyboard.md`        | ~490  |
+| `expansion/petay.md`        | ~390  |
+| `hardware/chip.md`          | ~330  |

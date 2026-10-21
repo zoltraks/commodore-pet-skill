@@ -22,20 +22,20 @@ Do not use C64 addresses - they differ.
 
 ## Contents
 
-| Section                     | Line | What it covers                                                                                     |
-|-----------------------------|------|----------------------------------------------------------------------------------------------------|
-| File Architecture Overview  | 40   | Logical files, device numbers, secondary addresses, file types                                     |
-| KERNAL Routine Reference    | 139  | pet_setnam, pet_setlfs, OPEN, CLOSE, CHKIN, CHKOUT, CLRCHN, CHRIN, CHROUT, LOAD, SAVE, CLALL, STOP |
-| Call Sequences              | 821  | Open-read, open-write, load PRG, save PRG patterns                                                 |
-| EOF Detection               | 1009 | STATUS bit 6 (disk), STATUS bit 4 (cassette)                                                       |
-| Error Handling              | 1061 | OPEN error codes, device not present, file not found                                               |
-| PETSCII Filename Rules      | 1123 | Uppercase, wildcards, drive prefix                                                                 |
-| Tape File Notes             | 1149 | Cassette SA values, sequential vs PRG                                                              |
-| Multiple Open Files         | 1161 | Table limits, safe LFN allocation                                                                  |
-| Chunk-Based Partial Reading | 1190 | Re-open and skip to offset, read fixed-size chunks, STATUS-based EOF                               |
-| No Backward Seek            | 1308 | CBM-DOS cannot seek backward; re-open and skip forward for scroll-up                               |
-| Zero-Page Save and Restore  | 1336 | restore_zp pattern: save $FB-$FE on entry, restore before each KERNAL call                         |
-| Troubleshooting             | 1382 | Common bugs and their causes                                                                       |
+| Section                     | What it covers                                                                                     |
+|-----------------------------|----------------------------------------------------------------------------------------------------|
+| File Architecture Overview  | Logical files, device numbers, secondary addresses, file types                                     |
+| KERNAL Routine Reference    | pet_setnam, pet_setlfs, OPEN, CLOSE, CHKIN, CHKOUT, CLRCHN, CHRIN, CHROUT, LOAD, SAVE, CLALL, STOP |
+| Call Sequences              | Open-read, open-write, load PRG, save PRG patterns                                                 |
+| EOF Detection               | STATUS bit 6 (disk), STATUS bit 4 (cassette)                                                       |
+| Error Handling              | OPEN error codes, device not present, file not found                                               |
+| PETSCII Filename Rules      | Uppercase, wildcards, drive prefix                                                                 |
+| Tape File Notes             | Cassette SA values, sequential vs PRG                                                              |
+| Multiple Open Files         | Table limits, safe LFN allocation                                                                  |
+| Chunk-Based Partial Reading | Re-open and skip to offset, read fixed-size chunks, STATUS-based EOF                               |
+| No Backward Seek            | CBM-DOS cannot seek backward; re-open and skip forward for scroll-up                               |
+| Zero-Page Save and Restore  | restore_zp pattern: save $FB-$FE on entry, restore before each KERNAL call                         |
+| Troubleshooting             | Common bugs and their causes                                                                       |
 
 ## File Architecture Overview
 

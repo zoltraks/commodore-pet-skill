@@ -8,6 +8,27 @@ It compiles rules from the [Agent Skills specification](https://agentskills.io/s
 
 Every document created or modified as part of this skill must follow the rules below.
 
+## Contents
+
+| Section                          | What it covers                          |
+|----------------------------------|-----------------------------------------|
+| Document Structure               | Top-to-bottom layout for every document |
+| Paragraph and Sentence Structure | Sentence and paragraph rules            |
+| Word Wrap and Line Breaks        | Logical lines, no hard wrap             |
+| Headings                         | Heading case, depth, and punctuation    |
+| Lists                            | Bullet and numbered list rules          |
+| Empty Lines and Spacing          | Blank-line and trailing-space rules     |
+| Code Blocks                      | Fences, language tags, inline code      |
+| Inline Formatting                | Quotes, bold, emphasis                  |
+| Semicolons                       | Semicolon prohibition in prose          |
+| Tables                           | Source-width table formatting           |
+| Special Characters               | Box-drawing and emoji rules             |
+| Language                         | Document language and heading case      |
+| File References                  | Relative-path references between files  |
+| Skill Document Requirements      | Agent Skills spec requirements          |
+| Adding New Files                 | Registration and required sections      |
+| File Maintenance                 | Encoding and line-break preservation    |
+
 ## Document Structure
 
 Use a consistent top-to-bottom layout for every document.
@@ -55,17 +76,17 @@ Include a Contents table in files longer than 300 lines.
 ```markdown
 ## Contents
 
-| Section            | Line | What it covers                          |
-|--------------------|------|-----------------------------------------|
-| Overview           | 15   | Background and architecture description |
-| Register Reference | 80   | Full register map with bit meanings     |
+| Section            | What it covers                          |
+|--------------------|-----------------------------------------|
+| Overview           | Background and architecture description |
+| Register Reference | Full register map with bit meanings     |
 ```
 
-The table has exactly three columns: `Section`, `Line`, and `What it covers`.
+The table has exactly two columns: `Section` and `What it covers`.
 
-`Line` is the approximate starting line number of the section.
+Each `Section` cell names an existing `##` or `###` heading in the same file.
 
-Update line numbers when sections move significantly.
+Run `python3 script/check-contents.py` after adding, renaming, or removing sections - it reports every Contents entry that resolves to no heading.
 
 ## Paragraph and Sentence Structure
 
@@ -323,7 +344,7 @@ Reference files clearly from `SKILL.md` with guidance on when to read them.
 
 Use backtick code spans around file paths in both prose and table cells.
 
-Examples: `system/memory.md`, `hardware/chip.md`, `process/workflow.md`.
+Examples: `system/memory.md`, `hardware/chip.md`, `system/disk.md`.
 
 ## Skill Document Requirements
 
@@ -410,3 +431,5 @@ Files over 300 lines must also include a `## Contents` table.
 Maintain the existing line break style and encoding of any document you edit.
 
 Create new files in UTF-8 by default.
+
+Run `python3 script/check-contents.py` after edits that move, rename, or resize sections - it verifies Contents tables and the SKILL.md large-file table still match the documents.

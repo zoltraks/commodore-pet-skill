@@ -1,0 +1,119 @@
+{
+  "skill_name": "commodore-pet-skill",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Explain how the 6502 ROL instruction works on the PET.",
+      "expected_output": "Opens hardware/cpu.md only - a single-domain task reads the narrowest matching topic file.",
+      "files": [],
+      "expectations": [
+        "Exactly one topic file is loaded.",
+        "The answer uses PET 3032 addresses and facts, never C64 addresses.",
+        "No other topic files are loaded without a cross-domain need."
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Write a routine that plays a tone on the PET speaker.",
+      "expected_output": "Opens hardware/sound.md - VIA CB2 speaker and shift-register tone generation.",
+      "files": [],
+      "expectations": [
+        "hardware/sound.md is the file loaded.",
+        "The code uses the VIA shift register and CB2 path, not PetAY."
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "How do I read a sequential file from disk into a buffer on the PET?",
+      "expected_output": "Opens system/file.md first and may open example/file.md as the second file - the task crosses reference and worked-example domains.",
+      "files": [],
+      "expectations": [
+        "system/file.md is loaded for the KERNAL call sequence.",
+        "At most two topic files are loaded.",
+        "PET wrappers (pet_setnam/pet_setlfs/pet_open) are used rather than C64 conventions."
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "What is the C64 border color register address?",
+      "expected_output": "Near miss - the skill covers the PET 3032, not the C64. The answer states PET-only scope and does not substitute or invent C64 addresses.",
+      "files": [],
+      "expectations": [
+        "No C64-specific address is presented as verified fact.",
+        "The PET 3032 scope boundary is stated."
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "DASM fails with 'branch out of range' - how do I fix it?",
+      "expected_output": "Opens utility/dasm-assembler.md - assembler errors and DASM syntax live there.",
+      "files": [],
+      "expectations": [
+        "utility/dasm-assembler.md is the file loaded.",
+        "The fix uses DASM-specific syntax, not a generic assembler guess."
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "How do I set a breakpoint in the VICE monitor for xpet?",
+      "expected_output": "Opens utility/vice-emulator.md - breakpoints, watchpoints, and monitor commands.",
+      "files": [],
+      "expectations": [
+        "utility/vice-emulator.md is the file loaded.",
+        "Commands target xpet with -model 3032, not another VICE emulator."
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "Send a scratch command to delete a file on the PET disk drive.",
+      "expected_output": "Opens system/disk.md first, optionally example/file.md second - command channel SA=15 and drive status handling.",
+      "files": [],
+      "expectations": [
+        "system/disk.md is loaded.",
+        "The command channel (secondary address 15) is used."
+      ]
+    },
+    {
+      "id": 8,
+      "prompt": "Play a musical note through the PetAY board on the PET.",
+      "expected_output": "Opens expansion/petay.md - AY-8910 register map and frequency dividers.",
+      "files": [],
+      "expectations": [
+        "expansion/petay.md is the file loaded.",
+        "The base address is treated as configurable ($9000/$A000/$B000), not hardcoded."
+      ]
+    },
+    {
+      "id": 9,
+      "prompt": "Write a Python script that parses CSV files.",
+      "expected_output": "Outside the skill's domain - no topic file covers general Python work, so no file is force-loaded.",
+      "files": [],
+      "expectations": [
+        "No topic file is presented as relevant.",
+        "The answer does not cite PET addresses for a non-PET task."
+      ]
+    },
+    {
+      "id": 10,
+      "prompt": "Add a new section to system/screen.md about raster timing.",
+      "expected_output": "The new section is registered in the file's Contents table and script/check-contents.py is run to verify every entry still resolves.",
+      "files": [],
+      "expectations": [
+        "The Contents table gains a row naming the new heading.",
+        "script/check-contents.py is run and reports no unresolved entries.",
+        "The file keeps its Purpose section and STYLE.md conventions."
+      ]
+    },
+    {
+      "id": 11,
+      "prompt": "Add a new topic file for sprite programming to this skill.",
+      "expected_output": "The file is created with the four-layer structure and registered in SKILL.md (topic table and routing table) and the README.md tree.",
+      "files": [],
+      "expectations": [
+        "The file carries a Purpose section and the four-layer structure.",
+        "It is registered in SKILL.md and mirrored in the README.md tree.",
+        "The directory and file names follow the singular, lowercase convention."
+      ]
+    }
+  ]
+}

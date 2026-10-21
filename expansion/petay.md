@@ -11,6 +11,25 @@
 | VIA/PIA/CRTC registers    | `hardware/chip.md`  |
 | Memory map and safe zones | `system/memory.md`  |
 
+## Contents
+
+| Section                    | What it covers                       |
+|----------------------------|--------------------------------------|
+| Overview                   | Board description and channel layout |
+| I/O Addresses              | Base address by socket               |
+| Read/Write Limitation      | Read-is-write register behavior      |
+| AY-8910 Register Map       | Register numbers and functions       |
+| Frequency Calculation      | Divider values for notes             |
+| Mixer Register ($07)       | Tone and noise channel enables       |
+| Volume Registers ($08-$0A) | Channel volume and envelope mode     |
+| Envelope Generator         | Envelope shapes and period           |
+| Writing to a Register      | Register write sequence              |
+| Register Write Subroutine  | Reusable AY write code               |
+| Playing a Tone             | Tone generation example              |
+| Silencing a Channel        | Muting one channel                   |
+| Silencing Both Chips       | Full mute                            |
+| BASIC Example              | BASIC comparison listing             |
+
 ## Overview
 
 The PetAY is an unofficial expansion card for the Commodore PET 3032 that adds two AY-8910 sound chips, providing stereo music playback. The left channel is AY 1, the right channel is AY 2. Each chip has 3 tone channels, 1 noise generator, and a per-channel volume/envelope system.

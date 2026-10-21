@@ -18,6 +18,20 @@ This file covers the PET 3032 hardware chips in four progressive layers:
 | KERNAL routines and vectors     | `system/kernal.md` |
 | Screen I/O and PETSCII          | `system/screen.md` |
 
+## Contents
+
+| Section                                      | What it covers                             |
+|----------------------------------------------|--------------------------------------------|
+| Memory Map Overview                          | RAM, screen, I/O, and ROM ranges           |
+| I/O Area Decoding ($E800-$E8FF)              | Chip-select address decoding               |
+| PIA 1 ($E810-$E813) - Keyboard, Tape, VBLANK | PIA1 ports and control lines               |
+| PIA 2 ($E820-$E823) - IEEE-488               | PIA2 ports for the IEEE-488 bus            |
+| VIA 6522 ($E840-$E84F)                       | VIA registers, timers, shift register, PCR |
+| CRTC 6545 ($E880-$E88F)                      | CRTC registers and video timing            |
+| Character Generator                          | Character ROM and glyph data               |
+| Refresh Rates                                | Screen refresh frequencies                 |
+| PET 3032 Specifics                           | Model-specific details                     |
+
 ## Memory Map Overview
 
 | Region            | Address Range | Size   | Description                              |

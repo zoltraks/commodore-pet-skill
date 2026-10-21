@@ -20,15 +20,15 @@ Every address in this file was verified by disassembling the `basic-2.901465-01-
 
 ## Contents
 
-| Section                 | Line | What it covers                                       |
-|-------------------------|------|------------------------------------------------------|
-| Detecting the ROM       | 33   | Confirm BASIC 2 before calling any address here      |
-| ROM Memory Regions      | 44   | What lives where in `$C000-$FFFF`                    |
-| Screen and Editor       | 58   | Clear, home, scroll, insert, print to screen         |
-| Interrupt Entry Points  | 79   | `$E61B` IRQ entry and `$E62E` clock/keyboard service |
-| Floating-Point Routines | 92   | FAC layout, load/store, arithmetic, functions        |
-| Number and String       | 130  | FAC<->ASCII, print line number, string functions     |
-| CHRGET and the Wedge    | 148  | `$70-$87` text scanner; adding commands to BASIC     |
+| Section                 | What it covers                                       |
+|-------------------------|------------------------------------------------------|
+| Detecting the ROM       | Confirm BASIC 2 before calling any address here      |
+| ROM Memory Regions      | What lives where in `$C000-$FFFF`                    |
+| Screen and Editor       | Clear, home, scroll, insert, print to screen         |
+| Interrupt Entry Points  | `$E61B` IRQ entry and `$E62E` clock/keyboard service |
+| Floating-Point Routines | FAC layout, load/store, arithmetic, functions        |
+| Number and String       | FAC<->ASCII, print line number, string functions     |
+| CHRGET and the Wedge    | `$70-$87` text scanner; adding commands to BASIC     |
 
 ## Detecting the ROM
 

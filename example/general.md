@@ -9,18 +9,18 @@ This file provides verified, runnable code examples for the PET 3032. Each examp
 
 ## Contents
 
-| Section                        | Line | What it covers                                       |
-|--------------------------------|------|------------------------------------------------------|
-| Minimal BASIC Stub             | 25   | Shortest valid BASIC stub at $0401, SYS1038          |
-| Clear Screen                   | 56   | Fill 1000 bytes of screen RAM with space character   |
-| Wait for Key Press             | 97   | Poll GETIN until non-zero                            |
-| VBLANK Polling                 | 121  | Two-phase VBLANK poll via VIA PORT B bit 5           |
-| Copy Screen to Screen          | 155  | Copy 1000 bytes between two page-aligned buffers     |
-| Switch Character Set           | 202  | PCR register values for uppercase and lowercase sets |
-| Minimal Animation Frame Player | 239  | Frame table, copy loop, VBLANK wait, keypress exit   |
-| Demo Skeleton Template         | 335  | init/main_loop/update/render pattern with IRQ guard  |
-| IRQ-Driven Animation Skeleton  | 421  | Replace CINV, acknowledge PIA1 CRB, chain to KERNAL  |
-| Screen Data Row Format         | 599  | 40-column row layout, PETSCII screen code reference  |
+| Section                        | What it covers                                       |
+|--------------------------------|------------------------------------------------------|
+| Minimal BASIC Stub             | Shortest valid BASIC stub at $0401, SYS1038          |
+| Clear Screen                   | Fill 1000 bytes of screen RAM with space character   |
+| Wait for Key Press             | Poll GETIN until non-zero                            |
+| VBLANK Polling                 | Two-phase VBLANK poll via VIA PORT B bit 5           |
+| Copy Screen to Screen          | Copy 1000 bytes between two page-aligned buffers     |
+| Switch Character Set           | PCR register values for uppercase and lowercase sets |
+| Minimal Animation Frame Player | Frame table, copy loop, VBLANK wait, keypress exit   |
+| Demo Skeleton Template         | init/main_loop/update/render pattern with IRQ guard  |
+| IRQ-Driven Animation Skeleton  | Replace CINV, acknowledge PIA1 CRB, chain to KERNAL  |
+| Screen Data Row Format         | 40-column row layout, PETSCII screen code reference  |
 
 ## Minimal BASIC Stub
 

@@ -22,18 +22,18 @@ This file covers PET 3032 screen I/O in four progressive layers:
 
 ## Contents
 
-| Section                 | Line | What it covers                                                                                                  |
-|-------------------------|------|-----------------------------------------------------------------------------------------------------------------|
-| Screen RAM Layout       | 35   | Base address, 40x25 layout, row address table, 1000-byte rule                                                   |
-| PETSCII vs Screen Codes | 118  | Conversion table, working converter, inverse video from PETSCII                                                 |
-| Cursor Control          | 180  | KERNAL cursor routines, PLOT, TAB                                                                               |
-| Clear and Home          | 206  | CLR/HOME PETSCII, clear screen routine                                                                          |
-| Reverse Video           | 243  | Bit 7, RVS on/off, highlight_row routine                                                                        |
-| PETSCII Control Codes   | 376  | CHROUT control code table                                                                                       |
-| Character Sets          | 400  | Uppercase/graphics vs lowercase/text, PCR switching, charset-aware label rendering                              |
-| Double Buffering        | 482  | Back buffer, VBLANK sync, copy routine, tail flag hazard, bounded poll, deferred charset flush, common mistakes |
-| Raw Screen Codes        | 740  | Storing byte values directly as screen codes for hex viewer ASCII columns                                       |
-| Frame Composition       | 822  | Drawing order for bordered frames with header, content, and footer                                              |
+| Section                 | What it covers                                                                                                  |
+|-------------------------|-----------------------------------------------------------------------------------------------------------------|
+| Screen RAM Layout       | Base address, 40x25 layout, row address table, 1000-byte rule                                                   |
+| PETSCII vs Screen Codes | Conversion table, working converter, inverse video from PETSCII                                                 |
+| Cursor Control          | KERNAL cursor routines, PLOT, TAB                                                                               |
+| Clear and Home          | CLR/HOME PETSCII, clear screen routine                                                                          |
+| Reverse Video           | Bit 7, RVS on/off, highlight_row routine                                                                        |
+| PETSCII Control Codes   | CHROUT control code table                                                                                       |
+| Character Sets          | Uppercase/graphics vs lowercase/text, PCR switching, charset-aware label rendering                              |
+| Double Buffering        | Back buffer, VBLANK sync, copy routine, tail flag hazard, bounded poll, deferred charset flush, common mistakes |
+| Raw Screen Codes        | Storing byte values directly as screen codes for hex viewer ASCII columns                                       |
+| Frame Composition       | Drawing order for bordered frames with header, content, and footer                                              |
 
 ## Screen RAM Layout
 
@@ -256,6 +256,8 @@ clear_tail:
 ```
 
 The `clear_tail` loop is safe because `sta` does not affect flags -- `bne` tests the Z flag set by `dex`. This differs from the `copy_buffer` tail, which inserts an `lda` between `dex` and `sta`. See the Tail Loop Flag Hazard section under Double Buffering below.
+
+## Reverse Video
 
 ### Per-Character Reverse
 
